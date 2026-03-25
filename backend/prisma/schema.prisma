@@ -1,0 +1,379 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////
+
+enum AgentStatus {
+  draft
+  active
+  inactive
+  busy
+  offline
+}
+
+enum AgentCategory {
+  Analysis
+  Development
+  Security
+  Data
+  NLP
+  Web3
+  Other
+}
+
+enum AgentTier {
+  Standard
+  Professional
+  Enterprise
+}
+
+enum TransactionType {
+  deploy
+  purchase_access
+  upvote
+  call
+  agent_to_agent
+}
+
+enum TransactionStatus {
+  pending
+  confirmed
+  failed
+}
+
+enum InteractionStatus {
+  success
+  failed
+  timeout
+}
+
+//////////////////////////////////////////////////
+// USER
+//////////////////////////////////////////////////
+
+model User {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  walletAddress String   @unique
+  nonce         String   @default(cuid())
+
+  totalRevenue  String   @default("0")
+
+  createdAt     DateTime @default(now())
+  lastSeen      DateTime @default(now())
+
+  agents        Agent[]
+  transactions  Transaction[]
+  interactions  Interaction[]
+  accesses      AgentAccess[]
+  upvotes       AgentUpvote[]
+  reviews       Review[]
+  reviewLikes   ReviewLike[]
+}
+
+//////////////////////////////////////////////////
+// AGENT
+//////////////////////////////////////////////////
+
+model Agent {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  agentId         String        @unique @default(cuid())
+
+  contractAgentId Int?
+  txHash          String?
+
+  name            String        @unique
+  description     String?
+  metadataUri     String?
+
+  ownerWallet     String
+  owner           User          @relation(fields: [ownerWallet], references: [walletAddress])
+
+  endpoint        String
+
+  tier            AgentTier
+  pricing         String        // monthly price in wei
+  lifetimeMultiplier Int        @default(12) // lifetime = monthly * this
+  commsEnabled    Boolean       @default(false)
+  commsPricePerCall String      @default("0") // per delegated task price in wei
+
+  upvotes         Int           @default(0)
+
+  category        AgentCategory @default(Data)
+  tags            String[]
+  status          AgentStatus   @default(active)
+
+  rating          Float         @default(0)
+  ratingCount     Int           @default(0)
+
+  calls           Int           @default(0)
+  successRate     Float         @default(100)
+
+  revenue         String        @default("0")
+  score           Float         @default(0)
+
+  mcpSchema       Json?
+  isVerified      Boolean       @default(false)
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  accesses        AgentAccess[]
+  transactions    Transaction[]
+  interactions    Interaction[]
+  metrics         UsageMetrics?
+  upvoteRecords   AgentUpvote[]
+  reviews         Review[]
+  outgoingMessages AgentCommsMessage[] @relation("AgentCommsFrom")
+  incomingMessages AgentCommsMessage[] @relation("AgentCommsTo")
+
+  @@index([ownerWallet])
+  @@index([status])
+  @@index([category])
+}
+
+//////////////////////////////////////////////////
+// AGENT-TO-AGENT COMMUNICATION LOG
+//////////////////////////////////////////////////
+
+model AgentCommsMessage {
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+
+  fromAgentId      String
+  toAgentId        String
+  callerWallet     String
+
+  task             String
+  response         String?
+
+  status           InteractionStatus @default(success)
+  latency          Int?
+  errorMessage     String?
+
+  priceWei         String            @default("0")
+  platformFeeWei   String            @default("0")
+  creatorAmountWei String            @default("0")
+  transactionHash  String?
+
+  createdAt        DateTime          @default(now())
+
+  fromAgent        Agent             @relation("AgentCommsFrom", fields: [fromAgentId], references: [agentId])
+  toAgent          Agent             @relation("AgentCommsTo", fields: [toAgentId], references: [agentId])
+
+  @@index([fromAgentId])
+  @@index([toAgentId])
+  @@index([callerWallet])
+  @@index([createdAt])
+}
+
+//////////////////////////////////////////////////
+// UPVOTE TRACKING (deduplication)
+//////////////////////////////////////////////////
+
+model AgentUpvote {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  agentId     String
+  voterWallet String
+
+  txHash      String?
+
+  agent       Agent    @relation(fields: [agentId], references: [agentId])
+  voter       User     @relation(fields: [voterWallet], references: [walletAddress])
+
+  createdAt   DateTime @default(now())
+
+  @@unique([agentId, voterWallet])
+  @@index([agentId])
+  @@index([voterWallet])
+}
+
+//////////////////////////////////////////////////
+// ACCESS CONTROL
+//////////////////////////////////////////////////
+
+model AgentAccess {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  agentId     String
+  userWallet  String
+
+  expiresAt   DateTime
+  isLifetime  Boolean  @default(false)
+  txHash      String?
+
+  agent       Agent    @relation(fields: [agentId], references: [agentId])
+  user        User     @relation(fields: [userWallet], references: [walletAddress])
+
+  createdAt   DateTime @default(now())
+
+  @@unique([agentId, userWallet])
+  @@index([agentId])
+  @@index([userWallet])
+}
+
+//////////////////////////////////////////////////
+// TRANSACTIONS
+//////////////////////////////////////////////////
+
+model Transaction {
+  id            String            @id @default(auto()) @map("_id") @db.ObjectId
+
+  txHash        String            @unique
+
+  type          TransactionType
+  status        TransactionStatus @default(pending)
+
+  agentId       String?
+  agent         Agent?            @relation(fields: [agentId], references: [agentId])
+
+  callerWallet  String
+  caller        User              @relation(fields: [callerWallet], references: [walletAddress])
+
+  ownerWallet   String?
+
+  totalAmount   String
+  platformFee   String?
+  creatorAmount String?
+
+  createdAt     DateTime          @default(now())
+
+  @@index([agentId])
+  @@index([callerWallet])
+  @@index([ownerWallet])
+  @@index([type])
+}
+
+//////////////////////////////////////////////////
+// INTERACTIONS
+//////////////////////////////////////////////////
+
+model Interaction {
+  id                  String            @id @default(auto()) @map("_id") @db.ObjectId
+
+  agentId             String
+  agent               Agent             @relation(fields: [agentId], references: [agentId])
+
+  callerWallet        String?
+  caller              User?             @relation(fields: [callerWallet], references: [walletAddress])
+
+  task                String?
+  response            String?
+
+  latency             Int?
+  status              InteractionStatus @default(success)
+
+  parentInteractionId String?
+  callDepth           Int               @default(0)
+
+  errorMessage        String?
+
+  createdAt           DateTime          @default(now())
+
+  @@index([agentId])
+  @@index([callerWallet])
+  @@index([agentId, createdAt])
+}
+
+//////////////////////////////////////////////////
+// REVIEWS / COMMENTS
+//////////////////////////////////////////////////
+
+model Review {
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+
+  agentId       String
+  agent         Agent        @relation(fields: [agentId], references: [agentId])
+
+  authorWallet  String
+  author        User         @relation(fields: [authorWallet], references: [walletAddress])
+
+  content       String
+  rating        Int          @default(0) // 0 = no rating, 1-5
+
+  parentId      String?      // null = top-level, set = reply
+
+  likes         ReviewLike[]
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([agentId])
+  @@index([authorWallet])
+  @@index([parentId])
+}
+
+model ReviewLike {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  reviewId      String
+  review        Review   @relation(fields: [reviewId], references: [id])
+
+  walletAddress String
+  liker         User     @relation(fields: [walletAddress], references: [walletAddress])
+
+  createdAt     DateTime @default(now())
+
+  @@unique([reviewId, walletAddress])
+  @@index([reviewId])
+}
+
+//////////////////////////////////////////////////
+// USAGE METRICS
+//////////////////////////////////////////////////
+
+model UsageMetrics {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  agentId     String   @unique
+  agent       Agent    @relation(fields: [agentId], references: [agentId])
+
+  calls       Int      @default(0)
+  successRate Float    @default(100)
+
+  revenue     String   @default("0")
+  avgLatency  Float    @default(0)
+
+  dailyCalls  Json     @default("{}")
+
+  updatedAt   DateTime @updatedAt
+}
+
+//////////////////////////////////////////////////
+// PLATFORM CONFIG
+//////////////////////////////////////////////////
+
+model PlatformConfig {
+  id               String   @id @default("config") @map("_id")
+
+  feeCollector     String
+
+  standardFee      String
+  professionalFee  String
+  enterpriseFee    String
+
+  updatedAt        DateTime @updatedAt
+}
+
+//////////////////////////////////////////////////
+// GLOBAL STATS
+//////////////////////////////////////////////////
+
+model GlobalStats {
+  id           String   @id @default("global") @map("_id")
+
+  totalAgents  Int      @default(0)
+  activeAgents Int      @default(0)
+
+  totalCalls   Int      @default(0)
+  totalRevenue String   @default("0")
+
+  updatedAt    DateTime @updatedAt
+}
