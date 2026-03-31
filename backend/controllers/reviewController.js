@@ -7,14 +7,13 @@ const createSchema = z.object({
   rating: z.number().int().min(0).max(5).optional().default(0),
   parentId: z.string().optional(),
 })
-
+ 
 // ── GET /api/agents/:agentId/reviews ──────────────────────────
 const getReviews = asyncHandler(async (req, res) => {
   const { agentId } = req.params
   const page = Math.max(1, parseInt(req.query.page) || 1)
   const limit = Math.min(parseInt(req.query.limit) || 20, 100)
 
-  // Always look up by agentId (cuid) — never by ObjectId
   const agent = await prisma.agent.findFirst({
     where: { agentId },
     select: { agentId: true },

@@ -18,9 +18,6 @@ const composeSchema = z.object({
   sequential: z.boolean().optional(),
 })
 
-/**
- * POST /agents/:id/execute
- */
 const executeAgent = asyncHandler(async (req, res) => {
   const { task } = executeSchema.parse(req.body)
   const { id } = req.params

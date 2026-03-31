@@ -5,9 +5,6 @@ import { asyncHandler } from '../middlewares/errorHandler.js'
 const generateNonce = () =>
   Math.random().toString(36).substring(2) + Date.now().toString(36)
 
-/**
- * GET /auth/nonce/:address
- */
 const getNonce = asyncHandler(async (req, res) => {
   const { address } = req.params
 

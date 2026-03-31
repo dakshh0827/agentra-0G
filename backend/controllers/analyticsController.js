@@ -6,7 +6,7 @@ const getLeaderboard = asyncHandler(async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit) || 50, 100)
   const leaderboard = await analyticsService.getLeaderboard(limit)
   res.json(leaderboard)
-})
+}) 
 
 const getDashboard = asyncHandler(async (req, res) => {
   const wallet = req.walletAddress

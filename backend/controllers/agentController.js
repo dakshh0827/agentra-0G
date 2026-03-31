@@ -8,7 +8,7 @@ import { z } from 'zod'
 // ── Validation schemas ────────────────────────────────────────
 
 const deploySchema = z.object({
-  name: z.string().min(2).max(64),
+  name: z.string().min(2).max(64), 
   description: z.string().min(10).max(1000).optional(),
   category: z.enum(['Analysis', 'Development', 'Security', 'Data', 'NLP', 'Web3', 'Other']),
   tags: z.array(z.string().max(32)).max(10).optional(),
