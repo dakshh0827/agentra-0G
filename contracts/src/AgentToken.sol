@@ -10,8 +10,6 @@ contract AgentToken is ERC20, ERC20Burnable, ERC20Permit, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     constructor() ERC20("Agentra Token", "AGT") ERC20Permit("Agentra Token") {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(MINTER_ROLE, msg.sender);
         
         // Mint initial supply
         _mint(msg.sender, 100_000_000 * 10 ** decimals());
