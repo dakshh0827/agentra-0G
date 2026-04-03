@@ -16,7 +16,7 @@ class OrchestratorService {
       agentToAgentCalls: 0,
     }
   }
-
+ 
   async executeAgent(agentId, task, callerWallet, options = {}) {
     const {
       callDepth = 0,

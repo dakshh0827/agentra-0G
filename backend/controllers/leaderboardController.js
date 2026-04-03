@@ -1,7 +1,6 @@
 import prisma from '../lib/prisma.js'
 import { asyncHandler } from '../middlewares/errorHandler.js'
 
-// helper to safely convert wei string → number (for analytics only)
 const weiToNumber = (wei) => {
   if (!wei) return 0
   return Number(wei) / 1e18

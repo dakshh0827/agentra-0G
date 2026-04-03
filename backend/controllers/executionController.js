@@ -23,7 +23,6 @@ const executeAgent = asyncHandler(async (req, res) => {
   const { id } = req.params
   const callerWallet = req.walletAddress
 
-  // FIXED: Safely query the correct ID field based on format
   const isObjectId = /^[a-f\d]{24}$/i.test(id)
   const agent = await prisma.agent.findFirst({
     where: isObjectId ? { id } : { agentId: id },

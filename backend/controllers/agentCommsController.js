@@ -102,7 +102,7 @@ async function _discoverTargetAgent(task, excludeAgentId) {
 
   return prisma.agent.findFirst({
     where: {
-      status: 'active',
+      status: 'active', 
       commsEnabled: true,
       commsPricePerCall: { not: '0' },
       ...(excludeAgentId ? { agentId: { not: excludeAgentId } } : {}),

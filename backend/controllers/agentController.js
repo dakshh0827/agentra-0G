@@ -35,7 +35,6 @@ const updateSchema = z.object({
   category: z.enum(['Analysis', 'Development', 'Security', 'Data', 'NLP', 'Web3', 'Other']).optional(),
 })
 
-// ── Helpers ───────────────────────────────────────────────────
 
 const TIER_MAP = {
   Standard: 0,

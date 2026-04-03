@@ -14,7 +14,7 @@ async function ensureUniqueAgentName(name, excludeAgentId = null) {
     const error = new Error(`Agent name "${name}" is already in use`)
     error.status = 409
     throw error
-  }
+  } 
 }
 
 class AgentService {

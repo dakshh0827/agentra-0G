@@ -15,7 +15,6 @@ const getDashboard = asyncHandler(async (req, res) => {
 })
 
 const getGlobalStats = asyncHandler(async (req, res) => {
-  // Execute concurrent queries safely
   const [
     totalAgents,
     activeAgents,

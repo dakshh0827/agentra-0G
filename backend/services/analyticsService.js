@@ -16,7 +16,7 @@ class AnalyticsService {
   async updateLeaderboardScores() {
     const agents = await prisma.agent.findMany({
       where: { status: { not: 'inactive' } },
-    })
+    }) 
 
     const updates = agents.map(agent => {
       const score = this.calculateScore(agent)
