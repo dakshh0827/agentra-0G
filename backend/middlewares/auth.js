@@ -12,7 +12,7 @@ const authMiddleware = async (req, res, next) => {
     if (!ethers.isAddress(walletAddress)) {
       return res.status(401).json({ error: 'Invalid wallet address format' })
     }
-
+ 
     const normalized = walletAddress.toLowerCase()
 
     const user = await prisma.user.upsert({

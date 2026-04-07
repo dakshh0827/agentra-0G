@@ -7,7 +7,7 @@ const getLeaderboard = asyncHandler(async (req, res) => {
   const leaderboard = await analyticsService.getLeaderboard(limit)
   res.json(leaderboard)
 }) 
-
+ 
 const getDashboard = asyncHandler(async (req, res) => {
   const wallet = req.walletAddress
   const data = await analyticsService.getDashboard(wallet)

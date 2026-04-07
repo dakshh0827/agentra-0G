@@ -17,7 +17,7 @@ const composeSchema = z.object({
   })).min(2).max(5),
   sequential: z.boolean().optional(),
 })
-
+ 
 const executeAgent = asyncHandler(async (req, res) => {
   const { task } = executeSchema.parse(req.body)
   const { id } = req.params

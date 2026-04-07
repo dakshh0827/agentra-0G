@@ -15,7 +15,7 @@ async function ensureUniqueAgentName(name, excludeAgentId = null) {
     error.status = 409
     throw error
   } 
-}
+} 
 
 class AgentService {
   async createAgent(data, ownerWallet) {

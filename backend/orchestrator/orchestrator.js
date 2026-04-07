@@ -16,7 +16,7 @@ class Orchestrator {
       parentInteractionId = null,
       callChainId = uuidv4(),
     } = options
-
+ 
     if (callDepth > config.platform.maxCallDepth) {
       throw Object.assign(
         new Error(`Max call depth (${config.platform.maxCallDepth}) exceeded`),

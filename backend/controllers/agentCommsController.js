@@ -99,7 +99,7 @@ async function _discoverTargetAgent(task, excludeAgentId) {
   })
 
   if (candidates.length > 0) return candidates[0]
-
+ 
   return prisma.agent.findFirst({
     where: {
       status: 'active', 
