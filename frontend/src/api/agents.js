@@ -1,0 +1,123 @@
+import api from './axios'
+
+// Headers that prevent the browser from ever caching a response.
+// Applied to wallet-sensitive endpoints (access check, upvote status)
+// so switching accounts always fetches fresh data from the server.
+const NO_CACHE = {
+  headers: {
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
+  },
+}
+
+export const agentsAPI = {
+  // ─────────────────────────────────────────────
+  // READ
+  // ─────────────────────────────────────────────
+  getAll: (params) => api.get('/agents', { params }),
+
+  getById: (id) => api.get(`/agents/${id}`),
+
+  search: (query) => api.get('/agents/search', { params: { q: query } }),
+
+  getMetrics: (id) => api.get(`/agents/${id}/metrics`),
+
+  // ── Wallet-sensitive — never cache ──────────────────────────
+
+  checkAccess: (agentId) =>
+    api.get(`/agents/${agentId}/access`, NO_CACHE),
+
+  checkUpvoteStatus: (agentId) =>
+    api.get(`/agents/${agentId}/upvote-status`, NO_CACHE),
+
+  // ─────────────────────────────────────────────
+  // DEPLOY AGENT FLOW
+  // ─────────────────────────────────────────────
+
+  deploy: (data) =>
+    api.post('/agents/deploy', {
+      name: data.name,
+      description: data.description,
+      endpoint: data.endpoint,
+      tier: data.tier,
+      pricing: data.pricing,
+      lifetimeMultiplier: data.lifetimeMultiplier ?? 12,
+      commsEnabled: data.commsEnabled ?? false,
+      commsPricePerCall: data.commsPricePerCall ?? '0',
+      tags: data.tags || [],
+      category: data.category,
+      mcpSchema: data.mcpSchema || undefined,
+      deployMode: data.deployMode || 'database',
+    }),
+
+  confirmDeploy: (id, txHash, contractAgentId) =>
+    api.post(`/agents/${id}/confirm`, {
+      txHash,
+      contractAgentId: contractAgentId ? String(contractAgentId) : undefined,
+    }),
+
+  cancelDraft: (id) => api.delete(`/agents/${id}/draft`),
+
+  // ─────────────────────────────────────────────
+  // ACCESS PURCHASE
+  // ─────────────────────────────────────────────
+
+  purchaseAccess: (agentId, isLifetime, txHash) =>
+    api.post(`/agents/${agentId}/purchase`, {
+      isLifetime,
+      txHash: txHash || undefined,
+    }),
+
+  // ─────────────────────────────────────────────
+  // UPVOTE
+  // ─────────────────────────────────────────────
+
+  upvote: (agentId, txHash) =>
+    api.post(`/agents/${agentId}/upvote`, { txHash: txHash || undefined }),
+
+  // ─────────────────────────────────────────────
+  // EXECUTION
+  // ─────────────────────────────────────────────
+
+  execute: (id, task) =>
+    api.post(`/agents/${id}/execute`, { task }),
+
+  discoverForComms: (task, excludeId) =>
+    api.get('/agents/discover', { params: { task, excludeId } }),
+
+  getCommsTarget: ({ targetAgentName, targetAgentId }) =>
+    api.get('/agents/comms-target', { params: { targetAgentName, targetAgentId } }),
+
+  callAgent: (fromId, payload) =>
+    api.post(`/agents/${fromId}/call-agent`, payload),
+
+  getCommsMessages: (agentId) =>
+    api.get(`/agents/${agentId}/messages`),
+
+  // ─────────────────────────────────────────────
+  // REVIEWS
+  // ─────────────────────────────────────────────
+
+  getReviews: (agentId, page = 1) =>
+    api.get(`/agents/${agentId}/reviews`, { params: { page } }),
+
+  createReview: (agentId, data) =>
+    api.post(`/agents/${agentId}/reviews`, data),
+
+  likeReview: (reviewId) =>
+    api.post(`/reviews/${reviewId}/like`),
+
+  deleteReview: (reviewId) =>
+    api.delete(`/reviews/${reviewId}`),
+
+  // ─────────────────────────────────────────────
+  // MANAGEMENT
+  // ─────────────────────────────────────────────
+
+  update: (id, data) => api.put(`/agents/${id}`, data),
+
+  deactivate: (id) => api.delete(`/agents/${id}`),
+
+  validateEndpoint: (endpoint) =>
+    api.post('/agents/validate-endpoint', { endpoint }),
+}
