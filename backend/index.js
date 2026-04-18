@@ -93,7 +93,7 @@ app.use('/api', analyticsRoutes)
 app.use('/api', reviewRoutes)
 
 // ── 404 handler ────────────────────────────────────────────────
-app.use('*', (req, res) => {
+app.use((req, res) => {
   res.status(404).json({
     error: `Route ${req.method} ${req.originalUrl} not found`,
   })
