@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Radio, Bell, ChevronDown, Repeat } from 'lucide-react'
+import { Radio, Bell, ChevronDown } from 'lucide-react'
 import { useWeb3Modal } from '@web3modal/wagmi/react'
 import { useAccount, useDisconnect, useReadContract } from 'wagmi'
 import { formatUnits } from 'viem'
@@ -101,17 +101,6 @@ export default function TopBar() {
 
         {isConnected ? (
           <div className="flex items-center gap-2">
-            {/* Network Switch */}
-            <button
-              onClick={() => open({ view: 'Networks' })}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-bright)] transition-all cursor-pointer"
-            >
-              <Repeat size={11} />
-              <span className="text-[10px] font-mono hidden sm:inline">
-                SWITCH CHAIN
-              </span>
-            </button>
-
             {/* Wallet */}
             <button
               onClick={() => disconnect()}

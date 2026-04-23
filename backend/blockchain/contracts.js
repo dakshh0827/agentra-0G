@@ -6,7 +6,7 @@ import config from '../config/config.js'
 // ─────────────────────────────────────────────
 
 const AGENTRA_ABI = [
-  'function deployAgent(uint8 tier, uint256 monthlyPrice, string metadataURI)',
+  'function deployAgent(uint8 tier, uint256 monthlyPrice, string metadataURI, bool commsEnabled, uint256 commsPricePerCall)',
   'function purchaseAccess(uint256 agentId, bool isLifetime)',
   'function upvote(uint256 agentId)',
   'function agents(uint256) view returns (uint256 id, address creator, uint8 tier, uint256 monthlyPrice, string metadataURI, uint256 upvotes)',
@@ -130,7 +130,7 @@ class ContractManager {
   // DEPLOY AGENT
   // ─────────────────────────────────────────────
 
-  async deployAgent(tier, monthlyPriceWei, metadataURI) {
+  async deployAgent(tier, monthlyPriceWei, metadataURI, commsEnabled = false, commsPricePerCall = 0n) {
     if (this._mockMode) {
       return { success: true, txHash: `0xmock_deploy_${Date.now()}` }
     }
@@ -140,7 +140,7 @@ class ContractManager {
 
       await this._ensureApproval(fee)
 
-      const tx = await this.agentra.deployAgent(tier, monthlyPriceWei, metadataURI)
+      const tx = await this.agentra.deployAgent(tier, monthlyPriceWei, metadataURI, commsEnabled, commsPricePerCall)
       const receipt = await tx.wait(1)
 
       return {

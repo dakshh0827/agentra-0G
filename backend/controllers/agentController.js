@@ -2,6 +2,7 @@ import agentService from '../services/agentService.js'
 import prisma from '../lib/prisma.js'
 import contractManager from '../lib/contractManager.js'
 import config from '../config/config.js'
+import { uploadAgentMetadata } from '../services/storageService.js'
 import { asyncHandler } from '../middlewares/errorHandler.js'
 import { z } from 'zod'
 
@@ -34,13 +35,6 @@ const updateSchema = z.object({
   tags: z.array(z.string()).optional(),
   category: z.enum(['Analysis', 'Development', 'Security', 'Data', 'NLP', 'Web3', 'Other']).optional(),
 })
-
- 
-const TIER_MAP = {
-  Standard: 0,
-  Professional: 1,
-  Enterprise: 2,
-}
 
 async function ensureUniqueAgentName(name, excludeAgentId = null) {
   const existing = await prisma.agent.findFirst({
@@ -86,7 +80,22 @@ const deployAgent = asyncHandler(async (req, res) => {
   const data = deploySchema.parse(req.body)
   await ensureUniqueAgentName(data.name)
 
-  const metadataURI = `https://api.agentra.io/metadata/temp-${Date.now()}`
+  const metadataPayload = {
+    name: data.name,
+    description: data.description || '',
+    category: data.category,
+    tags: data.tags || [],
+    endpoint: data.endpoint,
+    tier: data.tier,
+    pricing: data.pricing,
+    lifetimeMultiplier: data.lifetimeMultiplier ?? 12,
+    commsEnabled: data.commsEnabled ?? false,
+    commsPricePerCall: data.commsPricePerCall || '0',
+    mcpSchema: data.mcpSchema || null,
+    deployMode: data.deployMode || 'database',
+  }
+
+  const { metadataUri: metadataURI } = await uploadAgentMetadata(metadataPayload)
   const isBlockchain = data.deployMode === 'blockchain'
 
   // For database-only deploys, skip the contract call
@@ -122,18 +131,8 @@ const deployAgent = asyncHandler(async (req, res) => {
     return res.status(201).json(agent)
   }
 
-  // 1. Call smart contract
-  const tx = await contractManager.deployAgent(
-    TIER_MAP[data.tier],
-    BigInt(data.pricing),
-    metadataURI
-  )
-
-  if (!tx.success) {
-    return res.status(400).json({ error: tx.error })
-  }
-
-  // 2. Create DB record (pending confirmation)
+  // Blockchain deploys are draft-first: the frontend submits the wallet tx,
+  // then calls confirmDeploy once the transaction is mined.
   const agent = await prisma.agent.create({
     data: {
       name: data.name,
@@ -150,7 +149,7 @@ const deployAgent = asyncHandler(async (req, res) => {
       tags: data.tags || [],
       mcpSchema: data.mcpSchema || null,
       status: 'draft',
-      txHash: tx.txHash,
+      txHash: null,
     },
   })
 
@@ -162,22 +161,6 @@ const deployAgent = asyncHandler(async (req, res) => {
     create: { id: 'global', totalAgents: 1, activeAgents: 0, totalCalls: 0, totalRevenue: '0' },
   })
 
-  // 3. Log transaction
-  const listingFeeWei = config.token.listingFeesWei[data.tier.toLowerCase()] || config.token.listingFeesWei.standard
-  await prisma.transaction.create({
-    data: {
-      txHash: tx.txHash,
-      type: 'deploy',
-      status: 'pending',
-      agentId: agent.agentId,
-      callerWallet: req.walletAddress,
-      ownerWallet: req.walletAddress,
-      totalAmount: listingFeeWei,
-      platformFee: listingFeeWei,
-      creatorAmount: '0',
-    },
-  })
-
   res.status(201).json(agent)
 })
 
@@ -187,19 +170,52 @@ const confirmDeploy = asyncHandler(async (req, res) => {
   const { contractAgentId, txHash } = req.body
   const { id } = req.params
 
-  const agent = await prisma.agent.update({
+  if (!txHash) {
+    return res.status(400).json({ error: 'txHash is required to confirm a blockchain deploy' })
+  }
+
+  const existingAgent = await prisma.agent.findFirst({
     where: { id, ownerWallet: req.walletAddress },
+  })
+
+  if (!existingAgent) {
+    return res.status(404).json({ error: 'Agent not found' })
+  }
+
+  const agent = await prisma.agent.update({
+    where: { id: existingAgent.id },
     data: {
       status: 'active',
       contractAgentId: contractAgentId ? parseInt(contractAgentId) : undefined,
-      txHash: txHash || undefined,
+      txHash,
       isVerified: true,
     },
   })
 
-  await prisma.transaction.updateMany({
-    where: { agentId: agent.agentId, type: 'deploy' },
-    data: { status: 'confirmed' },
+  const listingFeeWei = config.token.listingFeesWei[agent.tier.toLowerCase()] || config.token.listingFeesWei.standard
+
+  await prisma.transaction.upsert({
+    where: { txHash },
+    update: {
+      status: 'confirmed',
+      agentId: agent.agentId,
+      callerWallet: req.walletAddress,
+      ownerWallet: req.walletAddress,
+      totalAmount: listingFeeWei,
+      platformFee: listingFeeWei,
+      creatorAmount: '0',
+    },
+    create: {
+      txHash,
+      type: 'deploy',
+      status: 'confirmed',
+      agentId: agent.agentId,
+      callerWallet: req.walletAddress,
+      ownerWallet: req.walletAddress,
+      totalAmount: listingFeeWei,
+      platformFee: listingFeeWei,
+      creatorAmount: '0',
+    },
   })
 
   await prisma.globalStats.upsert({
@@ -216,9 +232,13 @@ const confirmDeploy = asyncHandler(async (req, res) => {
 const cancelDraft = asyncHandler(async (req, res) => {
   const { id } = req.params
 
-  await prisma.agent.delete({
+  const deleted = await prisma.agent.deleteMany({
     where: { id, status: 'draft', ownerWallet: req.walletAddress },
   })
+
+  if (!deleted.count) {
+    return res.status(404).json({ error: 'Draft not found' })
+  }
 
   res.json({ success: true })
 })

@@ -101,7 +101,7 @@ export default function LandingPage() {
 const STATS = [
   { value: 'MCP', label: 'Native Protocol' },
   { value: 'ETH', label: 'Base Settlement' },
-  { value: 'IPFS', label: 'Decentralized Storage' },
+  { value: '0G', label: 'Chain Storage' },
   { value: 'V1.0', label: 'Network Status' },
 ]
 

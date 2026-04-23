@@ -11,6 +11,10 @@ export default function NetworkEnforcer({ children }) {
 
   if (!isUnsupported) return children
 
+  const targetChain = SUPPORTED_CHAINS[0]
+
+  if (!targetChain) return children
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-bg)]/90 backdrop-blur-md">
       <div className="glass-panel p-8 max-w-md w-full border border-red-500/30 flex flex-col items-center text-center">
@@ -19,18 +23,15 @@ export default function NetworkEnforcer({ children }) {
         </div>
         <h2 className="text-xl font-display text-white mb-2">Unsupported Network</h2>
         <p className="text-[var(--color-text-secondary)] text-sm mb-6 font-mono">
-          Your wallet is connected to an unsupported chain. Please switch to one of our active networks to continue.
+          Your wallet is connected to an unsupported chain. Please switch to Zero Gravity Chain to continue.
         </p>
         <div className="flex flex-col gap-3 w-full">
-          {SUPPORTED_CHAINS.map((c) => (
-            <NeonButton 
-              key={c.id} 
-              onClick={() => switchChain({ chainId: c.id })}
-              loading={isPending}
-            >
-              SWITCH TO {c.name.toUpperCase()}
-            </NeonButton>
-          ))}
+          <NeonButton
+            onClick={() => switchChain({ chainId: targetChain.id })}
+            loading={isPending}
+          >
+            SWITCH TO {targetChain.name.toUpperCase()}
+          </NeonButton>
         </div>
       </div>
     </div>

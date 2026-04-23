@@ -1,12 +1,10 @@
-import { baseSepolia, arbitrumSepolia } from 'wagmi/chains'
-import { monadTestnet, polkadotTestnet } from './custom-chains'
+import { zeroGTestnet } from './custom-chains'
 import deployments from '../deployments.json'
 
-// 1. Export the array for Wagmi to initialize
-// (Added polkadotTestnet here!)
-export const SUPPORTED_CHAINS = [baseSepolia, arbitrumSepolia, monadTestnet, polkadotTestnet]
+// Wagmi is pinned to Zero Gravity Chain only.
+export const SUPPORTED_CHAINS = [zeroGTestnet]
 
-// 2. Export the dynamic lookup map for your React components
+// Dynamic lookup map for the single supported chain.
 export const CHAIN_CONFIG = SUPPORTED_CHAINS.reduce((acc, chain) => {
   acc[chain.id] = {
     chain,

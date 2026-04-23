@@ -40,10 +40,10 @@ const config = {
     },
   },
 
-  ipfs: {
-    projectId: process.env.IPFS_PROJECT_ID || '',
-    projectSecret: process.env.IPFS_PROJECT_SECRET || '',
-    gateway: process.env.IPFS_GATEWAY || '',
+  storage: {
+    rpcUrl: process.env.OG_STORAGE_RPC_URL || process.env.BLOCKCHAIN_RPC_URL || '',
+    indexerRpc: process.env.OG_STORAGE_INDEXER_RPC || 'https://indexer-storage-testnet-turbo.0g.ai',
+    privateKey: process.env.OG_STORAGE_PRIVATE_KEY || process.env.PRIVATE_KEY || '',
   },
 
   platform: {

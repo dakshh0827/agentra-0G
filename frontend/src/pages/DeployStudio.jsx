@@ -186,7 +186,7 @@ export default function DeployStudio() {
       // ── BLOCKCHAIN + DB ──
       const currentNetwork = chain?.id ? CHAIN_CONFIG[chain.id] : null
       if (!currentNetwork?.contracts) {
-        throw new Error('Smart contracts not found for the current network. Please switch chains.')
+        throw new Error('Smart contracts not found for Zero Gravity Chain. Please reconnect on 0G.')
       }
 
       const { Agentra, AgentToken } = currentNetwork.contracts
@@ -194,7 +194,7 @@ export default function DeployStudio() {
       // Step 1: Create DB draft
       const draftRes = await agentsAPI.deploy({ ...payload, deployMode: 'blockchain' })
       draftId = draftRes.data.id
-      const metadataURI = draftRes.data.metadataUri || `ipfs://pending-${draftId}`
+      const metadataURI = draftRes.data.metadataUri || `0g://pending-${draftId}`
 
       // Step 2: Approve listing fee
       const listingFeeWei = parseUnits(selectedTier?.listingFee || '50', 18)
