@@ -18,7 +18,7 @@ export default function GlassCard({
       className={clsx(
         'glass-panel rounded-xl transition-all duration-300',
         glow && 'glow-border',
-        hover && 'hover:border-[var(--color-border-bright)]',
+        hover && 'hover:border-[var(--color-border)]',
         onClick && 'cursor-pointer',
         className
       )}
@@ -28,3 +28,5 @@ export default function GlassCard({
     </motion.div>
   )
 }
+
+

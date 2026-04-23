@@ -27,13 +27,13 @@ function FadeInSection({ children, className = '', delay = 0 }) {
   )
 }
 
-const STEPS = [
-  { id: 1, label: 'MODE', icon: Database, description: 'Deploy target' },
-  { id: 2, label: 'IDENTITY', icon: Zap, description: 'Name & category' },
-  { id: 3, label: 'ENDPOINT', icon: Globe, description: 'MCP schema' },
-  { id: 4, label: 'METADATA', icon: Tag, description: 'Tags & description' },
-  { id: 5, label: 'PRICING', icon: DollarSign, description: 'Monthly & lifetime' },
-  { id: 6, label: 'DEPLOY', icon: Upload, description: 'Publish agent' },
+  const STEPS = [
+  { id: 1, label: 'Mode', icon: Database, description: 'Deploy target' },
+  { id: 2, label: 'Identity', icon: Zap, description: 'Name & category' },
+  { id: 3, label: 'Endpoint', icon: Globe, description: 'MCP schema' },
+  { id: 4, label: 'Metadata', icon: Tag, description: 'Tags & description' },
+  { id: 5, label: 'Pricing', icon: DollarSign, description: 'Monthly & lifetime' },
+  { id: 6, label: 'Deploy', icon: Upload, description: 'Publish agent' },
 ]
 
 const CATEGORIES = ['Analysis', 'Development', 'Security', 'Data', 'NLP', 'Web3', 'Other']
@@ -74,14 +74,14 @@ const LIFETIME_MULTIPLIERS = [
 
 const InputField = ({ label, field, type = 'text', placeholder, rows, form, update }) => (
   <div>
-    <label className="text-[9px] font-mono text-[var(--color-text-dim)] tracking-[0.2em] uppercase block mb-2.5">{label}</label>
+    <label className="text-xs font-semibold text-[var(--color-text-primary)] block mb-2.5">{label}</label>
     {rows ? (
       <textarea
         value={form[field]}
         onChange={e => update(field, e.target.value)}
         rows={rows}
         placeholder={placeholder}
-        className="input-field w-full px-4 py-3 rounded-xl text-sm resize-none focus:ring-2 focus:ring-[var(--color-purple-core)]/30 transition-all"
+        className="input-field w-full px-4 py-3 rounded-lg text-base resize-none focus:ring-2 focus:ring-[var(--color-primary)]/30 transition-all"
       />
     ) : (
       <input
@@ -89,7 +89,7 @@ const InputField = ({ label, field, type = 'text', placeholder, rows, form, upda
         value={form[field]}
         onChange={e => update(field, e.target.value)}
         placeholder={placeholder}
-        className="input-field w-full px-4 py-3 rounded-xl text-sm focus:ring-2 focus:ring-[var(--color-purple-core)]/30 transition-all"
+        className="input-field w-full px-4 py-3 rounded-lg text-base focus:ring-2 focus:ring-[var(--color-primary)]/30 transition-all"
       />
     )}
   </div>
@@ -248,25 +248,20 @@ export default function DeployStudio() {
   const canDeploy = isConnected && form.name && form.category && form.tier && form.monthlyPrice !== ''
 
   return (
-    <div className="relative min-h-screen">
-      <div className="fixed top-20 right-10 w-[500px] h-[400px] rounded-full pointer-events-none opacity-25"
-        style={{ background: 'radial-gradient(ellipse, rgba(124,58,237,0.08) 0%, transparent 70%)' }} />
-      <div className="fixed bottom-20 left-10 w-[400px] h-[300px] rounded-full pointer-events-none opacity-25"
-        style={{ background: 'radial-gradient(ellipse, rgba(52,211,153,0.05) 0%, transparent 70%)' }} />
-
+    <div className="relative min-h-screen bg-[var(--color-bg)]">
       <div className="relative z-10 p-5 lg:p-8 max-w-7xl mx-auto">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-8">
           <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-9 h-9 rounded-xl bg-[rgba(124,58,237,0.1)] border border-[rgba(124,58,237,0.25)] flex items-center justify-center">
-              <Rocket size={16} className="text-[var(--color-purple-bright)]" />
-            </div>
-            <span className="font-mono text-[10px] text-[var(--color-purple-pale)] tracking-[0.3em]">AGENT DEPLOYMENT PROTOCOL</span>
+          <div className="w-10 h-10 rounded-lg bg-[var(--color-primary)]/10 border border-[var(--color-primary)] flex items-center justify-center">
+            <Rocket size={18} className="text-[var(--color-primary)]" />
           </div>
-          <h1 className="font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl text-[var(--color-text-primary)] leading-tight tracking-tight">
-            <span className="gradient-text-purple">DEPLOY</span> STUDIO
+          <span className="text-xs font-semibold text-[var(--color-primary)]">AGENT DEPLOYMENT</span>
+          </div>
+          <h1 className="font-display font-bold text-4xl sm:text-5xl lg:text-6xl text-[var(--color-text-primary)] leading-tight">
+            Deploy Your <span className="text-[var(--color-primary)]">Agent</span>
           </h1>
-          <p className="text-[var(--color-text-muted)] text-sm sm:text-base mt-2 max-w-lg">Launch your autonomous AI agent on the neural marketplace</p>
+          <p className="text-[var(--color-text-secondary)] text-lg sm:text-xl mt-3 max-w-2xl">List your AI agent on the Agentra marketplace and earn from every execution</p>
         </motion.div>
 
         {/* Step indicator */}
@@ -284,7 +279,7 @@ export default function DeployStudio() {
                       onClick={() => isDone && setStep(s.id)}
                       className={`relative flex items-center gap-2.5 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all shrink-0 ${isDone ? 'cursor-pointer' : ''} ${
                         isActive
-                          ? 'bg-[rgba(124,58,237,0.12)] border border-[rgba(124,58,237,0.4)] text-[var(--color-purple-bright)]'
+                          ? 'bg-[rgba(124,58,237,0.12)] border border-[rgba(124,58,237,0.4)] text-[var(--color-primary)]'
                           : isDone
                           ? 'bg-[rgba(52,211,153,0.08)] border border-[rgba(52,211,153,0.25)] text-[var(--color-success)]'
                           : 'text-[var(--color-text-dim)] border border-transparent'
@@ -296,11 +291,11 @@ export default function DeployStudio() {
                         {isDone ? <Check size={14} /> : <Icon size={14} />}
                       </div>
                       <div className="hidden sm:block">
-                        <div className="text-[10px] font-mono font-bold tracking-[0.12em]">{s.label}</div>
-                        <div className="text-[9px] opacity-50">{s.description}</div>
+                        <div className="text-sm font-semibold text-[var(--color-text-primary)]">{s.label}</div>
+                        <div className="text-xs text-[var(--color-text-dim)]">{s.description}</div>
                       </div>
                       {isActive && (
-                        <motion.div layoutId="step-indicator" className="absolute inset-0 rounded-xl border-2 border-[var(--color-purple-bright)] pointer-events-none" transition={{ type: 'spring', stiffness: 300, damping: 30 }} />
+                        <motion.div layoutId="step-indicator" className="absolute inset-0 rounded-xl border-2 border-[var(--color-primary)] pointer-events-none" transition={{ type: 'spring', stiffness: 300, damping: 30 }} />
                       )}
                     </motion.div>
                     {i < STEPS.length - 1 && (
@@ -315,7 +310,7 @@ export default function DeployStudio() {
                 initial={{ width: 0 }}
                 animate={{ width: `${((step - 1) / (STEPS.length - 1)) * 100}%` }}
                 transition={{ duration: 0.4, ease: 'easeOut' }}
-                className="h-full bg-gradient-to-r from-[var(--color-purple-core)] to-[var(--color-purple-bright)] rounded-full"
+                className="h-full bg-gradient-to-r from-[var(--color-primary-dark)] to-[var(--color-primary)] rounded-full"
               />
             </div>
           </div>
@@ -331,7 +326,7 @@ export default function DeployStudio() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="font-display font-bold text-xl sm:text-2xl text-[var(--color-text-primary)] mb-2 flex items-center gap-3">
-                      <Sparkles size={20} className="text-[var(--color-purple-bright)]" />
+                      <Sparkles size={20} className="text-[var(--color-primary)]" />
                       Deployment Target
                     </h2>
                     <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
@@ -346,7 +341,7 @@ export default function DeployStudio() {
                         <Wallet size={16} className="text-[var(--color-warning)]" />
                       </div>
                       <div>
-                        <div className="text-[var(--color-warning)] text-[11px] font-mono font-bold tracking-widest mb-1">WALLET REQUIRED</div>
+                        <div className="text-[var(--color-warning)] text-[11px] font-bold  mb-1">WALLET REQUIRED</div>
                         <div className="text-[var(--color-text-muted)] text-xs leading-relaxed">
                           Connect your wallet via the top bar before deploying.
                         </div>
@@ -366,8 +361,8 @@ export default function DeployStudio() {
                           <Database size={20} className={isDatabase ? 'text-[var(--color-success)]' : 'text-[var(--color-text-dim)]'} />
                         </div>
                         <div>
-                          <div className={`font-mono font-bold text-xs tracking-widest ${isDatabase ? 'text-[var(--color-success)]' : 'text-[var(--color-text-secondary)]'}`}>DATABASE ONLY</div>
-                          <div className="text-[9px] font-mono mt-0.5 text-[var(--color-text-dim)]">OFF-CHAIN · NO GAS</div>
+                          <div className={`font-bold text-xs  ${isDatabase ? 'text-[var(--color-success)]' : 'text-[var(--color-text-secondary)]'}`}>DATABASE ONLY</div>
+                          <div className="text-xs font-mono mt-0.5 text-[var(--color-text-dim)]">OFF-CHAIN · NO GAS</div>
                         </div>
                         {isDatabase && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="ml-auto w-6 h-6 rounded-full bg-[var(--color-success)] flex items-center justify-center"><Check size={14} className="text-black" /></motion.div>}
                       </div>
@@ -384,13 +379,13 @@ export default function DeployStudio() {
                       }`}>
                       <div className="flex items-center gap-3 mb-4">
                         <div className={`w-11 h-11 rounded-xl flex items-center justify-center border ${isBlockchain ? 'bg-[rgba(124,58,237,0.15)] border-[rgba(124,58,237,0.4)]' : 'bg-[var(--color-nebula-deep)] border-[var(--color-border)]'}`}>
-                          <Link2 size={20} className={isBlockchain ? 'text-[var(--color-purple-bright)]' : 'text-[var(--color-text-dim)]'} />
+                          <Link2 size={20} className={isBlockchain ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-dim)]'} />
                         </div>
                         <div>
-                          <div className={`font-mono font-bold text-xs tracking-widest ${isBlockchain ? 'text-[var(--color-purple-bright)]' : 'text-[var(--color-text-secondary)]'}`}>BLOCKCHAIN + DB</div>
-                          <div className="text-[9px] font-mono mt-0.5 text-[var(--color-text-dim)]">ON-CHAIN · AGT FEE</div>
+                          <div className={`font-bold text-xs  ${isBlockchain ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-secondary)]'}`}>BLOCKCHAIN + DB</div>
+                          <div className="text-xs font-mono mt-0.5 text-[var(--color-text-dim)]">ON-CHAIN · AGT FEE</div>
                         </div>
-                        {isBlockchain && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="ml-auto w-6 h-6 rounded-full bg-[var(--color-purple-bright)] flex items-center justify-center"><Check size={14} className="text-white" /></motion.div>}
+                        {isBlockchain && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="ml-auto w-6 h-6 rounded-full bg-[var(--color-primary)] flex items-center justify-center"><Check size={14} className="text-white" /></motion.div>}
                       </div>
                       <p className="text-xs leading-relaxed text-[var(--color-text-muted)]">
                         Agent registered on-chain. Trustless access control, buyers pay via wallet (80% to you / 20% platform), immutable ownership.
@@ -404,19 +399,19 @@ export default function DeployStudio() {
               {step === 2 && (
                 <div className="space-y-6">
                   <h2 className="font-display font-bold text-xl sm:text-2xl text-[var(--color-text-primary)] mb-6 flex items-center gap-3">
-                    <Zap size={20} className="text-[var(--color-purple-bright)]" /> Agent Identity
+                    <Zap size={20} className="text-[var(--color-primary)]" /> Agent Identity
                   </h2>
                   <InputField label="AGENT NAME" field="name" placeholder="e.g. DataSynth-X" form={form} update={update} />
                   <div>
-                    <label className="text-[9px] font-mono text-[var(--color-text-dim)] tracking-[0.2em] uppercase block mb-3">CATEGORY</label>
+                    <label className="text-xs font-mono text-[var(--color-text-dim)]  uppercase block mb-3">CATEGORY</label>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                       {CATEGORIES.map(cat => (
                         <motion.button key={cat} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                           onClick={() => update('category', cat)}
-                          className={`py-2.5 px-4 rounded-xl text-[10px] font-mono border transition-all cursor-pointer ${
+                          className={`py-2.5 px-4 rounded-xl text-sm font-mono border transition-all cursor-pointer ${
                             form.category === cat
-                              ? 'bg-[rgba(124,58,237,0.12)] border-[var(--color-purple-core)] text-[var(--color-purple-bright)]'
-                              : 'border-[var(--color-border)] text-[var(--color-text-dim)] hover:border-[var(--color-border-bright)]'
+                              ? 'bg-[rgba(124,58,237,0.12)] border-[var(--color-primary-dark)] text-[var(--color-primary)]'
+                              : 'border-[var(--color-border)] text-[var(--color-text-dim)] hover:border-[var(--color-border)]'
                           }`}>
                           {cat.toUpperCase()}
                         </motion.button>
@@ -430,7 +425,7 @@ export default function DeployStudio() {
               {step === 3 && (
                 <div className="space-y-6">
                   <h2 className="font-display font-bold text-xl sm:text-2xl text-[var(--color-text-primary)] mb-6 flex items-center gap-3">
-                    <Globe size={20} className="text-[var(--color-purple-bright)]" /> MCP Endpoint
+                    <Globe size={20} className="text-[var(--color-primary)]" /> MCP Endpoint
                   </h2>
                   <InputField label="ENDPOINT URL" field="endpoint" placeholder="https://your-agent.example.com" form={form} update={update} />
                   <InputField label="MCP SCHEMA (JSON — optional)" field="mcpSchema" rows={8} placeholder={'{\n  "name": "my-agent",\n  "version": "1.0.0",\n  "tools": []\n}'} form={form} update={update} />
@@ -441,7 +436,7 @@ export default function DeployStudio() {
               {step === 4 && (
                 <div className="space-y-6">
                   <h2 className="font-display font-bold text-xl sm:text-2xl text-[var(--color-text-primary)] mb-6 flex items-center gap-3">
-                    <Tag size={20} className="text-[var(--color-purple-bright)]" /> Metadata
+                    <Tag size={20} className="text-[var(--color-primary)]" /> Metadata
                   </h2>
                   <InputField label="DESCRIPTION" field="description" rows={4} placeholder="Describe what your agent does..." form={form} update={update} />
                   <InputField label="TAGS (comma separated)" field="tags" placeholder="e.g. analysis, data, ml" form={form} update={update} />
@@ -453,7 +448,7 @@ export default function DeployStudio() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="font-display font-bold text-xl sm:text-2xl text-[var(--color-text-primary)] mb-2 flex items-center gap-3">
-                      <DollarSign size={20} className="text-[var(--color-purple-bright)]" /> Tier & Pricing
+                      <DollarSign size={20} className="text-[var(--color-primary)]" /> Tier & Pricing
                     </h2>
                     <p className="text-[var(--color-text-muted)] text-sm">
                       Choose your tier (one-time listing fee to platform) and set your access prices. Users pay you 80%, platform takes 20%.
@@ -462,7 +457,7 @@ export default function DeployStudio() {
 
                   {/* Tier selection */}
                   <div>
-                    <label className="text-[9px] font-mono text-[var(--color-text-dim)] tracking-[0.2em] uppercase block mb-3">SELECT TIER</label>
+                    <label className="text-xs font-mono text-[var(--color-text-dim)]  uppercase block mb-3">SELECT TIER</label>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       {TIER_OPTIONS.map(tier => (
                         <motion.button key={tier.tier} whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}
@@ -472,17 +467,17 @@ export default function DeployStudio() {
                             if (!form.monthlyPrice) update('monthlyPrice', tier.suggestedMonthly)
                           }}
                           className={`p-5 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden ${
-                            form.tier === tier.tier ? 'bg-[rgba(124,58,237,0.1)] border-[var(--color-purple-core)]' : 'border-[var(--color-border)] hover:border-[var(--color-border-bright)] bg-black/20'
+                            form.tier === tier.tier ? 'bg-[rgba(124,58,237,0.1)] border-[var(--color-primary-dark)]' : 'border-[var(--color-border)] hover:border-[var(--color-border)] bg-black/20'
                           }`}>
                           <div className="flex justify-between items-start mb-2">
-                            <div className={`text-[10px] font-mono font-bold tracking-widest ${form.tier === tier.tier ? 'text-[var(--color-purple-bright)]' : 'text-[var(--color-text-secondary)]'}`}>{tier.label}</div>
+                            <div className={`text-sm font-bold  ${form.tier === tier.tier ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-secondary)]'}`}>{tier.label}</div>
                             {isBlockchain && (
-                              <div className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-[var(--color-purple-core)]/20 text-[var(--color-purple-bright)]">
+                              <div className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-[var(--color-primary-dark)]/20 text-[var(--color-primary)]">
                                 {tier.listingFee} AGT fee
                               </div>
                             )}
                           </div>
-                          <div className="text-[10px] opacity-60 mt-1 text-[var(--color-text-muted)]">{tier.desc}</div>
+                          <div className="text-sm opacity-60 mt-1 text-[var(--color-text-muted)]">{tier.desc}</div>
                         </motion.button>
                       ))}
                     </div>
@@ -490,7 +485,7 @@ export default function DeployStudio() {
 
                   {/* Monthly price */}
                   <div>
-                    <label className="text-[9px] font-mono text-[var(--color-text-dim)] tracking-[0.2em] uppercase block mb-2.5">
+                    <label className="text-xs font-mono text-[var(--color-text-dim)]  uppercase block mb-2.5">
                       MONTHLY ACCESS PRICE (AGT) — You receive 80%
                     </label>
                     <div className="relative">
@@ -506,16 +501,16 @@ export default function DeployStudio() {
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-dim)] text-xs font-mono">AGT/mo</span>
                     </div>
                     {form.monthlyPrice && parseFloat(form.monthlyPrice) > 0 && (
-                      <div className="mt-2 flex gap-4 text-[10px] font-mono">
+                      <div className="mt-2 flex gap-4 text-sm font-mono">
                         <span className="text-[var(--color-success)]">You: {creatorMonthly} AGT/mo</span>
-                        <span className="text-[var(--color-purple-bright)]">Platform: {platformMonthly} AGT/mo</span>
+                        <span className="text-[var(--color-primary)]">Platform: {platformMonthly} AGT/mo</span>
                       </div>
                     )}
                   </div>
 
                   {/* Lifetime multiplier */}
                   <div>
-                    <label className="text-[9px] font-mono text-[var(--color-text-dim)] tracking-[0.2em] uppercase block mb-2.5">
+                    <label className="text-xs font-mono text-[var(--color-text-dim)]  uppercase block mb-2.5">
                       LIFETIME ACCESS = MONTHLY × MULTIPLIER
                     </label>
                     <div className="grid grid-cols-3 gap-3">
@@ -528,11 +523,11 @@ export default function DeployStudio() {
                           className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
                             form.lifetimeMultiplier === opt.value
                               ? 'bg-[rgba(52,211,153,0.1)] border-[var(--color-success)] text-[var(--color-success)]'
-                              : 'border-[var(--color-border)] text-[var(--color-text-dim)] hover:border-[var(--color-border-bright)]'
+                              : 'border-[var(--color-border)] text-[var(--color-text-dim)] hover:border-[var(--color-border)]'
                           }`}
                         >
                           <div className={`text-lg font-bold font-display ${form.lifetimeMultiplier === opt.value ? 'text-[var(--color-success)]' : 'text-[var(--color-text-secondary)]'}`}>×{opt.value}</div>
-                          <div className="text-[9px] font-mono mt-1 opacity-70">{opt.value} months</div>
+                          <div className="text-xs font-mono mt-1 opacity-70">{opt.value} months</div>
                         </motion.button>
                       ))}
                     </div>
@@ -546,18 +541,18 @@ export default function DeployStudio() {
                       >
                         <div className="flex items-center gap-2 mb-3">
                           <Info size={12} className="text-[var(--color-success)]" />
-                          <span className="text-[10px] font-mono text-[var(--color-success)] tracking-widest">PRICING SUMMARY</span>
+                          <span className="text-sm font-mono text-[var(--color-success)] ">PRICING SUMMARY</span>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="text-center p-3 rounded-lg bg-[rgba(124,58,237,0.08)] border border-[rgba(124,58,237,0.15)]">
-                            <div className="text-[9px] font-mono text-[var(--color-text-dim)] mb-1">30-DAY ACCESS</div>
-                            <div className="text-lg font-bold font-display text-[var(--color-purple-bright)]">{parseFloat(form.monthlyPrice).toFixed(4)} AGT</div>
-                            <div className="text-[9px] font-mono text-[var(--color-success)] mt-1">→ {creatorMonthly} AGT to you</div>
+                            <div className="text-xs font-mono text-[var(--color-text-dim)] mb-1">30-DAY ACCESS</div>
+                            <div className="text-lg font-bold font-display text-[var(--color-primary)]">{parseFloat(form.monthlyPrice).toFixed(4)} AGT</div>
+                            <div className="text-xs font-mono text-[var(--color-success)] mt-1">→ {creatorMonthly} AGT to you</div>
                           </div>
                           <div className="text-center p-3 rounded-lg bg-[rgba(52,211,153,0.08)] border border-[rgba(52,211,153,0.15)]">
-                            <div className="text-[9px] font-mono text-[var(--color-text-dim)] mb-1">LIFETIME (×{form.lifetimeMultiplier})</div>
+                            <div className="text-xs font-mono text-[var(--color-text-dim)] mb-1">LIFETIME (×{form.lifetimeMultiplier})</div>
                             <div className="text-lg font-bold font-display text-[var(--color-success)]">{lifetimeNum.toFixed(4)} AGT</div>
-                            <div className="text-[9px] font-mono text-[var(--color-success)] mt-1">→ {creatorLifetime} AGT to you</div>
+                            <div className="text-xs font-mono text-[var(--color-success)] mt-1">→ {creatorLifetime} AGT to you</div>
                           </div>
                         </div>
                       </motion.div>
@@ -568,7 +563,7 @@ export default function DeployStudio() {
                   <div className="rounded-xl border border-[var(--color-border)] bg-black/20 p-4 sm:p-5 space-y-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <div className="text-[10px] font-mono font-bold tracking-widest text-[var(--color-purple-bright)]">AGENT-TO-AGENT COMMUNICATION</div>
+                        <div className="text-sm font-bold  text-[var(--color-primary)]">AGENT-TO-AGENT COMMUNICATION</div>
                         <p className="text-[11px] text-[var(--color-text-dim)] mt-1">
                           Let other agents delegate tasks to your agent for a per-call fee.
                         </p>
@@ -576,7 +571,7 @@ export default function DeployStudio() {
                       <button
                         type="button"
                         onClick={() => update('commsEnabled', !form.commsEnabled)}
-                        className={`px-3 py-2 rounded-lg border text-[10px] font-mono tracking-wider cursor-pointer transition-all ${
+                        className={`px-3 py-2 rounded-lg border text-sm font-mono tracking-wider cursor-pointer transition-all ${
                           form.commsEnabled
                             ? 'border-[var(--color-success)] text-[var(--color-success)] bg-[rgba(52,211,153,0.1)]'
                             : 'border-[var(--color-border)] text-[var(--color-text-dim)]'
@@ -588,7 +583,7 @@ export default function DeployStudio() {
 
                     {form.commsEnabled && (
                       <div>
-                        <label className="text-[9px] font-mono text-[var(--color-text-dim)] tracking-[0.2em] uppercase block mb-2.5">
+                        <label className="text-xs font-mono text-[var(--color-text-dim)]  uppercase block mb-2.5">
                           COMMS PRICE PER CALL (AGT)
                         </label>
                         <div className="relative">
@@ -603,7 +598,7 @@ export default function DeployStudio() {
                           />
                           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-dim)] text-xs font-mono">AGT/call</span>
                         </div>
-                        <p className="text-[10px] font-mono text-[var(--color-text-dim)] mt-2">
+                        <p className="text-sm font-mono text-[var(--color-text-dim)] mt-2">
                           Recommended: keep this lower than full monthly purchase price for better marketplace conversion.
                         </p>
                       </div>
@@ -616,7 +611,7 @@ export default function DeployStudio() {
               {step === 6 && (
                 <div className="space-y-6">
                   <h2 className="font-display font-bold text-xl sm:text-2xl text-[var(--color-text-primary)] mb-6 flex items-center gap-3">
-                    <Upload size={20} className="text-[var(--color-purple-bright)]" /> Review & Deploy
+                    <Upload size={20} className="text-[var(--color-primary)]" /> Review & Deploy
                   </h2>
 
                   <div className="space-y-0 rounded-xl overflow-hidden border border-[var(--color-border)] bg-black/20">
@@ -636,10 +631,10 @@ export default function DeployStudio() {
                     ].map((row, i) => (
                       <motion.div key={row.label} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
                         className={`flex justify-between items-center px-5 py-3.5 ${i % 2 === 0 ? 'bg-[rgba(255,255,255,0.02)]' : ''}`}>
-                        <span className="text-[var(--color-text-dim)] font-mono text-[10px] tracking-widest">{row.label}</span>
+                        <span className="text-[var(--color-text-dim)] font-semibold text-sm ">{row.label}</span>
                         <span className={`font-mono text-sm truncate max-w-[55%] text-right font-medium ${
                           row.highlight === 'success' ? 'text-[var(--color-success)]'
-                          : row.highlight === 'purple' ? 'text-[var(--color-purple-bright)]'
+                          : row.highlight === 'purple' ? 'text-[var(--color-primary)]'
                           : row.highlight === 'warning' ? 'text-[var(--color-warning)]'
                           : 'text-[var(--color-text-primary)]'
                         }`}>{row.value}</span>
@@ -652,7 +647,7 @@ export default function DeployStudio() {
                       className="flex items-start gap-3.5 p-4 sm:p-5 rounded-xl bg-[rgba(248,113,113,0.06)] border border-[rgba(248,113,113,0.3)]">
                       <AlertTriangle size={16} className="text-[var(--color-danger)] shrink-0 mt-0.5" />
                       <div>
-                        <div className="text-[var(--color-danger)] text-[11px] font-mono font-bold tracking-widest mb-1">WALLET NOT CONNECTED</div>
+                        <div className="text-[var(--color-danger)] text-[11px] font-bold  mb-1">WALLET NOT CONNECTED</div>
                         <div className="text-[var(--color-text-muted)] text-xs">Connect your wallet to deploy.</div>
                       </div>
                     </motion.div>
@@ -663,7 +658,7 @@ export default function DeployStudio() {
                       className="flex items-start gap-3.5 p-4 rounded-xl bg-[rgba(248,113,113,0.06)] border border-[rgba(248,113,113,0.3)]">
                       <AlertTriangle size={16} className="text-[var(--color-danger)] shrink-0 mt-0.5" />
                       <div>
-                        <div className="text-[var(--color-danger)] text-[11px] font-mono font-bold tracking-widest mb-1">DEPLOY FAILED</div>
+                        <div className="text-[var(--color-danger)] text-[11px] font-bold  mb-1">DEPLOY FAILED</div>
                         <div className="text-[var(--color-text-muted)] text-xs font-mono">{deployError}</div>
                       </div>
                     </motion.div>
@@ -698,9 +693,9 @@ export default function DeployStudio() {
                           className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center ${
                             isDatabase ? 'bg-[rgba(52,211,153,0.15)] border border-[rgba(52,211,153,0.3)]' : 'bg-[rgba(124,58,237,0.15)] border border-[rgba(124,58,237,0.3)]'
                           }`}>
-                          <Check size={32} className={isDatabase ? 'text-[var(--color-success)]' : 'text-[var(--color-purple-bright)]'} />
+                          <Check size={32} className={isDatabase ? 'text-[var(--color-success)]' : 'text-[var(--color-primary)]'} />
                         </motion.div>
-                        <div className={`font-display font-bold text-xl sm:text-2xl mb-2 ${isDatabase ? 'text-[var(--color-success)]' : 'text-[var(--color-purple-bright)]'}`}>
+                        <div className={`font-display font-bold text-xl sm:text-2xl mb-2 ${isDatabase ? 'text-[var(--color-success)]' : 'text-[var(--color-primary)]'}`}>
                           AGENT {isDatabase ? 'SAVED' : 'DEPLOYED'}!
                         </div>
                         <p className="text-[var(--color-text-muted)] text-sm mb-2">
@@ -749,3 +744,6 @@ export default function DeployStudio() {
     </div>
   )
 }
+
+
+

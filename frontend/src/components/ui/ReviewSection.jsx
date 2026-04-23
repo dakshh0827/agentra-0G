@@ -48,14 +48,14 @@ function ReviewItem({ review, agentId, currentWallet, onLike, onReply, onDelete,
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[rgba(124,58,237,0.12)] border border-[rgba(124,58,237,0.2)] flex items-center justify-center shrink-0">
-              <User size={14} className="text-[var(--color-purple-bright)]" />
+              <User size={14} className="text-[var(--color-primary)]" />
             </div>
             <div>
-              <div className="font-mono text-[11px] text-[var(--color-purple-bright)]">
+              <div className="font-semibold text-base text-[var(--color-primary)]">
                 {review.authorWallet.slice(0, 6)}...{review.authorWallet.slice(-4)}
-                {isOwner && <span className="ml-1.5 text-[9px] text-[var(--color-text-dim)] font-mono">(you)</span>}
+                {isOwner && <span className="ml-1.5 text-xs text-[var(--color-text-dim)] font-mono">(you)</span>}
               </div>
-              <div className="text-[9px] text-[var(--color-text-dim)] font-mono">
+              <div className="text-xs text-[var(--color-text-dim)] font-mono">
                 {new Date(review.createdAt).toLocaleDateString('en', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
@@ -111,7 +111,7 @@ function ReviewItem({ review, agentId, currentWallet, onLike, onReply, onDelete,
           {currentWallet && depth < maxDepth && (
             <button
               onClick={() => setReplying(!replying)}
-              className="flex items-center gap-1.5 text-[11px] font-mono text-[var(--color-text-dim)] hover:text-[var(--color-purple-bright)] transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 text-[11px] font-mono text-[var(--color-text-dim)] hover:text-[var(--color-primary)] transition-colors cursor-pointer"
             >
               <Reply size={13} />
               Reply
@@ -151,12 +151,12 @@ function ReviewItem({ review, agentId, currentWallet, onLike, onReply, onDelete,
                 <button
                   onClick={handleReplySubmit}
                   disabled={!replyText.trim() || submitting}
-                  className="px-3 py-2 rounded-lg bg-[var(--color-purple-core)] text-white disabled:opacity-40 hover:bg-[var(--color-purple-bright)] transition-colors cursor-pointer self-end"
+                  className="px-3 py-2 rounded-lg bg-[var(--color-primary-dark)] text-white disabled:opacity-40 hover:bg-[var(--color-primary)] transition-colors cursor-pointer self-end"
                 >
                   {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                 </button>
               </div>
-              <div className="text-[9px] font-mono text-[var(--color-text-dim)] mt-1">⌘+Enter to submit</div>
+              <div className="text-xs font-mono text-[var(--color-text-dim)] mt-1">⌘+Enter to submit</div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -212,7 +212,7 @@ function StarRatingInput({ value, onChange }) {
         </button>
       ))}
       {value > 0 && (
-        <span className="text-[10px] font-mono text-[var(--color-text-dim)] ml-1">({value}/5)</span>
+        <span className="text-sm font-mono text-[var(--color-text-dim)] ml-1">({value}/5)</span>
       )}
     </div>
   )
@@ -293,10 +293,10 @@ export default function ReviewSection({ agentId }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h3 className="font-display font-bold text-lg text-[var(--color-text-primary)] flex items-center gap-2">
-            <MessageSquare size={18} className="text-[var(--color-purple-bright)]" />
+            <MessageSquare size={18} className="text-[var(--color-primary)]" />
             Reviews & Discussion
           </h3>
-          <span className="px-2.5 py-1 rounded-lg bg-[rgba(124,58,237,0.08)] border border-[rgba(124,58,237,0.2)] text-[10px] font-mono text-[var(--color-purple-bright)]">
+          <span className="px-2.5 py-1 rounded-lg bg-[rgba(124,58,237,0.08)] border border-[rgba(124,58,237,0.2)] text-sm font-mono text-[var(--color-primary)]">
             {reviews.length} comments
           </span>
         </div>
@@ -311,14 +311,14 @@ export default function ReviewSection({ agentId }) {
         <div className="glass-card-landing rounded-xl p-5">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 rounded-lg bg-[rgba(124,58,237,0.12)] border border-[rgba(124,58,237,0.2)] flex items-center justify-center">
-              <User size={14} className="text-[var(--color-purple-bright)]" />
+              <User size={14} className="text-[var(--color-primary)]" />
             </div>
-            <span className="font-mono text-[11px] text-[var(--color-purple-bright)]">
+            <span className="font-semibold text-base text-[var(--color-primary)]">
               {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
             </span>
           </div>
           <div className="mb-3">
-            <div className="text-[9px] font-mono text-[var(--color-text-dim)] mb-2 tracking-widest">RATING (OPTIONAL)</div>
+            <div className="text-xs font-mono text-[var(--color-text-dim)] mb-2 ">RATING (OPTIONAL)</div>
             <StarRatingInput value={newRating} onChange={setNewRating} />
           </div>
           <textarea
@@ -334,13 +334,13 @@ export default function ReviewSection({ agentId }) {
             </div>
           )}
           <div className="flex items-center justify-between">
-            <span className="text-[9px] font-mono text-[var(--color-text-dim)]">
+            <span className="text-xs font-mono text-[var(--color-text-dim)]">
               {newComment.length}/5000
             </span>
             <button
               onClick={handleSubmit}
               disabled={!newComment.trim() || submitting}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--color-purple-core)] text-white text-[11px] font-mono disabled:opacity-40 hover:bg-[var(--color-purple-bright)] transition-colors cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--color-primary-dark)] text-white text-[11px] font-mono disabled:opacity-40 hover:bg-[var(--color-primary)] transition-colors cursor-pointer"
             >
               {submitting ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
               POST REVIEW
@@ -403,7 +403,7 @@ export default function ReviewSection({ agentId }) {
                 fetchReviews(next)
               }}
               disabled={loading}
-              className="w-full py-3 rounded-xl border border-[var(--color-border)] text-[var(--color-text-dim)] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border-bright)] font-mono text-[11px] transition-all cursor-pointer flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl border border-[var(--color-border)] text-[var(--color-text-dim)] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border)] font-semibold text-base transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               {loading ? <Loader2 size={14} className="animate-spin" /> : <ChevronDown size={14} />}
               LOAD MORE REVIEWS
@@ -430,3 +430,5 @@ function updateReviewLikes(reviews, reviewId, wallet, liked) {
     return r
   })
 }
+
+

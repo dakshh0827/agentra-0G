@@ -76,14 +76,14 @@ export default function Marketplace() {
   ]
 
   const colorMap = {
-    purple: 'text-[var(--color-purple-bright)]',
+    purple: 'text-[var(--color-primary)]',
     green: 'text-[var(--color-success)]',
     blue: 'text-[var(--color-star-blue)]',
     yellow: 'text-[var(--color-warning)]',
   }
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen bg-[var(--color-bg)]">
       <div className="fixed top-20 right-20 w-[500px] h-[400px] rounded-full pointer-events-none opacity-30"
         style={{ background: 'radial-gradient(ellipse, rgba(124,58,237,0.08) 0%, transparent 70%)' }} />
       <div className="fixed bottom-20 left-10 w-[400px] h-[300px] rounded-full pointer-events-none opacity-30"
@@ -95,7 +95,7 @@ export default function Marketplace() {
           {/* <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1, duration: 0.4 }}
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[rgba(124,58,237,0.25)] bg-[rgba(124,58,237,0.06)] mb-4">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] pulse-dot" />
-            <span className="text-[10px] font-mono text-[var(--color-purple-pale)] tracking-[0.2em]">
+            <span className="text-sm font-mono text-[var(--color-purple-pale)] ">
               NETWORK LIVE — {stats?.activeAgents ?? 0} AGENTS ONLINE
             </span>
           </motion.div> */}
@@ -119,8 +119,8 @@ export default function Marketplace() {
                   <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0`} />
                   <div className="relative z-10">
                     <Icon size={18} className={`mx-auto mb-2 ${colorMap[stat.color]} opacity-60`} />
-                    <div className={`font-mono font-bold text-2xl sm:text-3xl ${colorMap[stat.color]}`}>{stat.value}</div>
-                    <div className="text-[var(--color-text-dim)] text-[9px] font-mono tracking-[0.2em] mt-1 uppercase">{stat.label}</div>
+                    <div className={`font-bold text-2xl sm:text-3xl ${colorMap[stat.color]}`}>{stat.value}</div>
+                    <div className="text-[var(--color-text-dim)] text-xs font-mono  mt-1 uppercase">{stat.label}</div>
                   </div>
                 </div>
               </motion.div>
@@ -133,13 +133,13 @@ export default function Marketplace() {
           <div className="glass-card-landing rounded-xl p-4 sm:p-5">
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
               <div className="flex-1 relative group">
-                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-dim)] group-focus-within:text-[var(--color-purple-bright)] transition-colors" />
+                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-dim)] group-focus-within:text-[var(--color-primary)] transition-colors" />
                 <input
                   type="text"
                   placeholder="Search agents, capabilities, tags..."
                   value={searchInput}
                   onChange={e => setSearchInput(e.target.value)}
-                  className="input-field w-full pl-11 pr-4 py-3 rounded-xl text-sm focus:ring-2 focus:ring-[var(--color-purple-core)]/30 transition-all"
+                  className="input-field w-full pl-11 pr-4 py-3 rounded-xl text-sm focus:ring-2 focus:ring-[var(--color-primary-dark)]/30 transition-all"
                 />
               </div>
               <NeonButton variant="ghost" icon={RefreshCw} size="sm"
@@ -154,21 +154,21 @@ export default function Marketplace() {
                 {CATEGORIES.map(cat => (
                   <motion.button key={cat} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     onClick={() => setFilter('category', cat)}
-                    className={`px-3 sm:px-4 py-2 rounded-lg font-mono text-[10px] tracking-[0.12em] border transition-all cursor-pointer ${
+                    className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-sm  border transition-all cursor-pointer ${
                       (filters?.category || 'all') === cat
-                        ? ' border-[var(--color-purple-core)] text-[var(--color-purple-bright)] shadow-[0_0_12px_rgba(124,58,237,0.2)]'
-                        : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-dim)] hover:border-[var(--color-border-bright)] hover:text-[var(--color-text-secondary)]'
+                        ? ' border-[var(--color-primary-dark)] text-[var(--color-primary)] shadow-[0_0_12px_rgba(124,58,237,0.2)]'
+                        : 'bg-transparent border-[var(--color-border)] text-[var(--color-text-dim)] hover:border-[var(--color-border)] hover:text-[var(--color-text-secondary)]'
                     }`}>
                     {cat.toUpperCase()}
                   </motion.button>
                 ))}
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-[var(--color-text-dim)] text-[10px] font-mono">SORT:</span>
+                <span className="text-[var(--color-text-dim)] text-sm font-mono">SORT:</span>
                 <select
                   value={filters?.sortBy || 'score'}
                   onChange={e => setFilter('sortBy', e.target.value)}
-                  className="input-field px-3 py-2 rounded-lg text-[10px] font-mono cursor-pointer bg-[var(--color-nebula-deep)] focus:ring-2 focus:ring-[var(--color-purple-core)]/30 transition-all"
+                  className="input-field px-3 py-2 rounded-lg text-sm font-mono cursor-pointer bg-[var(--color-nebula-deep)] focus:ring-2 focus:ring-[var(--color-primary-dark)]/30 transition-all"
                 >
                   {SORT_OPTIONS.map(o => (
                     <option key={o.value} value={o.value}>{o.label}</option>
@@ -183,9 +183,9 @@ export default function Marketplace() {
         {!isLoading && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-between mb-4">
             <div className="text-[var(--color-text-dim)] text-[11px] font-mono tracking-wider">
-              SHOWING <span className="text-[var(--color-purple-bright)]">{filteredAgents.length}</span> AGENTS
+              SHOWING <span className="text-[var(--color-primary)]">{filteredAgents.length}</span> AGENTS
             </div>
-            <div className="hidden sm:flex items-center gap-2 text-[var(--color-text-dim)] text-[10px] font-mono">
+            <div className="hidden sm:flex items-center gap-2 text-[var(--color-text-dim)] text-sm font-mono">
               <Globe size={11} />
               <span>AGENTRA NETWORK</span>
             </div>
@@ -206,10 +206,10 @@ export default function Marketplace() {
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="col-span-full">
                 <div className="glass-card-landing rounded-2xl p-12 sm:p-16 text-center">
                   <div className="w-16 h-16 rounded-2xl bg-[rgba(124,58,237,0.08)] border border-[rgba(124,58,237,0.15)] flex items-center justify-center mx-auto mb-5">
-                    <Zap size={28} className="text-[var(--color-purple-bright)] opacity-50" />
+                    <Zap size={28} className="text-[var(--color-primary)] opacity-50" />
                   </div>
                   <div className="text-[var(--color-text-muted)] text-sm font-display font-bold mb-2">NO AGENTS FOUND</div>
-                  <div className="text-[var(--color-text-dim)] text-xs font-mono tracking-widest">TRY ADJUSTING YOUR SEARCH OR FILTERS</div>
+                  <div className="text-[var(--color-text-dim)] text-xs font-mono ">TRY ADJUSTING YOUR SEARCH OR FILTERS</div>
                 </div>
               </motion.div>
             )}
@@ -219,3 +219,6 @@ export default function Marketplace() {
     </div>
   )
 }
+
+
+

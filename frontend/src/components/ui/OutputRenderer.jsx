@@ -55,14 +55,14 @@ function SyntaxCodeBlock({ code, lang }) {
   return (
     <div className="my-4 rounded-xl border border-[#333333] overflow-hidden bg-[#1e1e1e] shadow-lg">
       <div className="flex items-center justify-between px-4 py-2 bg-[#2d2d2d] border-b border-[#404040]">
-        <span className="text-[10px] font-mono text-[#cccccc] uppercase tracking-widest">{lang || 'CODE'}</span>
+        <span className="text-sm font-mono text-[#cccccc] uppercase ">{lang || 'CODE'}</span>
         <button
           onClick={() => {
             navigator.clipboard.writeText(code)
             setCopied(true)
             setTimeout(() => setCopied(false), 2000)
           }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-mono text-[#cccccc] hover:bg-[#404040] hover:text-white transition-all cursor-pointer"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-mono text-[#cccccc] hover:bg-[#404040] hover:text-white transition-all cursor-pointer"
         >
           {copied ? <CheckCircle size={12} className="text-[var(--color-success)]" /> : <Copy size={12} />}
           {copied ? 'COPIED' : 'COPY CODE'}
@@ -87,7 +87,7 @@ function InlineCsvTable({ content }) {
       <div className="flex items-center justify-between px-4 py-2 bg-[#2d2d2d] border-b border-[#404040]">
         <div className="flex items-center gap-2">
           <Table size={13} className="text-[#4ec9b0]" />
-          <span className="text-[10px] font-mono text-[#cccccc] uppercase tracking-widest">DATA TABLE</span>
+          <span className="text-sm font-mono text-[#cccccc] uppercase ">DATA TABLE</span>
         </div>
         <button
           onClick={() => {
@@ -95,7 +95,7 @@ function InlineCsvTable({ content }) {
             setCopied(true)
             setTimeout(() => setCopied(false), 2000)
           }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-mono text-[#cccccc] hover:bg-[#404040] hover:text-white transition-all cursor-pointer"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-mono text-[#cccccc] hover:bg-[#404040] hover:text-white transition-all cursor-pointer"
         >
           {copied ? <CheckCircle size={12} className="text-[var(--color-success)]" /> : <Copy size={12} />}
           {copied ? 'COPIED' : 'COPY CSV'}
@@ -207,12 +207,12 @@ function JsonRenderer({ content }) {
       <div className="flex items-center justify-between px-4 py-2 bg-[#2d2d2d] border-b border-[#404040]">
         <div className="flex items-center gap-2">
           <FileJson size={13} className="text-[var(--color-warning)]" />
-          <span className="text-[10px] font-mono text-[#cccccc] uppercase tracking-widest">JSON</span>
+          <span className="text-sm font-mono text-[#cccccc] uppercase ">JSON</span>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="flex items-center gap-1 text-[10px] font-mono text-[#cccccc] hover:text-white cursor-pointer"
+            className="flex items-center gap-1 text-sm font-mono text-[#cccccc] hover:text-white cursor-pointer"
           >
             {collapsed ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
             {collapsed ? 'EXPAND' : 'COLLAPSE'}
@@ -224,7 +224,7 @@ function JsonRenderer({ content }) {
               setCopied(true)
               setTimeout(() => setCopied(false), 2000)
             }}
-            className="flex items-center gap-1.5 text-[10px] font-mono text-[#cccccc] hover:text-white transition-all cursor-pointer"
+            className="flex items-center gap-1.5 text-sm font-mono text-[#cccccc] hover:text-white transition-all cursor-pointer"
           >
             {copied ? <CheckCircle size={12} className="text-[var(--color-success)]" /> : <Copy size={12} />}
             {copied ? 'COPIED' : 'COPY'}
@@ -254,11 +254,11 @@ function DataUriRenderer({ content }) {
     <div className="space-y-3">
       <div className="flex items-center gap-2 px-4 py-2.5 bg-[rgba(0,0,0,0.4)] border-b border-[var(--color-border)] rounded-t-xl">
         <Package size={13} className="text-[var(--color-warning)]" />
-        <span className="text-[10px] font-mono text-[var(--color-text-dim)] uppercase tracking-widest">{mime}</span>
+        <span className="text-sm font-mono text-[var(--color-text-dim)] uppercase ">{mime}</span>
         <a
           href={content}
           download={`agent-output.${ext}`}
-          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono bg-[rgba(52,211,153,0.1)] border border-[rgba(52,211,153,0.25)] text-[var(--color-success)] hover:bg-[rgba(52,211,153,0.2)] transition-all cursor-pointer"
+          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono bg-[rgba(52,211,153,0.1)] border border-[rgba(52,211,153,0.25)] text-[var(--color-success)] hover:bg-[rgba(52,211,153,0.2)] transition-all cursor-pointer"
         >
           <Download size={12} />
           DOWNLOAD .{ext.toUpperCase()}
@@ -379,9 +379,9 @@ function MarkdownRenderer({ content }) {
       .replace(/^# (.+)$/gm, '<h1 class="text-lg font-bold text-[var(--color-text-primary)] mt-4 mb-2">$1</h1>')
       .replace(/\*\*(.+?)\*\*/g, '<strong class="text-[var(--color-text-primary)]">$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/`(.+?)`/g, '<code class="px-1.5 py-0.5 rounded bg-[rgba(124,58,237,0.12)] text-[var(--color-purple-pale)] font-mono text-[11px]">$1</code>')
-      .replace(/^- (.+)$/gm, '<li class="flex items-start gap-2 text-[var(--color-text-secondary)] text-sm"><span class="text-[var(--color-purple-bright)] mt-1">·</span><span>$1</span></li>')
-      .replace(/^> (.+)$/gm, '<blockquote class="border-l-2 border-[var(--color-purple-core)] pl-3 text-[var(--color-text-muted)] italic text-sm">$1</blockquote>')
+      .replace(/`(.+?)`/g, '<code class="px-1.5 py-0.5 rounded bg-[rgba(124,58,237,0.12)] text-[var(--color-purple-pale)] font-semibold text-base">$1</code>')
+      .replace(/^- (.+)$/gm, '<li class="flex items-start gap-2 text-[var(--color-text-secondary)] text-sm"><span class="text-[var(--color-primary)] mt-1">·</span><span>$1</span></li>')
+      .replace(/^> (.+)$/gm, '<blockquote class="border-l-2 border-[var(--color-primary-dark)] pl-3 text-[var(--color-text-muted)] italic text-sm">$1</blockquote>')
       .replace(/\n\n/g, '<br/><br/>')
     return html
   }
@@ -415,7 +415,7 @@ export default function OutputRenderer({ response, agentName, latency, success }
 
   const typeLabels = {
     text: { label: 'TEXT', icon: FileText, color: 'text-[var(--color-text-muted)]' },
-    code: { label: 'CODE', icon: FileCode, color: 'text-[var(--color-purple-bright)]' },
+    code: { label: 'CODE', icon: FileCode, color: 'text-[var(--color-primary)]' },
     json: { label: 'JSON', icon: FileJson, color: 'text-[var(--color-warning)]' },
     csv: { label: 'TABLE', icon: Table, color: 'text-[var(--color-star-blue)]' },
     datauri: { label: 'FILE', icon: Download, color: 'text-[var(--color-success)]' },
@@ -443,18 +443,18 @@ export default function OutputRenderer({ response, agentName, latency, success }
             ? <CheckCircle size={14} className="text-[var(--color-success)]" />
             : <AlertCircle size={14} className="text-[var(--color-danger)]" />
           }
-          <span className={`text-[10px] font-mono font-bold ${success !== false ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
+          <span className={`text-sm font-bold ${success !== false ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
             {success !== false ? 'EXECUTION COMPLETE' : 'EXECUTION FAILED'}
           </span>
         </div>
 
         <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-[rgba(255,255,255,0.04)] border border-[var(--color-border)]">
           <MetaIcon size={11} className={meta.color} />
-          <span className={`text-[9px] font-mono font-bold ${meta.color}`}>{meta.label}</span>
+          <span className={`text-xs font-bold ${meta.color}`}>{meta.label}</span>
         </div>
 
         {latency && (
-          <div className="flex items-center gap-1 text-[10px] font-mono text-[var(--color-text-dim)]">
+          <div className="flex items-center gap-1 text-sm font-mono text-[var(--color-text-dim)]">
             <Clock size={11} />
             {latency}ms
           </div>
@@ -462,7 +462,7 @@ export default function OutputRenderer({ response, agentName, latency, success }
 
         <button
           onClick={() => setExpanded(!expanded)}
-          className="ml-auto flex items-center gap-1 text-[10px] font-mono text-[var(--color-text-dim)] hover:text-[var(--color-text-secondary)] cursor-pointer transition-colors"
+          className="ml-auto flex items-center gap-1 text-sm font-mono text-[var(--color-text-dim)] hover:text-[var(--color-text-secondary)] cursor-pointer transition-colors"
         >
           {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
         </button>
@@ -494,3 +494,5 @@ export default function OutputRenderer({ response, agentName, latency, success }
     </motion.div>
   )
 }
+
+

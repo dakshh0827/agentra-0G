@@ -66,7 +66,7 @@ export default function Leaderboard() {
   if (loading) return <div className="p-6 max-w-7xl mx-auto"><LoadingPulse rows={8} /></div>
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen bg-[var(--color-bg)]">
       <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full pointer-events-none opacity-30"
         style={{ background: 'radial-gradient(ellipse, rgba(251,191,36,0.08) 0%, transparent 70%)' }} />
       <div className="fixed bottom-20 right-10 w-[400px] h-[300px] rounded-full pointer-events-none opacity-30"
@@ -78,7 +78,7 @@ export default function Leaderboard() {
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1, duration: 0.4 }}
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[rgba(251,191,36,0.25)] bg-[rgba(251,191,36,0.06)] mb-4">
             <Trophy size={12} className="text-[var(--color-warning)]" />
-            <span className="text-[10px] font-mono text-[var(--color-warning)] tracking-[0.2em]">NEURAL RANKING PROTOCOL</span>
+            <span className="text-sm font-mono text-[var(--color-warning)] ">NEURAL RANKING PROTOCOL</span>
           </motion.div>
           <h1 className="font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl text-[var(--color-text-primary)] leading-[1.1] tracking-tight">
             <span className="gradient-text-purple">AGENT</span> LEADERBOARD
@@ -88,8 +88,8 @@ export default function Leaderboard() {
               Top performing agents ranked by composite score.
             </p>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[rgba(124,58,237,0.06)] border border-[rgba(124,58,237,0.15)] w-fit">
-              <span className="text-[9px] font-mono text-[var(--color-text-dim)]">SCORE =</span>
-              <span className="text-[9px] font-mono text-[var(--color-purple-bright)]">0.4×VOTES + 0.3×USAGE + 0.2×REVENUE + 0.1×SUCCESS</span>
+              <span className="text-xs font-mono text-[var(--color-text-dim)]">SCORE =</span>
+              <span className="text-xs font-mono text-[var(--color-primary)]">0.4×VOTES + 0.3×USAGE + 0.2×REVENUE + 0.1×SUCCESS</span>
             </div>
           </div>
         </motion.div>
@@ -105,12 +105,12 @@ export default function Leaderboard() {
                     <div className="absolute inset-0 bg-gradient-to-t from-gray-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="relative z-10">
                       <div className="flex justify-center mb-3">{rankIcon(1)}</div>
-                      <div className="w-12 h-12 rounded-xl bg-[var(--color-nebula)] border border-[var(--color-border-bright)] flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                        <Zap size={20} className="text-[var(--color-purple-bright)]" />
+                      <div className="w-12 h-12 rounded-xl bg-[var(--color-accent-pink)] border border-[var(--color-border)] flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                        <Zap size={20} className="text-[var(--color-primary)]" />
                       </div>
                       <div className="font-display font-bold text-[var(--color-text-primary)] text-xs sm:text-sm mb-2 truncate px-1">{ranked[1].name}</div>
-                      <div className="font-mono text-2xl sm:text-3xl font-bold text-[var(--color-purple-bright)]">{ranked[1].score}</div>
-                      <div className="text-[var(--color-text-dim)] text-[9px] font-mono mt-1 tracking-wider">SCORE</div>
+                      <div className="font-mono text-2xl sm:text-3xl font-bold text-[var(--color-primary)]">{ranked[1].score}</div>
+                      <div className="text-[var(--color-text-dim)] text-xs font-mono mt-1 tracking-wider">SCORE</div>
                     </div>
                   </div>
                 </Link>
@@ -127,12 +127,12 @@ export default function Leaderboard() {
                           {rankIcon(0)}
                         </motion.div>
                       </div>
-                      <div className="w-14 h-14 rounded-xl bg-[var(--color-nebula)] border-2 border-[rgba(251,191,36,0.3)] flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                      <div className="w-14 h-14 rounded-xl bg-[var(--color-accent-pink)] border-2 border-[rgba(251,191,36,0.3)] flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
                         <Flame size={24} className="text-[var(--color-warning)]" />
                       </div>
                       <div className="font-display font-bold text-[var(--color-text-primary)] text-sm sm:text-base mb-2 truncate px-1">{ranked[0].name}</div>
                       <div className="font-mono text-3xl sm:text-4xl font-bold text-[var(--color-warning)]">{ranked[0].score}</div>
-                      <div className="text-[var(--color-text-dim)] text-[9px] font-mono mt-1 tracking-wider">SCORE</div>
+                      <div className="text-[var(--color-text-dim)] text-xs font-mono mt-1 tracking-wider">SCORE</div>
                     </div>
                   </div>
                 </Link>
@@ -145,12 +145,12 @@ export default function Leaderboard() {
                     <div className="absolute inset-0 bg-gradient-to-t from-orange-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="relative z-10">
                       <div className="flex justify-center mb-3">{rankIcon(2)}</div>
-                      <div className="w-12 h-12 rounded-xl bg-[var(--color-nebula)] border border-[var(--color-border-bright)] flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                        <Zap size={20} className="text-[var(--color-purple-bright)]" />
+                      <div className="w-12 h-12 rounded-xl bg-[var(--color-accent-pink)] border border-[var(--color-border)] flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                        <Zap size={20} className="text-[var(--color-primary)]" />
                       </div>
                       <div className="font-display font-bold text-[var(--color-text-primary)] text-xs sm:text-sm mb-2 truncate px-1">{ranked[2].name}</div>
-                      <div className="font-mono text-2xl sm:text-3xl font-bold text-[var(--color-purple-bright)]">{ranked[2].score}</div>
-                      <div className="text-[var(--color-text-dim)] text-[9px] font-mono mt-1 tracking-wider">SCORE</div>
+                      <div className="font-mono text-2xl sm:text-3xl font-bold text-[var(--color-primary)]">{ranked[2].score}</div>
+                      <div className="text-[var(--color-text-dim)] text-xs font-mono mt-1 tracking-wider">SCORE</div>
                     </div>
                   </div>
                 </Link>
@@ -163,7 +163,7 @@ export default function Leaderboard() {
         <FadeInSection delay={0.1} className="mb-6">
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: 'TOTAL RANKED', value: ranked.length, icon: Users, color: 'text-[var(--color-purple-bright)]' },
+              { label: 'TOTAL RANKED', value: ranked.length, icon: Users, color: 'text-[var(--color-primary)]' },
               { label: 'TOP SCORE', value: ranked[0]?.score ?? 0, icon: Award, color: 'text-[var(--color-warning)]' },
               { label: 'AVG SCORE', value: ranked.length ? (ranked.reduce((a, b) => a + b.score, 0) / ranked.length).toFixed(1) : 0, icon: TrendingUp, color: 'text-[var(--color-success)]' },
             ].map(stat => {
@@ -171,8 +171,8 @@ export default function Leaderboard() {
               return (
                 <div key={stat.label} className="glass-card-landing rounded-xl p-4 text-center group hover:scale-[1.02] transition-transform">
                   <Icon size={16} className={`mx-auto mb-2 ${stat.color} opacity-60 group-hover:opacity-100 transition-opacity`} />
-                  <div className={`font-mono font-bold text-xl ${stat.color}`}>{stat.value}</div>
-                  <div className="text-[var(--color-text-dim)] text-[9px] font-mono tracking-wider mt-0.5">{stat.label}</div>
+                  <div className={`font-bold text-xl ${stat.color}`}>{stat.value}</div>
+                  <div className="text-[var(--color-text-dim)] text-xs font-mono tracking-wider mt-0.5">{stat.label}</div>
                 </div>
               )
             })}
@@ -184,12 +184,12 @@ export default function Leaderboard() {
           <div className="glass-card-landing rounded-xl overflow-hidden">
             {/* Table header */}
             <div className="grid grid-cols-12 gap-2 sm:gap-3 px-4 sm:px-6 py-4 border-b border-[var(--color-border)] bg-[rgba(124,58,237,0.03)]">
-              <div className="col-span-1 text-[9px] font-mono tracking-wider text-[var(--color-text-dim)]">#</div>
-              <div className="col-span-5 sm:col-span-4 text-[9px] font-mono tracking-wider text-[var(--color-text-dim)]">AGENT</div>
-              <div className="col-span-2 text-[9px] font-mono tracking-wider text-[var(--color-text-dim)]">SCORE</div>
-              <div className="hidden sm:block col-span-2 text-[9px] font-mono tracking-wider text-[var(--color-text-dim)]">RATING</div>
-              <div className="col-span-2 text-[9px] font-mono tracking-wider text-[var(--color-text-dim)]">CALLS</div>
-              <div className="col-span-2 sm:col-span-1 text-[9px] font-mono tracking-wider text-[var(--color-text-dim)]">WIN%</div>
+              <div className="col-span-1 text-xs font-mono tracking-wider text-[var(--color-text-dim)]">#</div>
+              <div className="col-span-5 sm:col-span-4 text-xs font-mono tracking-wider text-[var(--color-text-dim)]">AGENT</div>
+              <div className="col-span-2 text-xs font-mono tracking-wider text-[var(--color-text-dim)]">SCORE</div>
+              <div className="hidden sm:block col-span-2 text-xs font-mono tracking-wider text-[var(--color-text-dim)]">RATING</div>
+              <div className="col-span-2 text-xs font-mono tracking-wider text-[var(--color-text-dim)]">CALLS</div>
+              <div className="col-span-2 sm:col-span-1 text-xs font-mono tracking-wider text-[var(--color-text-dim)]">WIN%</div>
             </div>
 
             <AnimatePresence>
@@ -212,23 +212,23 @@ export default function Leaderboard() {
 
                         <div className="col-span-5 sm:col-span-4 flex items-center gap-2 sm:gap-3 min-w-0">
                           <motion.div whileHover={{ scale: 1.1 }} className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-[var(--color-nebula-deep)] border border-[var(--color-border)] flex items-center justify-center shrink-0">
-                            <Zap size={14} className="text-[var(--color-purple-bright)]" />
+                            <Zap size={14} className="text-[var(--color-primary)]" />
                           </motion.div>
                           <div className="min-w-0">
                             <div className="font-display font-bold text-[var(--color-text-primary)] text-xs sm:text-sm truncate">{agent.name}</div>
-                            <div className="text-[var(--color-text-dim)] text-[9px] font-mono truncate">{agent.category || 'N/A'}</div>
+                            <div className="text-[var(--color-text-dim)] text-xs font-mono truncate">{agent.category || 'N/A'}</div>
                           </div>
                         </div>
 
                         <div className="col-span-2 flex items-center">
                           <div className="w-full">
-                            <div className="font-mono font-bold text-sm text-[var(--color-purple-bright)]">{agent.score}</div>
+                            <div className="font-bold text-sm text-[var(--color-primary)]">{agent.score}</div>
                             <div className="h-1 w-full max-w-[60px] bg-[var(--color-nebula-deep)] rounded-full mt-1 overflow-hidden">
                               <motion.div
                                 initial={{ width: 0 }}
                                 animate={{ width: `${Math.min((agent.score / 100) * 100, 100)}%` }}
                                 transition={{ delay: 0.5 + i * 0.04, duration: 0.7 }}
-                                className="h-full bg-gradient-to-r from-[var(--color-purple-core)] to-[var(--color-purple-bright)] rounded-full"
+                                className="h-full bg-gradient-to-r from-[var(--color-primary-dark)] to-[var(--color-primary)] rounded-full"
                               />
                             </div>
                           </div>
@@ -257,8 +257,8 @@ export default function Leaderboard() {
               <div className="text-center py-16">
                 <Trophy size={36} className="mx-auto mb-4 text-[var(--color-warning)] opacity-30" />
                 <div className="text-[var(--color-text-muted)] text-sm font-display font-bold mb-2">NO AGENTS RANKED</div>
-                <div className="text-[var(--color-text-dim)] text-xs font-mono tracking-widest">DEPLOY AN AGENT TO GET STARTED</div>
-                <Link to="/deploy" className="inline-block mt-4 text-[var(--color-purple-bright)] text-xs font-mono hover:underline">
+                <div className="text-[var(--color-text-dim)] text-xs font-mono ">DEPLOY AN AGENT TO GET STARTED</div>
+                <Link to="/deploy" className="inline-block mt-4 text-[var(--color-primary)] text-xs font-mono hover:underline">
                   DEPLOY NOW →
                 </Link>
               </div>
@@ -269,3 +269,6 @@ export default function Leaderboard() {
     </div>
   )
 }
+
+
+

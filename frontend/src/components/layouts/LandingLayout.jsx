@@ -36,11 +36,11 @@ export default function LandingLayout() {
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-[var(--color-nebula)] border border-[var(--color-border-bright)] flex items-center justify-center">
-              <Cpu size={15} className="text-[var(--color-purple-bright)]" />
+            <div className="w-8 h-8 rounded-lg bg-[var(--color-accent-pink)] border border-[var(--color-border)] flex items-center justify-center">
+              <Cpu size={15} className="text-[var(--color-primary)]" />
             </div>
             <div>
-              <div className="font-display font-bold text-sm text-[var(--color-text-primary)] tracking-[0.15em]">AGENTRA</div>
+              <div className="font-display font-bold text-sm text-[var(--color-text-primary)] ">AGENTRA</div>
             </div>
           </Link>
 
@@ -50,7 +50,7 @@ export default function LandingLayout() {
               <Link
                 key={link.to}
                 to={link.to}
-                className="px-4 py-2 rounded-lg text-[11px] font-mono tracking-[0.15em] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:bg-[rgba(255,255,255,0.03)] transition-all duration-200"
+                className="px-4 py-2 rounded-lg text-[11px] font-mono  text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:bg-[rgba(255,255,255,0.03)] transition-all duration-200"
               >
                 {link.label}
               </Link>
@@ -90,7 +90,7 @@ export default function LandingLayout() {
                   <Link
                     key={link.to}
                     to={link.to}
-                    className="px-4 py-3 rounded-lg text-[11px] font-mono tracking-[0.15em] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:bg-[rgba(255,255,255,0.03)] transition-all"
+                    className="px-4 py-3 rounded-lg text-[11px] font-mono  text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:bg-[rgba(255,255,255,0.03)] transition-all"
                   >
                     {link.label}
                   </Link>
@@ -113,3 +113,6 @@ export default function LandingLayout() {
     </div>
   )
 }
+
+
+

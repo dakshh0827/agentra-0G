@@ -64,20 +64,20 @@ export default function TopBar() {
       {/* Left */}
       <div className="flex items-center gap-4">
         <Link to="/" className="lg:hidden flex items-center gap-2 shrink-0">
-          <div className="w-7 h-7 rounded-md bg-[var(--color-nebula)] border border-[var(--color-border-bright)] flex items-center justify-center">
+          <div className="w-7 h-7 rounded-md bg-[var(--color-accent-pink)] border border-[var(--color-border)] flex items-center justify-center">
             <img src="/logo.png" className="w-7 h-7 object-contain" alt="Agentra" />
           </div>
-          <span className="font-display font-bold text-xs text-[var(--color-text-primary)] tracking-[0.15em]">
+          <span className="font-display font-bold text-xs text-[var(--color-text-primary)] ">
             AGENTRA
           </span>
         </Link>
 
-        {/* <div className="hidden sm:flex items-center gap-2 text-[var(--color-success)] text-[10px] font-mono tracking-widest">
+        {/* <div className="hidden sm:flex items-center gap-2 text-[var(--color-success)] text-sm font-mono ">
           <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] pulse-dot" />
           NETWORK ONLINE
         </div> */}
 
-        <div className="hidden md:flex items-center gap-1.5 text-[var(--color-text-dim)] text-[10px] font-mono tracking-widest uppercase">
+        <div className="hidden md:flex items-center gap-1.5 text-[var(--color-text-dim)] text-sm font-mono  uppercase">
           <Radio size={11} />
           {isConnected && chain ? chain.name : 'DISCONNECTED'}
         </div>
@@ -88,9 +88,9 @@ export default function TopBar() {
         <motion.div
           animate={{ opacity: [0.5, 1, 0.5] }}
           transition={{ duration: 3, repeat: Infinity }}
-          className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--color-nebula-deep)] border border-[var(--color-border)] text-[10px] font-mono text-[var(--color-text-dim)]"
+          className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--color-nebula-deep)] border border-[var(--color-border)] text-sm font-mono text-[var(--color-text-dim)]"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-purple-bright)] pulse-dot" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)] pulse-dot" />
           AGENTS: {stats?.activeAgents ?? 0} ONLINE
         </motion.div>
 
@@ -104,17 +104,17 @@ export default function TopBar() {
             {/* Wallet */}
             <button
               onClick={() => disconnect()}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--color-nebula)] border border-[var(--color-border-bright)] text-[var(--color-purple-bright)] hover:border-[var(--color-purple-core)] hover:shadow-[var(--shadow-glow-soft)] transition-all cursor-pointer"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--color-accent-pink)] border border-[var(--color-border)] text-[var(--color-primary)] hover:border-[var(--color-primary-dark)] hover:shadow-[var(--shadow-glow-soft)] transition-all cursor-pointer"
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-purple-bright)] pulse-dot" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)] pulse-dot" />
 
-              <span className="text-[10px] font-mono">
+              <span className="text-sm font-mono">
                 {`${address.slice(0, 6)}...${address.slice(-4)}`}
               </span>
 
               {/* AGT Balance */}
               {tokenBalance !== undefined && (
-                <span className="hidden sm:inline text-[10px] font-mono text-[var(--color-text-muted)]">
+                <span className="hidden sm:inline text-sm font-mono text-[var(--color-text-muted)]">
                   {Number(formatUnits(tokenBalance, 18)).toFixed(2)} AGT
                 </span>
               )}
@@ -131,3 +131,5 @@ export default function TopBar() {
     </header>
   )
 }
+
+

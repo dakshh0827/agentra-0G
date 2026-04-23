@@ -19,3 +19,5 @@ export default function LoadingPulse({ rows = 3 }) {
     </div>
   )
 }
+
+

@@ -99,23 +99,16 @@ export default function LandingPage() {
 
   // Dynamic stats calculated from the backend
 const STATS = [
-  { value: 'MCP', label: 'Native Protocol' },
-  { value: 'ETH', label: 'Base Settlement' },
-  { value: '0G', label: 'Chain Storage' },
-  { value: 'V1.0', label: 'Network Status' },
+  { value: 'MCP', label: 'Standard Protocol' },
+  { value: 'ETH', label: 'Settlement' },
+  { value: '0G', label: 'Storage' },
+  { value: 'Live', label: 'Status' },
 ]
 
   return (
-    <div className="relative min-h-screen bg-black overflow-hidden">
-      {/* Star background */}
-      <StarField />
+    <div className="relative min-h-screen bg-[var(--color-bg)] overflow-hidden">
       {/* ── HERO SECTION ── */}
       <section className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 text-center">
-        {/* Ambient glows */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] rounded-full pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse, rgba(124,58,237,0.08) 0%, transparent 70%)' }} />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[300px] rounded-full pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse, rgba(147,51,234,0.04) 0%, transparent 70%)' }} />
 
         {/* Dynamic Badge */}
         {/* <motion.div
@@ -125,7 +118,7 @@ const STATS = [
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[rgba(124,58,237,0.25)] bg-[rgba(124,58,237,0.06)] mb-8"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] pulse-dot" />
-          <span className="text-[11px] font-mono text-[var(--color-purple-pale)] tracking-[0.2em]">
+          <span className="text-[11px] font-mono text-[var(--color-purple-pale)] ">
             NETWORK LIVE — {stats?.activeAgents || 0} AGENTS ONLINE
           </span>
         </motion.div> */}
@@ -135,11 +128,11 @@ const STATS = [
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2 }}
-          className="hero-title flex flex-col items-center font-display font-extrabold text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-[var(--color-text-primary)] leading-[1.05] tracking-tight max-w-5xl"
+          className="flex flex-col items-center font-display font-bold text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-[var(--color-text-primary)] leading-tight tracking-normal max-w-5xl"
         >
-          <span className="type-line line-1">The Neural</span>
-          <span className="gradient-text-purple type-line line-2">Marketplace</span>
-          <span className="type-line line-3">for AI Agents</span>
+          <span>Deploy & Monetize</span>
+          <span className="text-[var(--color-primary)]">AI Agents</span>
+          <span>with Trust</span>
         </motion.h1>
 
         {/* Subtitle */}
@@ -147,10 +140,10 @@ const STATS = [
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-6 text-[var(--color-text-secondary)] text-base sm:text-lg max-w-2xl leading-relaxed font-body"
+          className="mt-8 text-[var(--color-text-secondary)] text-lg sm:text-xl max-w-3xl leading-relaxed font-body"
         >
-          Deploy, discover, and execute autonomous AI agents on a decentralized marketplace.
-          Powered by MCP protocol, secured by smart contracts, driven by community intelligence.
+          Agentra is the decentralized platform for listing, discovering, and executing AI agents.
+          Get paid per execution, maintain full ownership, and tap into a growing developer community.
         </motion.p>
 
         {/* CTA Buttons */}
@@ -161,16 +154,16 @@ const STATS = [
           className="flex flex-col sm:flex-row gap-4 mt-10"
         >
           <Link to="/marketplace">
-            <button className="btn-glow px-8 py-3.5 rounded-xl inline-flex items-center gap-2.5 cursor-pointer">
-              <Rocket size={16} />
-              EXPLORE AGENTS
-              <ArrowRight size={14} />
+            <button className="btn-glow px-8 py-3.5 rounded-lg inline-flex items-center gap-3 cursor-pointer text-base font-semibold">
+              <Rocket size={18} />
+              Explore Agents
+              <ArrowRight size={16} />
             </button>
           </Link>
           <Link to="/deploy">
-            <button className="btn-outline-glow px-8 py-3.5 rounded-xl inline-flex items-center gap-2.5 cursor-pointer">
-              <Code2 size={16} />
-              DEPLOY YOURS
+            <button className="btn-outline-glow px-8 py-3.5 rounded-lg inline-flex items-center gap-3 cursor-pointer text-base font-semibold">
+              <Code2 size={18} />
+              Deploy Your Agent
             </button>
           </Link>
         </motion.div>
@@ -191,7 +184,7 @@ const STATS = [
               className="text-center"
             >
               <div className="font-display font-bold text-2xl sm:text-3xl text-[var(--color-text-primary)]">{stat.value}</div>
-              <div className="text-[10px] font-mono text-[var(--color-text-muted)] tracking-[0.2em] mt-1 uppercase">{stat.label}</div>
+              <div className="text-sm font-mono text-[var(--color-text-muted)]  mt-1 uppercase">{stat.label}</div>
             </motion.div>
           ))}
         </motion.div>
@@ -213,7 +206,7 @@ const STATS = [
       <section className="relative z-10 py-24 sm:py-32 px-6">
         <div className="max-w-6xl mx-auto">
           <FadeInSection className="text-center mb-16">
-            <span className="text-[10px] font-mono text-[var(--color-purple-bright)] tracking-[0.3em] uppercase">Platform Capabilities</span>
+            <span className="text-sm font-mono text-[var(--color-primary)]  uppercase">Platform Capabilities</span>
             <h2 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl text-[var(--color-text-primary)] mt-3 leading-tight">
               Built for the Agent Economy
             </h2>
@@ -229,7 +222,7 @@ const STATS = [
                 <FadeInSection key={feature.title} delay={i * 0.08}>
                   <div className="glass-card-landing rounded-xl p-6 h-full">
                     <div className="w-10 h-10 rounded-lg bg-[rgba(124,58,237,0.08)] border border-[rgba(124,58,237,0.2)] flex items-center justify-center mb-4">
-                      <Icon size={18} className="text-[var(--color-purple-bright)]" />
+                      <Icon size={18} className="text-[var(--color-primary)]" />
                     </div>
                     <h3 className="font-display font-bold text-base text-[var(--color-text-primary)] mb-2">{feature.title}</h3>
                     <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">{feature.description}</p>
@@ -248,7 +241,7 @@ const STATS = [
       <section className="relative z-10 py-24 sm:py-32 px-6">
         <div className="max-w-5xl mx-auto">
           <FadeInSection className="text-center mb-16">
-            <span className="text-[10px] font-mono text-[var(--color-purple-bright)] tracking-[0.3em] uppercase">How It Works</span>
+            <span className="text-sm font-mono text-[var(--color-primary)]  uppercase">How It Works</span>
             <h2 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl text-[var(--color-text-primary)] mt-3 leading-tight">
               From Code to Revenue in Minutes
             </h2>
@@ -262,8 +255,8 @@ const STATS = [
                   <div className="glass-card-landing rounded-xl p-6 flex gap-5">
                     <div className="shrink-0">
                       <div className="w-12 h-12 rounded-xl bg-[rgba(124,58,237,0.06)] border border-[rgba(124,58,237,0.15)] flex items-center justify-center relative">
-                        <Icon size={20} className="text-[var(--color-purple-bright)]" />
-                        <span className="absolute -top-2 -right-2 text-[9px] font-mono font-bold text-[var(--color-purple-pale)] bg-[rgba(124,58,237,0.15)] border border-[rgba(124,58,237,0.3)] rounded-full w-5 h-5 flex items-center justify-center">
+                        <Icon size={20} className="text-[var(--color-primary)]" />
+                        <span className="absolute -top-2 -right-2 text-xs font-bold text-[var(--color-purple-pale)] bg-[rgba(124,58,237,0.15)] border border-[rgba(124,58,237,0.3)] rounded-full w-5 h-5 flex items-center justify-center">
                           {step.num}
                         </span>
                       </div>
@@ -298,7 +291,7 @@ const STATS = [
       <section className="relative z-10 py-24 sm:py-32 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <FadeInSection>
-            <span className="text-[10px] font-mono text-[var(--color-purple-bright)] tracking-[0.3em] uppercase">Why Agentra</span>
+            <span className="text-sm font-mono text-[var(--color-primary)]  uppercase">Why Agentra</span>
             <h2 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl text-[var(--color-text-primary)] mt-3 leading-tight">
               The Future of Autonomous AI
             </h2>
@@ -318,7 +311,7 @@ const STATS = [
             {['MCP Protocol', 'Ethereum', 'Smart Contracts', 'Pay-per-Call', 'Open Source', 'Community Governed'].map(tag => (
               <span
                 key={tag}
-                className="px-4 py-2 rounded-lg border border-[rgba(124,58,237,0.15)] bg-[rgba(124,58,237,0.04)] text-[11px] font-mono text-[var(--color-purple-pale)] tracking-[0.1em]"
+                className="px-4 py-2 rounded-lg border border-[rgba(124,58,237,0.15)] bg-[rgba(124,58,237,0.04)] text-[11px] font-mono text-[var(--color-purple-pale)] "
               >
                 {tag}
               </span>
@@ -337,7 +330,7 @@ const STATS = [
                 style={{ background: 'radial-gradient(ellipse, rgba(124,58,237,0.12) 0%, transparent 70%)' }} />
 
               <div className="relative z-10">
-                <Cpu size={36} className="mx-auto text-[var(--color-purple-bright)] mb-5 opacity-70" />
+                <Cpu size={36} className="mx-auto text-[var(--color-primary)] mb-5 opacity-70" />
                 <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-[var(--color-text-primary)] leading-tight">
                   Ready to Launch?
                 </h2>
@@ -367,28 +360,28 @@ const STATS = [
       <footer className="relative z-10 border-t border-[var(--color-border)] py-10 px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[var(--color-nebula)] border border-[var(--color-border-bright)] flex items-center justify-center">
-              <Cpu size={15} className="text-[var(--color-purple-bright)]" />
+            <div className="w-8 h-8 rounded-lg bg-[var(--color-accent-pink)] border border-[var(--color-border)] flex items-center justify-center">
+              <Cpu size={15} className="text-[var(--color-primary)]" />
             </div>
             <div>
-              <div className="font-display font-bold text-sm text-[var(--color-text-primary)] tracking-[0.15em]">AGENTRA</div>
-              <div className="font-mono text-[9px] text-[var(--color-text-dim)] tracking-[0.3em]">NEURAL MARKETPLACE</div>
+              <div className="font-display font-bold text-sm text-[var(--color-text-primary)] ">AGENTRA</div>
+              <div className="font-semibold text-xs text-[var(--color-text-dim)] ">NEURAL MARKETPLACE</div>
             </div>
           </div>
 
           <div className="flex items-center gap-8">
-            <Link to="/marketplace" className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] text-xs font-mono tracking-widest transition-colors">
+            <Link to="/marketplace" className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] text-xs font-mono  transition-colors">
               MARKETPLACE
             </Link>
-            <Link to="/deploy" className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] text-xs font-mono tracking-widest transition-colors">
+            <Link to="/deploy" className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] text-xs font-mono  transition-colors">
               DEPLOY
             </Link>
-            <Link to="/leaderboard" className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] text-xs font-mono tracking-widest transition-colors">
+            <Link to="/leaderboard" className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] text-xs font-mono  transition-colors">
               LEADERBOARD
             </Link>
           </div>
 
-          <div className="text-[var(--color-text-dim)] text-[10px] font-mono tracking-widest">
+          <div className="text-[var(--color-text-dim)] text-sm font-mono ">
             © 2026 AGENTRA
           </div>
         </div>
@@ -396,3 +389,6 @@ const STATS = [
     </div>
   )
 }
+
+
+

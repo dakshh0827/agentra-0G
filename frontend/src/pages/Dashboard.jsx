@@ -37,7 +37,7 @@ function FadeInSection({ children, className = '', delay = 0 }) {
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="glass-panel border border-[var(--color-border-bright)] rounded-lg px-4 py-3 text-xs font-mono shadow-xl">
+    <div className="glass-panel border border-[var(--color-border)] rounded-lg px-4 py-3 text-xs font-mono shadow-xl">
       <div className="text-[var(--color-text-secondary)] font-bold mb-2">{label}</div>
       {payload.map(p => (
         <div key={p.name} className="flex items-center gap-2 mt-1">
@@ -104,7 +104,7 @@ export default function Dashboard() {
           style={{ background: 'radial-gradient(ellipse, rgba(124,58,237,0.12) 0%, transparent 70%)' }} />
         <div className="relative z-10">
           <div className="w-20 h-20 rounded-2xl bg-[rgba(124,58,237,0.1)] border border-[rgba(124,58,237,0.25)] flex items-center justify-center mx-auto mb-6">
-            <Wallet size={36} className="text-[var(--color-purple-bright)] opacity-70" />
+            <Wallet size={36} className="text-[var(--color-primary)] opacity-70" />
           </div>
           <h2 className="text-2xl font-display font-bold text-[var(--color-text-primary)] mb-3">Connect Wallet</h2>
           <p className="text-[var(--color-text-muted)] text-sm mb-6 leading-relaxed">
@@ -112,7 +112,7 @@ export default function Dashboard() {
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             {['Revenue Tracking', 'Agent Metrics', 'Activity Feed'].map(tag => (
-              <span key={tag} className="px-3 py-1.5 rounded-lg border border-[rgba(124,58,237,0.15)] bg-[rgba(124,58,237,0.04)] text-[10px] font-mono text-[var(--color-purple-pale)] tracking-[0.1em]">
+              <span key={tag} className="px-3 py-1.5 rounded-lg border border-[rgba(124,58,237,0.15)] bg-[rgba(124,58,237,0.04)] text-sm font-mono text-[var(--color-purple-pale)] ">
                 {tag}
               </span>
             ))}
@@ -138,7 +138,7 @@ export default function Dashboard() {
   ]
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen bg-[var(--color-bg)]">
       <div className="fixed top-10 right-20 w-[450px] h-[350px] rounded-full pointer-events-none opacity-40"
         style={{ background: 'radial-gradient(ellipse, rgba(52,211,153,0.06) 0%, transparent 70%)' }} />
       <div className="fixed bottom-20 left-10 w-[400px] h-[300px] rounded-full pointer-events-none opacity-40"
@@ -150,7 +150,7 @@ export default function Dashboard() {
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1, duration: 0.4 }}
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[rgba(52,211,153,0.25)] bg-[rgba(52,211,153,0.06)] mb-4">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] pulse-dot" />
-            <span className="text-[10px] font-mono text-[var(--color-success)] tracking-[0.2em]">ANALYTICS DASHBOARD — LIVE</span>
+            <span className="text-sm font-mono text-[var(--color-success)] ">ANALYTICS DASHBOARD — LIVE</span>
           </motion.div>
           <h1 className="font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl text-[var(--color-text-primary)] leading-[1.1] tracking-tight">
             <span className="gradient-text-purple">REVENUE</span> CONTROL
@@ -181,7 +181,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="font-display font-bold text-[var(--color-text-primary)] text-base sm:text-lg">Revenue Chart</h3>
-                  <p className="text-[var(--color-text-dim)] text-[10px] font-mono tracking-wider mt-0.5">AGT EARNINGS OVER TIME</p>
+                  <p className="text-[var(--color-text-dim)] text-sm font-mono tracking-wider mt-0.5">AGT EARNINGS OVER TIME</p>
                 </div>
               </div>
               {revenueData.length > 0 ? (
@@ -202,9 +202,9 @@ export default function Dashboard() {
                 </ResponsiveContainer>
               ) : (
                 <div className="flex flex-col items-center justify-center h-[200px] text-center">
-                  <Sparkles size={28} className="text-[var(--color-purple-bright)] opacity-30 mb-3" />
-                  <div className="text-[var(--color-text-dim)] font-mono text-xs tracking-widest">NO REVENUE DATA YET</div>
-                  <Link to="/deploy" className="mt-3 text-[var(--color-purple-bright)] text-[10px] font-mono hover:underline">DEPLOY AN AGENT →</Link>
+                  <Sparkles size={28} className="text-[var(--color-primary)] opacity-30 mb-3" />
+                  <div className="text-[var(--color-text-dim)] font-mono text-xs ">NO REVENUE DATA YET</div>
+                  <Link to="/deploy" className="mt-3 text-[var(--color-primary)] text-sm font-mono hover:underline">DEPLOY AN AGENT →</Link>
                 </div>
               )}
             </div>
@@ -214,23 +214,23 @@ export default function Dashboard() {
           <FadeInSection delay={0.1}>
             <div className="glass-card-landing rounded-xl p-5 sm:p-6 h-full">
               <div className="flex items-center gap-2 mb-5">
-                <Clock size={14} className="text-[var(--color-purple-bright)]" />
+                <Clock size={14} className="text-[var(--color-primary)]" />
                 <h3 className="font-display font-bold text-[var(--color-text-primary)] text-base sm:text-lg">Activity Feed</h3>
               </div>
               <div className="space-y-3 overflow-y-auto max-h-52 pr-1">
                 {activityFeed.length > 0 ? activityFeed.map((item, i) => (
                   <motion.div key={i} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.05 }}
                     whileHover={{ x: 4 }} className="flex items-start gap-3 pb-3 border-b border-[var(--color-border)] last:border-0 cursor-default group">
-                    <div className="w-2 h-2 rounded-full mt-1.5 shrink-0 bg-[var(--color-purple-bright)] group-hover:scale-125 transition-transform" />
+                    <div className="w-2 h-2 rounded-full mt-1.5 shrink-0 bg-[var(--color-primary)] group-hover:scale-125 transition-transform" />
                     <div className="flex-1 min-w-0">
                       <div className="text-xs text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors truncate">{item.text}</div>
-                      <div className="text-[var(--color-text-dim)] text-[9px] font-mono mt-1">{item.time}</div>
+                      <div className="text-[var(--color-text-dim)] text-xs font-mono mt-1">{item.time}</div>
                     </div>
                   </motion.div>
                 )) : (
                   <div className="flex flex-col items-center justify-center py-8 text-center">
                     <Activity size={24} className="text-[var(--color-text-dim)] opacity-30 mb-2" />
-                    <div className="text-[var(--color-text-dim)] text-xs font-mono tracking-widest">NO RECENT ACTIVITY</div>
+                    <div className="text-[var(--color-text-dim)] text-xs font-mono ">NO RECENT ACTIVITY</div>
                   </div>
                 )}
               </div>
@@ -244,7 +244,7 @@ export default function Dashboard() {
             {/* My Deployed Agents */}
             <div>
               <div className="flex items-center gap-2 mb-5">
-                <Cpu size={20} className="text-[var(--color-purple-bright)]" />
+                <Cpu size={20} className="text-[var(--color-primary)]" />
                 <h3 className="font-display font-bold text-[var(--color-text-primary)] text-xl sm:text-2xl">My Deployed Agents</h3>
               </div>
               {myAgents.length > 0 ? (
@@ -255,8 +255,8 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="glass-card-landing rounded-xl p-10 text-center border-dashed border border-[rgba(124,58,237,0.3)] bg-[rgba(124,58,237,0.02)]">
-                  <div className="text-[var(--color-text-dim)] font-mono text-xs tracking-widest mb-3">NO AGENTS DEPLOYED YET</div>
-                  <Link to="/deploy" className="text-[var(--color-purple-bright)] text-xs font-mono hover:underline">LAUNCH YOUR FIRST AGENT →</Link>
+                  <div className="text-[var(--color-text-dim)] font-mono text-xs  mb-3">NO AGENTS DEPLOYED YET</div>
+                  <Link to="/deploy" className="text-[var(--color-primary)] text-xs font-mono hover:underline">LAUNCH YOUR FIRST AGENT →</Link>
                 </div>
               )}
             </div>
@@ -275,7 +275,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="glass-card-landing rounded-xl p-10 text-center border-dashed border border-[rgba(52,211,153,0.3)] bg-[rgba(52,211,153,0.02)]">
-                  <div className="text-[var(--color-text-dim)] font-mono text-xs tracking-widest mb-3">NO ON-CHAIN AGENTS PURCHASED</div>
+                  <div className="text-[var(--color-text-dim)] font-mono text-xs  mb-3">NO ON-CHAIN AGENTS PURCHASED</div>
                   <Link to="/marketplace" className="text-[var(--color-success)] text-xs font-mono hover:underline">EXPLORE MARKETPLACE →</Link>
                 </div>
               )}
@@ -289,9 +289,9 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="font-display font-bold text-[var(--color-text-primary)] text-base sm:text-lg">Performance Metrics</h3>
-                <p className="text-[var(--color-text-dim)] text-[10px] font-mono tracking-wider mt-0.5">CALLS VS REVENUE BY AGENT</p>
+                <p className="text-[var(--color-text-dim)] text-sm font-mono tracking-wider mt-0.5">CALLS VS REVENUE BY AGENT</p>
               </div>
-              <div className="flex items-center gap-4 text-[10px] font-mono">
+              <div className="flex items-center gap-4 text-sm font-mono">
                 <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded bg-[rgba(124,58,237,0.6)]" /><span className="text-[var(--color-text-dim)]">CALLS</span></div>
                 <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded bg-[rgba(52,211,153,0.6)]" /><span className="text-[var(--color-text-dim)]">REVENUE</span></div>
               </div>
@@ -309,9 +309,9 @@ export default function Dashboard() {
               </ResponsiveContainer>
             ) : (
               <div className="flex flex-col items-center justify-center h-[200px] text-center">
-                <BarChart3 size={28} className="text-[var(--color-purple-bright)] opacity-30 mb-3" />
-                <div className="text-[var(--color-text-dim)] font-mono text-xs tracking-widest">NO PERFORMANCE DATA</div>
-                <p className="text-[var(--color-text-dim)] text-[10px] mt-2 max-w-xs">Deploy agents and receive executions to see performance metrics here.</p>
+                <BarChart3 size={28} className="text-[var(--color-primary)] opacity-30 mb-3" />
+                <div className="text-[var(--color-text-dim)] font-mono text-xs ">NO PERFORMANCE DATA</div>
+                <p className="text-[var(--color-text-dim)] text-sm mt-2 max-w-xs">Deploy agents and receive executions to see performance metrics here.</p>
               </div>
             )}
           </div>
@@ -320,3 +320,6 @@ export default function Dashboard() {
     </div>
   )
 }
+
+
+

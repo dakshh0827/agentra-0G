@@ -33,8 +33,8 @@ export default function Sidebar() {
   
         {/* Left: Logo + Title */}
         <NavLink to="/" className="flex items-center gap-3 cursor-pointer">
-          <div className="w-8 h-8 rounded-lg bg-[var(--color-nebula)] border border-[var(--color-border-bright)] flex items-center justify-center shrink-0">
-            <Cpu size={15} className="text-[var(--color-purple-bright)]" />
+          <div className="w-8 h-8 rounded-lg bg-[var(--color-accent-pink)] border border-[var(--color-primary)] flex items-center justify-center shrink-0">
+            <Cpu size={16} className="text-[var(--color-navy)]" />
           </div>
 
           <AnimatePresence>
@@ -45,11 +45,11 @@ export default function Sidebar() {
                 exit={{ opacity: 0, x: -8 }}
                 transition={{ duration: 0.18 }}
               >
-                <div className="font-display font-bold text-sm text-[var(--color-text-primary)] tracking-[0.15em]">
+                <div className="font-display font-bold text-base text-[var(--color-text-primary)]">
                   AGENTRA
                 </div>
-                <div className="font-mono text-[9px] text-[var(--color-purple-bright)] tracking-[0.25em] whitespace-nowrap">
-                  NEURAL MARKET
+                <div className="text-xs text-[var(--color-primary)] font-medium whitespace-nowrap">
+                  Agent Platform
                 </div>
               </motion.div>
             )}
@@ -60,7 +60,7 @@ export default function Sidebar() {
         <button
           onClick={() => setCollapsed(!collapsed)}
           className={clsx(
-            "p-2 rounded-lg text-[var(--color-text-dim)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-nebula-deep)] transition-all",
+            "p-2 rounded-lg text-[var(--color-text-dim)] hover:text-[var(--color-primary)] hover:bg-[var(--color-accent-pink)]/10 transition-all",
             collapsed && "mr-1"
           )}
         >
@@ -83,7 +83,7 @@ export default function Sidebar() {
                     isActive ? 'nav-link-active' : 'nav-link-idle'
                   )}
                 >
-                  <Icon size={16} className={isActive ? 'text-[var(--color-purple-bright)]' : 'text-[var(--color-text-dim)]'} />
+                  <Icon size={16} className={isActive ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-dim)]'} />
                   <AnimatePresence>
                     {!collapsed && (
                       <motion.div
@@ -92,13 +92,13 @@ export default function Sidebar() {
                         exit={{ opacity: 0 }}
                         className="flex-1 min-w-0"
                       >
-                        <div className="text-[10px] font-mono tracking-[0.15em]">{label}</div>
-                        <div className="text-[9px] text-[var(--color-text-dim)]">{sublabel}</div>
+                        <div className="text-sm font-semibold text-[var(--color-text-primary)]">{label}</div>
+                        <div className="text-xs text-[var(--color-text-dim)]">{sublabel}</div>
                       </motion.div>
                     )}
                   </AnimatePresence>
                   {isActive && !collapsed && (
-                    <ChevronRight size={11} className="ml-auto text-[var(--color-purple-bright)]" />
+                    <ChevronRight size={11} className="ml-auto text-[var(--color-primary)]" />
                   )}
                 </motion.div>
               </NavLink>
@@ -110,9 +110,9 @@ export default function Sidebar() {
         <div className="px-2.5 pb-1">
           <NavLink to="/" style={{ cursor: 'pointer' }}>
             <div className="flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200 nav-link-idle">
-              <Home size={14} className="text-[var(--color-text-dim)]" />
+              <Home size={16} className="text-[var(--color-text-dim)]" />
               {!collapsed && (
-                <span className="text-[10px] font-mono tracking-[0.15em] text-[var(--color-text-dim)]">HOME</span>
+                <span className="text-sm font-semibold text-[var(--color-text-dim)]">Home</span>
               )}
             </div>
           </NavLink>
@@ -122,12 +122,12 @@ export default function Sidebar() {
         <div className="p-2.5 border-t border-[var(--color-border)]">
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="w-full flex items-center justify-center gap-2 p-2 rounded-lg text-[var(--color-text-dim)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-nebula-deep)] transition-all cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 p-2 rounded-lg text-[var(--color-text-dim)] hover:text-[var(--color-primary)] hover:bg-[var(--color-accent-pink)]/10 transition-all cursor-pointer"
           >
             <motion.div animate={{ rotate: collapsed ? 0 : 180 }}>
               <ChevronRight size={14} />
             </motion.div>
-            {!collapsed && <span className="text-[10px] font-mono tracking-widest">COLLAPSE</span>}
+            {!collapsed && <span className="text-xs font-semibold">Collapse</span>}
           </button>
         </div>
       </motion.aside>
@@ -139,10 +139,10 @@ export default function Sidebar() {
             const isActive = location.pathname.startsWith(to)
             return (
               <NavLink key={to} to={to} className="flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-lg transition-colors">
-                <Icon size={18} className={isActive ? 'text-[var(--color-purple-bright)]' : 'text-[var(--color-text-dim)]'} />
+                <Icon size={18} className={isActive ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-dim)]'} />
                 <span className={clsx(
-                  'text-[8px] font-mono tracking-[0.1em]',
-                  isActive ? 'text-[var(--color-purple-bright)]' : 'text-[var(--color-text-dim)]'
+                  'text-xs font-semibold',
+                  isActive ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-dim)]'
                 )}>
                   {label.slice(0, 6)}
                 </span>
@@ -154,3 +154,5 @@ export default function Sidebar() {
     </>
   )
 }
+
+

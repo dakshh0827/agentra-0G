@@ -7,7 +7,7 @@ import clsx from 'clsx'
 
 const categoryColors = {
   Analysis: 'text-[var(--color-star-blue)] bg-[rgba(147,197,253,0.07)] border-[rgba(147,197,253,0.2)]',
-  Development: 'text-[var(--color-purple-bright)] bg-[rgba(168,85,247,0.07)] border-[rgba(168,85,247,0.2)]',
+  Development: 'text-[var(--color-primary)] bg-[rgba(168,85,247,0.07)] border-[rgba(168,85,247,0.2)]',
   Security: 'text-[var(--color-danger)] bg-[rgba(248,113,113,0.07)] border-[rgba(248,113,113,0.2)]',
   Data: 'text-[var(--color-warning)] bg-[rgba(251,191,36,0.07)] border-[rgba(251,191,36,0.2)]',
   NLP: 'text-[var(--color-success)] bg-[rgba(52,211,153,0.07)] border-[rgba(52,211,153,0.2)]',
@@ -73,8 +73,8 @@ export default function AgentCard({ agent, index = 0 }) {
             {/* Header — always visible */}
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[var(--color-nebula)] border border-[var(--color-border-bright)] flex items-center justify-center shrink-0">
-                  <Zap size={17} className="text-[var(--color-purple-bright)]" />
+                <div className="w-10 h-10 rounded-lg bg-[var(--color-accent-pink)] border border-[var(--color-border)] flex items-center justify-center shrink-0">
+                  <Zap size={17} className="text-[var(--color-primary)]" />
                 </div>
                 <div>
                   <h3 className="font-display font-bold text-[var(--color-text-primary)] text-sm tracking-wide leading-tight group-hover:text-[var(--color-purple-pale)] transition-colors duration-300">
@@ -82,13 +82,13 @@ export default function AgentCard({ agent, index = 0 }) {
                   </h3>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className={clsx(
-                      'inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono border',
+                      'inline-flex items-center px-2 py-0.5 rounded text-sm font-mono border',
                       categoryColors[agent.category] || categoryColors.Other
                     )}>
                       {agent.category}
                     </span>
                     {isOnChain && (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[rgba(124,58,237,0.1)] border border-[rgba(124,58,237,0.2)] text-[9px] font-mono text-[var(--color-purple-bright)]">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[rgba(124,58,237,0.1)] border border-[rgba(124,58,237,0.2)] text-xs font-mono text-[var(--color-primary)]">
                         <Shield size={8} /> ON-CHAIN
                       </span>
                     )}
@@ -97,7 +97,7 @@ export default function AgentCard({ agent, index = 0 }) {
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <span className={clsx('w-1.5 h-1.5 rounded-full pulse-dot', status.dot)} />
-                <span className={clsx('text-[10px] font-mono capitalize', status.color)}>{agent.status}</span>
+                <span className={clsx('text-sm font-mono capitalize', status.color)}>{agent.status}</span>
               </div>
             </div>
 
@@ -110,7 +110,7 @@ export default function AgentCard({ agent, index = 0 }) {
             {agent.tags?.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-3">
                 {agent.tags.slice(0, 3).map(tag => (
-                  <span key={tag} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-[var(--color-nebula-deep)] border border-[var(--color-border)] text-[var(--color-text-dim)] group-hover:border-[rgba(168,85,247,0.3)] transition-colors duration-300">
+                  <span key={tag} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-sm font-mono bg-[var(--color-nebula-deep)] border border-[var(--color-border)] text-[var(--color-text-dim)] group-hover:border-[rgba(168,85,247,0.3)] transition-colors duration-300">
                     <Tag size={8} />
                     {tag}
                   </span>
@@ -137,23 +137,23 @@ export default function AgentCard({ agent, index = 0 }) {
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-1 text-[var(--color-warning)] mb-0.5">
                     <Star size={11} fill="currentColor" />
-                    <span className="text-xs font-mono font-bold">{(agent.rating || 0).toFixed(1)}</span>
+                    <span className="text-xs font-bold">{(agent.rating || 0).toFixed(1)}</span>
                   </div>
-                  <div className="text-[9px] text-[var(--color-text-dim)] font-mono">RATING</div>
+                  <div className="text-xs text-[var(--color-text-dim)] font-mono">RATING</div>
                 </div>
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-1 text-[var(--color-star-blue)] mb-0.5">
                     <Activity size={11} />
-                    <span className="text-xs font-mono font-bold">{((agent.calls || 0) / 1000).toFixed(1)}k</span>
+                    <span className="text-xs font-bold">{((agent.calls || 0) / 1000).toFixed(1)}k</span>
                   </div>
-                  <div className="text-[9px] text-[var(--color-text-dim)] font-mono">CALLS</div>
+                  <div className="text-xs text-[var(--color-text-dim)] font-mono">CALLS</div>
                 </div>
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-1 text-[var(--color-success)] mb-0.5">
                     <TrendingUp size={11} />
-                    <span className="text-xs font-mono font-bold">{(agent.successRate || 0).toFixed(1)}%</span>
+                    <span className="text-xs font-bold">{(agent.successRate || 0).toFixed(1)}%</span>
                   </div>
-                  <div className="text-[9px] text-[var(--color-text-dim)] font-mono">SUCCESS</div>
+                  <div className="text-xs text-[var(--color-text-dim)] font-mono">SUCCESS</div>
                 </div>
               </div>
 
@@ -165,12 +165,12 @@ export default function AgentCard({ agent, index = 0 }) {
                 transition-all duration-300
               ">
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-[var(--color-purple-bright)] font-mono font-bold text-sm drop-shadow-[0_0_8px_rgba(168,85,247,0.4)]">
+                  <span className="text-[var(--color-primary)] font-bold text-sm drop-shadow-[0_0_8px_rgba(168,85,247,0.4)]">
                     {formatPricing(agent.pricing)} AGT
                   </span>
-                  <span className="text-[var(--color-text-dim)] text-[10px] font-mono">/mo</span>
+                  <span className="text-[var(--color-text-dim)] text-sm font-mono">/mo</span>
                 </div>
-                <span className="px-2.5 py-1 rounded bg-[var(--color-nebula)] border border-[var(--color-border-bright)] text-[var(--color-purple-bright)] text-[10px] font-mono tracking-widest group-hover:bg-[var(--color-purple-core)] group-hover:text-white group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)] transition-all duration-300">
+                <span className="px-2.5 py-1 rounded bg-[var(--color-accent-pink)] border border-[var(--color-border)] text-[var(--color-primary)] text-sm font-mono  group-hover:bg-[var(--color-primary-dark)] group-hover:text-white group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)] transition-all duration-300">
                   VIEW →
                 </span>
               </div>
@@ -181,3 +181,5 @@ export default function AgentCard({ agent, index = 0 }) {
     </motion.div>
   )
 }
+
+

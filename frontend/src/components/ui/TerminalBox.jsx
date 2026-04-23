@@ -13,14 +13,14 @@ export default function TerminalBox({ logs = [], title = 'SYSTEM LOG', className
     success: 'text-[var(--color-success)]',
     error: 'text-[var(--color-danger)]',
     warn: 'text-[var(--color-warning)]',
-    system: 'text-[var(--color-purple-bright)]',
+    system: 'text-[var(--color-primary)]',
   }
 
   return (
     <div className={`glass-panel rounded-xl overflow-hidden ${className}`}>
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-[var(--color-border)] bg-[var(--color-panel-light)]">
-        <Terminal size={13} className="text-[var(--color-purple-bright)]" />
-        <span className="font-mono text-[10px] text-[var(--color-text-muted)] tracking-[0.2em] uppercase">{title}</span>
+        <Terminal size={13} className="text-[var(--color-primary)]" />
+        <span className="font-semibold text-sm text-[var(--color-text-muted)]  uppercase">{title}</span>
         <div className="ml-auto flex gap-1.5">
           <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-danger)] opacity-50" />
           <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-warning)] opacity-50" />
@@ -36,7 +36,7 @@ export default function TerminalBox({ logs = [], title = 'SYSTEM LOG', className
               <span className="text-[var(--color-text-dim)] shrink-0">
                 {new Date(log.timestamp).toLocaleTimeString('en', { hour12: false })}
               </span>
-              <span className={`${levelColor[log.level] || 'text-[var(--color-text-secondary)]'} shrink-0 uppercase text-[10px] font-bold pt-0.5`}>
+              <span className={`${levelColor[log.level] || 'text-[var(--color-text-secondary)]'} shrink-0 uppercase text-sm font-bold pt-0.5`}>
                 [{log.level || 'INFO'}]
               </span>
               <span className="text-[var(--color-text-secondary)] break-all">{log.message}</span>
@@ -48,3 +48,5 @@ export default function TerminalBox({ logs = [], title = 'SYSTEM LOG', className
     </div>
   )
 }
+
+

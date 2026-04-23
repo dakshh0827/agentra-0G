@@ -98,11 +98,11 @@ function CodeBlock({ code, lang }) {
           </div>
           <div className="flex items-center gap-1.5 ml-1">
             <div className="w-2 h-2 rounded-full" style={{ background: langColors[detectedLang] || '#9e9e9e' }} />
-            <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: '#858585' }}>{detectedLang}</span>
+            <span className="text-sm font-mono uppercase " style={{ color: '#858585' }}>{detectedLang}</span>
           </div>
         </div>
         <button onClick={() => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-mono transition-all cursor-pointer"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-mono transition-all cursor-pointer"
           style={{ color: copied ? '#4ec9b0' : '#858585' }}>
           {copied ? <><CheckCircle size={12} /> COPIED</> : <><Copy size={12} /> COPY CODE</>}
         </button>
@@ -138,10 +138,10 @@ function TableBlock({ rows, isMarkdown }) {
       <div className="flex items-center justify-between px-4 py-2.5" style={{ background: '#1e1e1e', borderBottom: '1px solid #2d2d2d' }}>
         <div className="flex items-center gap-2">
           <Table size={13} style={{ color: '#4ec9b0' }} />
-          <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: '#858585' }}>DATA TABLE — {dataRows.length} rows</span>
+          <span className="text-sm font-mono uppercase " style={{ color: '#858585' }}>DATA TABLE — {dataRows.length} rows</span>
         </div>
         <button onClick={() => { navigator.clipboard.writeText([rows[0], ...dataRows].join('\n')); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-mono transition-all cursor-pointer"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-mono transition-all cursor-pointer"
           style={{ color: copied ? '#4ec9b0' : '#858585' }}>
           {copied ? <><CheckCircle size={12} /> COPIED</> : <><Copy size={12} /> COPY CSV</>}
         </button>
@@ -183,7 +183,7 @@ function inlineFormat(text) {
     if (match.index > last) parts.push(text.slice(last, match.index))
     if (match[0].startsWith('**')) parts.push(<strong key={match.index} className="text-[var(--color-text-primary)] font-semibold">{match[2]}</strong>)
     else if (match[0].startsWith('*')) parts.push(<em key={match.index} className="italic text-[var(--color-text-muted)]">{match[3]}</em>)
-    else parts.push(<code key={match.index} className="px-1.5 py-0.5 rounded font-mono text-[11px]" style={{ background: 'rgba(124,58,237,0.15)', color: '#c084fc' }}>{match[4]}</code>)
+    else parts.push(<code key={match.index} className="px-1.5 py-0.5 rounded font-semibold text-base" style={{ background: 'rgba(124,58,237,0.15)', color: '#c084fc' }}>{match[4]}</code>)
     last = match.index + match[0].length
   }
   if (last < text.length) parts.push(text.slice(last))
@@ -277,9 +277,9 @@ function ReadableOutput({ response, success }) {
       className={`rounded-xl border overflow-hidden ${success !== false ? 'border-[rgba(147,197,253,0.2)] bg-[rgba(147,197,253,0.02)]' : 'border-[rgba(248,113,113,0.2)] bg-[rgba(248,113,113,0.02)]'}`}>
       <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border)] bg-[rgba(0,0,0,0.35)]">
         <FileText size={13} className="text-[var(--color-star-blue)]" />
-        <span className="text-[10px] font-mono font-bold text-[var(--color-star-blue)] tracking-widest">READABLE OUTPUT</span>
+        <span className="text-sm font-bold text-[var(--color-star-blue)] ">READABLE OUTPUT</span>
         <button onClick={() => { navigator.clipboard.writeText(plainText); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
-          className="ml-auto flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-mono text-[var(--color-text-dim)] hover:text-[var(--color-text-secondary)] hover:bg-[rgba(255,255,255,0.05)] transition-all cursor-pointer">
+          className="ml-auto flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-mono text-[var(--color-text-dim)] hover:text-[var(--color-text-secondary)] hover:bg-[rgba(255,255,255,0.05)] transition-all cursor-pointer">
           {copied ? <><CheckCircle size={12} className="text-[var(--color-success)]" /> COPIED</> : <><Copy size={12} /> COPY ALL</>}
         </button>
       </div>
@@ -290,13 +290,13 @@ function ReadableOutput({ response, success }) {
             case 'hr': return <div key={i} className="my-4 h-px" style={{ background: 'rgba(124,58,237,0.2)' }} />
             case 'heading': {
               const sizes = { 1: 'text-xl font-extrabold mt-6 mb-3', 2: 'text-lg font-bold mt-5 mb-2', 3: 'text-base font-bold mt-4 mb-1.5', 4: 'text-[13px] font-bold mt-3 mb-1' }
-              const colors = { 1: 'text-[var(--color-text-primary)]', 2: 'text-[var(--color-text-primary)]', 3: 'text-[var(--color-purple-bright)]', 4: 'text-[var(--color-purple-pale)]' }
+              const colors = { 1: 'text-[var(--color-text-primary)]', 2: 'text-[var(--color-text-primary)]', 3: 'text-[var(--color-primary)]', 4: 'text-[var(--color-purple-pale)]' }
               return <div key={i} className={`font-display ${sizes[block.level] || sizes[3]} ${colors[block.level] || colors[3]}`}>{inlineFormat(block.text)}</div>
             }
             case 'paragraph': return <p key={i} className="text-sm leading-relaxed text-[var(--color-text-secondary)]">{inlineFormat(block.text)}</p>
             case 'quote': return <blockquote key={i} className="border-l-2 pl-4 my-3 text-sm italic text-[var(--color-text-muted)]" style={{ borderColor: 'rgba(124,58,237,0.5)' }}>{inlineFormat(block.text)}</blockquote>
-            case 'ul': return <ul key={i} className="my-2 space-y-1.5 ml-1">{block.items.map((item, j) => <li key={j} className="flex items-start gap-2 text-sm text-[var(--color-text-secondary)] leading-relaxed"><span className="text-[var(--color-purple-bright)] mt-0.5 shrink-0 text-xs">❖</span><span>{inlineFormat(item)}</span></li>)}</ul>
-            case 'ol': return <ol key={i} className="my-2 space-y-1.5 ml-1 list-none">{block.items.map((item, j) => <li key={j} className="flex items-start gap-2.5 text-sm text-[var(--color-text-secondary)] leading-relaxed"><span className="font-mono text-[11px] text-[var(--color-purple-bright)] mt-0.5 shrink-0 min-w-[1.2rem]">{j + 1}.</span><span>{inlineFormat(item)}</span></li>)}</ol>
+            case 'ul': return <ul key={i} className="my-2 space-y-1.5 ml-1">{block.items.map((item, j) => <li key={j} className="flex items-start gap-2 text-sm text-[var(--color-text-secondary)] leading-relaxed"><span className="text-[var(--color-primary)] mt-0.5 shrink-0 text-xs">❖</span><span>{inlineFormat(item)}</span></li>)}</ul>
+            case 'ol': return <ol key={i} className="my-2 space-y-1.5 ml-1 list-none">{block.items.map((item, j) => <li key={j} className="flex items-start gap-2.5 text-sm text-[var(--color-text-secondary)] leading-relaxed"><span className="font-semibold text-base text-[var(--color-primary)] mt-0.5 shrink-0 min-w-[1.2rem]">{j + 1}.</span><span>{inlineFormat(item)}</span></li>)}</ol>
             case 'code': return <CodeBlock key={i} code={block.content} lang={block.lang} />
             case 'table': return <TableBlock key={i} rows={block.rows} isMarkdown={block.isMarkdown} />
             default: return null
@@ -424,7 +424,7 @@ function PurchasePanelUI({ purchaseType, setPurchaseType, monthlyEth, lifetimeEt
   return (
     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center text-center py-6">
       <div className="w-16 h-16 rounded-2xl bg-[rgba(124,58,237,0.1)] border border-[rgba(124,58,237,0.25)] flex items-center justify-center mb-6">
-        <Lock size={32} className="text-[var(--color-purple-bright)]" />
+        <Lock size={32} className="text-[var(--color-primary)]" />
       </div>
       <h2 className="font-display font-bold text-2xl text-[var(--color-text-primary)] mb-2">ACCESS REQUIRED</h2>
       <p className="text-[var(--color-text-muted)] text-sm max-w-sm mb-4">
@@ -433,9 +433,9 @@ function PurchasePanelUI({ purchaseType, setPurchaseType, monthlyEth, lifetimeEt
       <div className="grid grid-cols-2 gap-4 w-full mb-6">
         {[{ id: 'monthly', label: '30 DAYS', price: monthlyEth, color: 'purple' }, { id: 'lifetime', label: `LIFETIME ×${multiplier}`, price: lifetimeEth, color: 'success' }].map(opt => (
           <motion.button key={opt.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setPurchaseType(opt.id)}
-            className={`p-4 rounded-xl border text-center transition-all cursor-pointer ${purchaseType === opt.id ? opt.color === 'purple' ? 'bg-[rgba(124,58,237,0.15)] border-[var(--color-purple-bright)]' : 'bg-[rgba(52,211,153,0.15)] border-[var(--color-success)]' : 'border-[var(--color-border)] bg-black/20'}`}>
-            <div className="text-[10px] font-mono tracking-widest text-[var(--color-text-dim)] mb-2">{opt.label}</div>
-            <div className={`text-xl font-bold font-display ${opt.color === 'purple' ? 'text-[var(--color-purple-bright)]' : 'text-[var(--color-success)]'}`}>{opt.price} <span className="text-xs">AGT</span></div>
+            className={`p-4 rounded-xl border text-center transition-all cursor-pointer ${purchaseType === opt.id ? opt.color === 'purple' ? 'bg-[rgba(124,58,237,0.15)] border-[var(--color-primary)]' : 'bg-[rgba(52,211,153,0.15)] border-[var(--color-success)]' : 'border-[var(--color-border)] bg-black/20'}`}>
+            <div className="text-sm font-mono  text-[var(--color-text-dim)] mb-2">{opt.label}</div>
+            <div className={`text-xl font-bold font-display ${opt.color === 'purple' ? 'text-[var(--color-primary)]' : 'text-[var(--color-success)]'}`}>{opt.price} <span className="text-xs">AGT</span></div>
           </motion.button>
         ))}
       </div>
@@ -519,8 +519,8 @@ function UpvoteButton({ agentId, contractAgentId, ownerWallet, initialUpvotes, w
 
   return (
     <div className="glass-card-landing rounded-xl p-5 sm:p-6">
-      <h3 className="font-mono text-[10px] tracking-[0.2em] text-[var(--color-text-dim)] uppercase mb-3">UPVOTE AGENT</h3>
-      <p className="text-[9px] font-mono text-[var(--color-text-dim)] mb-3 leading-relaxed">
+      <h3 className="font-semibold text-sm  text-[var(--color-text-dim)] uppercase mb-3">UPVOTE AGENT</h3>
+      <p className="text-xs font-mono text-[var(--color-text-dim)] mb-3 leading-relaxed">
         * Upvoting transfers 1 AGT from your wallet.
       </p>
       {error && (
@@ -551,8 +551,8 @@ function UpvoteButton({ agentId, contractAgentId, ownerWallet, initialUpvotes, w
           : <><ThumbsUp size={15} /> UPVOTE ({upvoteCount})</>
         }
       </motion.button>
-      {isOwner && <p className="text-[9px] font-mono text-[var(--color-text-dim)] text-center mt-2">You own this agent — cannot upvote</p>}
-      {!isConnected && !isOwner && <p className="text-[9px] font-mono text-[var(--color-text-dim)] text-center mt-2">Connect wallet to upvote</p>}
+      {isOwner && <p className="text-xs font-mono text-[var(--color-text-dim)] text-center mt-2">You own this agent — cannot upvote</p>}
+      {!isConnected && !isOwner && <p className="text-xs font-mono text-[var(--color-text-dim)] text-center mt-2">Connect wallet to upvote</p>}
     </div>
   )
 }
@@ -688,15 +688,15 @@ export default function AgentDetail() {
   if (!agent) return (
     <div className="relative min-h-[60vh] flex items-center justify-center p-6">
       <div className="glass-card-landing rounded-2xl p-10 text-center">
-        <Zap size={40} className="mx-auto mb-4 text-[var(--color-purple-bright)] opacity-40" />
+        <Zap size={40} className="mx-auto mb-4 text-[var(--color-primary)] opacity-40" />
         <div className="text-[var(--color-text-muted)] text-lg font-display font-bold mb-2">AGENT NOT FOUND</div>
-        <Link to="/marketplace" className="text-[var(--color-purple-bright)] text-xs font-mono hover:underline">← BACK TO MARKETPLACE</Link>
+        <Link to="/marketplace" className="text-[var(--color-primary)] text-xs font-mono hover:underline">← BACK TO MARKETPLACE</Link>
       </div>
     </div>
   )
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen bg-[var(--color-bg)]">
       {toastMessage && (
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
           className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 rounded-lg text-sm shadow-lg backdrop-blur-md ${toastMessage.type === 'success' ? 'bg-[rgba(52,211,153,0.15)] border border-[var(--color-success)] text-[var(--color-success)]' : 'bg-[rgba(248,113,113,0.15)] border border-[var(--color-danger)] text-[var(--color-danger)]'}`}>
@@ -710,7 +710,7 @@ export default function AgentDetail() {
 
       <div className="relative z-10 p-5 lg:p-8 max-w-7xl mx-auto">
         <Link to="/marketplace">
-          <motion.div whileHover={{ x: -4 }} className="inline-flex items-center gap-2 text-[var(--color-text-dim)] hover:text-[var(--color-purple-bright)] text-[11px] font-mono tracking-widest mb-6 transition-colors cursor-pointer group">
+          <motion.div whileHover={{ x: -4 }} className="inline-flex items-center gap-2 text-[var(--color-text-dim)] hover:text-[var(--color-primary)] text-[11px] font-mono  mb-6 transition-colors cursor-pointer group">
             <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
             BACK TO MARKETPLACE
           </motion.div>
@@ -722,35 +722,35 @@ export default function AgentDetail() {
             <div className="absolute top-0 right-0 w-[300px] h-[200px] rounded-full pointer-events-none" />
             <div className="relative z-10 flex flex-col lg:flex-row items-start gap-6">
               <motion.div whileHover={{ scale: 1.05 }} className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-[rgba(124,58,237,0.2)] to-[rgba(124,58,237,0.05)] border border-[rgba(124,58,237,0.3)] flex items-center justify-center shrink-0">
-                <Cpu size={32} className="text-[var(--color-purple-bright)]" />
+                <Cpu size={32} className="text-[var(--color-primary)]" />
               </motion.div>
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-3 mb-3">
                   <h1 className="font-display font-extrabold text-2xl sm:text-3xl lg:text-4xl text-[var(--color-text-primary)] tracking-tight">{agent.name}</h1>
                   <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[rgba(52,211,153,0.1)] border border-[rgba(52,211,153,0.25)]">
                     <span className="w-2 h-2 rounded-full bg-[var(--color-success)] pulse-dot" />
-                    <span className="text-[10px] font-mono text-[var(--color-success)] tracking-widest font-bold">{(agent.status || 'ACTIVE').toUpperCase()}</span>
+                    <span className="text-sm font-mono text-[var(--color-success)]  font-bold">{(agent.status || 'ACTIVE').toUpperCase()}</span>
                   </div>
-                  {isBlockchainAgent && <span className="px-2 py-1 rounded text-[9px] font-mono bg-[rgba(124,58,237,0.1)] border border-[rgba(124,58,237,0.3)] text-[var(--color-purple-bright)]">ON-CHAIN</span>}
+                  {isBlockchainAgent && <span className="px-2 py-1 rounded text-xs font-mono bg-[rgba(124,58,237,0.1)] border border-[rgba(124,58,237,0.3)] text-[var(--color-primary)]">ON-CHAIN</span>}
                 </div>
                 <p className="text-[var(--color-text-secondary)] text-sm sm:text-base mb-4 leading-relaxed max-w-2xl">{agent.description}</p>
                 <div className="flex flex-wrap gap-2 mb-5">
-                  {(agent.tags || []).map(tag => <span key={tag} className="px-3 py-1 rounded-lg text-[10px] font-mono bg-[rgba(124,58,237,0.06)] border border-[rgba(124,58,237,0.15)] text-[var(--color-purple-pale)]">#{tag}</span>)}
+                  {(agent.tags || []).map(tag => <span key={tag} className="px-3 py-1 rounded-lg text-sm font-mono bg-[rgba(124,58,237,0.06)] border border-[rgba(124,58,237,0.15)] text-[var(--color-purple-pale)]">#{tag}</span>)}
                 </div>
-                <div className="flex flex-wrap items-center gap-4 text-[10px] font-mono text-[var(--color-text-dim)]">
-                  <span>OWNER: <span className="text-[var(--color-purple-bright)]">{agent.ownerWallet?.slice(0, 12) || '0xUNKNOWN'}...</span></span>
+                <div className="flex flex-wrap items-center gap-4 text-sm font-mono text-[var(--color-text-dim)]">
+                  <span>OWNER: <span className="text-[var(--color-primary)]">{agent.ownerWallet?.slice(0, 12) || '0xUNKNOWN'}...</span></span>
                   <span>CATEGORY: <span className="text-[var(--color-text-muted)]">{agent.category || 'N/A'}</span></span>
-                  <span>MONTHLY: <span className="text-[var(--color-purple-bright)]">{monthlyEth} AGT</span></span>
+                  <span>MONTHLY: <span className="text-[var(--color-primary)]">{monthlyEth} AGT</span></span>
                 </div>
               </div>
             </div>
-            <div className="relative z-10 mt-6 flex items-center gap-3 p-3 rounded-xl bg-black/30 border border-[var(--color-border)] font-mono text-[11px]">
+            <div className="relative z-10 mt-6 flex items-center gap-3 p-3 rounded-xl bg-black/30 border border-[var(--color-border)] font-semibold text-base">
               <ExternalLink size={13} className="text-[var(--color-text-dim)] shrink-0" />
               <span className="text-[var(--color-text-muted)] flex-1 truncate">
                 {userHasAccess ? agent.endpoint : '****** (LOCKED — purchase access to reveal) ******'}
               </span>
               {userHasAccess && (
-                <button onClick={copyEndpoint} className="text-[var(--color-text-dim)] hover:text-[var(--color-purple-bright)] transition-colors cursor-pointer p-1">
+                <button onClick={copyEndpoint} className="text-[var(--color-text-dim)] hover:text-[var(--color-primary)] transition-colors cursor-pointer p-1">
                   {copied ? <CheckCircle size={14} className="text-[var(--color-success)]" /> : <Copy size={14} />}
                 </button>
               )}
@@ -780,7 +780,7 @@ export default function AgentDetail() {
             const Icon = tab.icon
             return (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-2 py-3.5 font-mono text-[10px] tracking-widest border-b-2 transition-all cursor-pointer ${activeTab === tab.id ? 'border-[var(--color-purple-bright)] text-[var(--color-purple-bright)] bg-[rgba(124,58,237,0.08)]' : 'border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-secondary)] hover:bg-[rgba(255,255,255,0.02)]'}`}>
+                className={`flex-1 flex items-center justify-center gap-2 py-3.5 font-semibold text-sm  border-b-2 transition-all cursor-pointer ${activeTab === tab.id ? 'border-[var(--color-primary)] text-[var(--color-primary)] bg-[rgba(124,58,237,0.08)]' : 'border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-secondary)] hover:bg-[rgba(255,255,255,0.02)]'}`}>
                 <Icon size={13} />
                 <span className="hidden sm:inline">{tab.label}</span>
               </button>
@@ -804,24 +804,24 @@ export default function AgentDetail() {
                     <AnimatePresence mode="wait">
                       {accessLoading ? (
                         <motion.div key="loading" className="flex items-center justify-center py-12">
-                          <Loader2 size={24} className="animate-spin text-[var(--color-purple-bright)]" />
+                          <Loader2 size={24} className="animate-spin text-[var(--color-primary)]" />
                         </motion.div>
                       ) : userHasAccess ? (
                         <motion.div key="execute" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
                           <h2 className="font-display font-bold text-base sm:text-lg text-[var(--color-text-primary)] mb-5 flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-lg bg-[rgba(124,58,237,0.1)] border border-[rgba(124,58,237,0.2)] flex items-center justify-center">
-                              <Terminal size={16} className="text-[var(--color-purple-bright)]" />
+                              <Terminal size={16} className="text-[var(--color-primary)]" />
                             </div>
                             EXECUTION CONSOLE
                           </h2>
                           <div className="mb-5">
-                            <label className="text-[9px] font-mono text-[var(--color-text-dim)] tracking-[0.2em] uppercase block mb-2">TASK INPUT</label>
+                            <label className="text-xs font-mono text-[var(--color-text-dim)]  uppercase block mb-2">TASK INPUT</label>
                             <textarea value={task} onChange={e => setTask(e.target.value)} placeholder="Describe the task for this agent..." rows={4} className="input-field w-full px-4 py-3 rounded-xl text-sm resize-none" />
                           </div>
                           <div className="flex items-center justify-between gap-4">
-                            <div className="text-[10px] font-mono text-[var(--color-text-dim)]">
+                            <div className="text-sm font-mono text-[var(--color-text-dim)]">
                               STATUS: <span className="text-[var(--color-success)] font-bold text-sm">UNLOCKED</span>
-                              {isOwner && <span className="ml-2 text-[var(--color-purple-bright)]">(OWNER)</span>}
+                              {isOwner && <span className="ml-2 text-[var(--color-primary)]">(OWNER)</span>}
                             </div>
                             <NeonButton icon={Send} onClick={handleExecute} loading={isExecuting} disabled={!isConnected || !task.trim()}>
                               {isConnected ? 'EXECUTE' : 'CONNECT WALLET'}
@@ -852,13 +852,13 @@ export default function AgentDetail() {
 
                 <FadeInSection delay={0.1}>
                   <div className="glass-card-landing rounded-xl p-5 sm:p-6">
-                    <h3 className="font-mono text-[10px] tracking-[0.2em] text-[var(--color-text-dim)] uppercase mb-4 flex items-center gap-2">
-                      <Sparkles size={12} className="text-[var(--color-purple-bright)]" /> CAPABILITIES
+                    <h3 className="font-semibold text-sm  text-[var(--color-text-dim)] uppercase mb-4 flex items-center gap-2">
+                      <Sparkles size={12} className="text-[var(--color-primary)]" /> CAPABILITIES
                     </h3>
                     <div className="space-y-2.5">
                       {['Natural Language Processing', 'Real-time Analysis', 'Multi-format Input', 'Streaming Output', 'Context Window 128K', 'Agent Composition'].map((cap, i) => (
                         <motion.div key={cap} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.05 }} className="flex items-center gap-2.5 text-xs text-[var(--color-text-muted)]">
-                          <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-purple-bright)] shrink-0" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)] shrink-0" />
                           {cap}
                         </motion.div>
                       ))}
@@ -879,7 +879,7 @@ export default function AgentDetail() {
 
                 <FadeInSection delay={0.2}>
                   <div className="glass-card-landing rounded-xl p-5 sm:p-6">
-                    <h3 className="font-mono text-[10px] tracking-[0.2em] text-[var(--color-text-dim)] uppercase mb-5 flex items-center gap-2">
+                    <h3 className="font-semibold text-sm  text-[var(--color-text-dim)] uppercase mb-5 flex items-center gap-2">
                       <Gauge size={12} className="text-[var(--color-star-blue)]" /> PERFORMANCE
                     </h3>
                     <div className="space-y-4">
@@ -889,7 +889,7 @@ export default function AgentDetail() {
                         { label: 'Success Rate', value: `${agent.successRate || 0}%`, bar: agent.successRate || 0, color: 'from-purple-500 to-purple-400' },
                       ].map((stat, i) => (
                         <div key={stat.label}>
-                          <div className="flex justify-between text-[10px] font-mono mb-1.5">
+                          <div className="flex justify-between text-sm font-mono mb-1.5">
                             <span className="text-[var(--color-text-dim)]">{stat.label}</span>
                             <span className="text-[var(--color-text-muted)] font-bold">{stat.value}</span>
                           </div>
@@ -957,3 +957,6 @@ export default function AgentDetail() {
     </div>
   )
 }
+
+
+
