@@ -208,11 +208,14 @@ export default function DeployStudio() {
 
       // Step 3: Deploy agent on-chain (monthly price goes into contract for access checks)
       const monthlyPriceWei = parseUnits(form.monthlyPrice || '0', 18)
+      const commsPricePerCallWei = form.commsEnabled
+        ? parseUnits(form.commsPricePerCall || '0', 18)
+        : 0n
       const deployTx = await writeContractAsync({
         address: Agentra.address,
         abi: Agentra.abi,
         functionName: 'deployAgent',
-        args: [form.tierIndex, monthlyPriceWei, metadataURI],
+        args: [form.tierIndex, monthlyPriceWei, metadataURI, !!form.commsEnabled, commsPricePerCallWei],
       })
       const receipt = await publicClient.waitForTransactionReceipt({ hash: deployTx })
 
