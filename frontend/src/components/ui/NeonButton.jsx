@@ -17,15 +17,15 @@ export default function NeonButton({
   const variants = {
     primary: 'btn-primary',
     ghost: 'btn-ghost',
-    danger: 'bg-transparent border border-[var(--color-danger)] text-[var(--color-danger)] font-semibold text-sm hover:bg-[var(--color-danger)] hover:text-white transition-all duration-200',
-    success: 'bg-transparent border border-[var(--color-success)] text-[var(--color-success)] font-semibold text-sm hover:bg-[var(--color-success)] hover:text-white transition-all duration-200',
+    danger: 'bg-transparent border border-[rgba(248,113,113,0.3)] text-[#F87171] font-semibold hover:bg-[rgba(248,113,113,0.1)] hover:border-[rgba(248,113,113,0.5)] transition-all duration-200',
+    success: 'bg-transparent border border-[rgba(52,211,153,0.3)] text-[#34D399] font-semibold hover:bg-[rgba(52,211,153,0.1)] hover:border-[rgba(52,211,153,0.5)] transition-all duration-200',
     solid: 'btn-primary',
   }
 
   const sizes = {
-    sm: 'px-3 py-2 text-sm',
-    md: 'px-5 py-2.5 text-base',
-    lg: 'px-8 py-3.5 text-base',
+    sm: 'px-3 py-1.5 text-xs',
+    md: 'px-5 py-2.5 text-sm',
+    lg: 'px-7 py-3 text-sm',
   }
 
   return (
@@ -36,7 +36,7 @@ export default function NeonButton({
       onClick={onClick}
       disabled={disabled || loading}
       className={clsx(
-        'inline-flex items-center gap-2 rounded-lg font-semibold',
+        'inline-flex items-center gap-2 rounded-xl font-semibold tracking-tight',
         'transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed',
         variants[variant] || variants.primary,
         sizes[size],
@@ -45,13 +45,11 @@ export default function NeonButton({
       {...props}
     >
       {loading ? (
-        <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
       ) : Icon ? (
-        <Icon size={size === 'sm' ? 16 : 18} />
+        <Icon size={size === 'sm' ? 13 : 15} />
       ) : null}
       {children}
     </motion.button>
   )
 }
-
-

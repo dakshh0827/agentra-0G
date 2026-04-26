@@ -5,6 +5,7 @@ import LoadingPulse from '../components/ui/LoadingPulse'
 import { analyticsAPI } from '../api/analytics'
 import { Link } from 'react-router-dom'
 import { formatUnits } from 'viem'
+import { getAgentExternalId } from '../utils/helpers'
 
 /* ── FadeInSection ── */
 function FadeInSection({ children, className = '', delay = 0 }) {
@@ -100,7 +101,7 @@ export default function Leaderboard() {
             <div className="grid grid-cols-3 gap-3 sm:gap-5 items-end">
               {/* 2nd Place */}
               <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.5 }} whileHover={{ y: -4 }}>
-                <Link to={`/agent/${ranked[1].agentId || ranked[1].id}`}>
+                <Link to={`/agent/${getAgentExternalId(ranked[1])}`}>
                   <div className={`glass-card-landing rounded-xl p-4 sm:p-5 text-center ${podiumStyles(1).border} ${podiumStyles(1).bg} ${podiumStyles(1).glow} relative overflow-hidden group`}>
                     <div className="absolute inset-0 bg-gradient-to-t from-gray-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="relative z-10">
@@ -118,7 +119,7 @@ export default function Leaderboard() {
 
               {/* 1st Place */}
               <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.5 }} whileHover={{ y: -6 }} className="-mt-4">
-                <Link to={`/agent/${ranked[0].agentId || ranked[0].id}`}>
+                <Link to={`/agent/${getAgentExternalId(ranked[0])}`}>
                   <div className={`glass-card-landing rounded-xl p-5 sm:p-6 text-center ${podiumStyles(0).border} ${podiumStyles(0).bg} ${podiumStyles(0).glow} relative overflow-hidden group`}>
                     <div className="absolute inset-0 bg-gradient-to-t from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="relative z-10">
@@ -140,7 +141,7 @@ export default function Leaderboard() {
 
               {/* 3rd Place */}
               <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.5 }} whileHover={{ y: -4 }}>
-                <Link to={`/agent/${ranked[2].agentId || ranked[2].id}`}>
+                <Link to={`/agent/${getAgentExternalId(ranked[2])}`}>
                   <div className={`glass-card-landing rounded-xl p-4 sm:p-5 text-center ${podiumStyles(2).border} ${podiumStyles(2).bg} ${podiumStyles(2).glow} relative overflow-hidden group`}>
                     <div className="absolute inset-0 bg-gradient-to-t from-orange-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="relative z-10">
@@ -194,7 +195,7 @@ export default function Leaderboard() {
 
             <AnimatePresence>
               {ranked.map((agent, i) => {
-                const linkId = agent.agentId || agent.id
+                const linkId = getAgentExternalId(agent)
                 return (
                   <motion.div
                     key={linkId || i}

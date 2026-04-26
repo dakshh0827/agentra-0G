@@ -215,7 +215,7 @@ function MessageHistory({ agentId }) {
 
 // ── Main AgentCommsPanel ──────────────────────────────────────
 export default function AgentCommsPanel({ agentId, agentName, isOwner = false, commsEnabled = false, commsPricePerCall = '0', onCommsConfigSaved }) {
-  const { isConnected, chain, address } = useAccount()
+  const { isConnected, chain } = useAccount()
   const publicClient = usePublicClient()
   const { writeContractAsync } = useWriteContract()
   const [tab, setTab] = useState('call') // 'call' | 'history'
@@ -310,10 +310,8 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
         throw new Error('Target agent is not active')
       }
 
-      const targetOwner = (target.ownerWallet || '').toLowerCase()
-      const caller = (address || '').toLowerCase()
       const rawPrice = BigInt(target.commsPricePerCall || '0')
-      const shouldCharge = rawPrice > 0n && targetOwner !== caller
+      const shouldCharge = rawPrice > 0n
 
       let txHash = undefined
       if (shouldCharge) {

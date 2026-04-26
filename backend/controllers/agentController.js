@@ -4,7 +4,24 @@ import contractManager from '../lib/contractManager.js'
 import config from '../config/config.js'
 import { uploadAgentMetadata } from '../services/storageService.js'
 import { asyncHandler } from '../middlewares/errorHandler.js'
+import { ethers } from 'ethers'
 import { z } from 'zod'
+
+const AGENTRA_CONFIRM_EVENT_ABI = [
+  'event AgentDeployed(uint256 indexed agentId, address indexed creator, uint8 tier)',
+]
+
+const agentraEventInterface = new ethers.Interface(AGENTRA_CONFIRM_EVENT_ABI)
+
+function buildAgentLookup(id) {
+  const value = String(id || '').trim()
+  const isObjectId = /^[a-f\d]{24}$/i.test(value)
+  const isContractAgentId = /^\d+$/.test(value)
+
+  if (isObjectId) return { id: value }
+  if (isContractAgentId) return { OR: [{ agentId: value }, { contractAgentId: Number(value) }] }
+  return { agentId: value }
+}
 
 // ── Validation schemas ────────────────────────────────────────
 
@@ -174,6 +191,54 @@ const confirmDeploy = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'txHash is required to confirm a blockchain deploy' })
   }
 
+  const parsedContractAgentId = Number.parseInt(contractAgentId, 10)
+  if (!Number.isInteger(parsedContractAgentId) || parsedContractAgentId < 0) {
+    return res.status(400).json({ error: 'contractAgentId is required and must be a valid non-negative integer' })
+  }
+
+  const confirmed = await contractManager.isTransactionConfirmed(txHash)
+  if (!confirmed) {
+    return res.status(400).json({ error: 'Provided txHash is not confirmed on-chain' })
+  }
+
+  if (!config.blockchain.rpcUrl) {
+    return res.status(500).json({ error: 'Blockchain RPC URL is not configured' })
+  }
+
+  const provider = new ethers.JsonRpcProvider(config.blockchain.rpcUrl)
+  const receipt = await provider.getTransactionReceipt(txHash)
+  if (!receipt || receipt.status !== 1) {
+    return res.status(400).json({ error: 'Provided txHash did not produce a successful on-chain receipt' })
+  }
+
+  let deployedEvent = null
+  for (const log of receipt.logs) {
+    try {
+      const parsed = agentraEventInterface.parseLog({ topics: log.topics, data: log.data })
+      if (parsed?.name === 'AgentDeployed') {
+        deployedEvent = parsed
+        break
+      }
+    } catch {
+      // Ignore unrelated logs
+    }
+  }
+
+  if (!deployedEvent) {
+    return res.status(400).json({ error: 'No AgentDeployed event found in the confirmed transaction' })
+  }
+
+  const emittedAgentId = Number(deployedEvent.args.agentId)
+  const emittedCreator = String(deployedEvent.args.creator || '').toLowerCase()
+
+  if (emittedAgentId !== parsedContractAgentId) {
+    return res.status(400).json({ error: 'contractAgentId does not match the on-chain deployed agent' })
+  }
+
+  if (emittedCreator !== (req.walletAddress || '').toLowerCase()) {
+    return res.status(400).json({ error: 'On-chain agent creator does not match connected wallet' })
+  }
+
   const existingAgent = await prisma.agent.findFirst({
     where: { id, ownerWallet: req.walletAddress },
   })
@@ -186,7 +251,7 @@ const confirmDeploy = asyncHandler(async (req, res) => {
     where: { id: existingAgent.id },
     data: {
       status: 'active',
-      contractAgentId: contractAgentId ? parseInt(contractAgentId) : undefined,
+      contractAgentId: parsedContractAgentId,
       txHash,
       isVerified: true,
     },
@@ -251,7 +316,7 @@ const purchaseAccess = asyncHandler(async (req, res) => {
   const { agentId } = req.params
   const { isLifetime, txHash } = req.body
 
-  const agent = await prisma.agent.findUnique({ where: { agentId } })
+  const agent = await prisma.agent.findFirst({ where: buildAgentLookup(agentId) })
   if (!agent) return res.status(404).json({ error: 'Agent not found' })
 
   // Owner always has access
@@ -330,7 +395,7 @@ const upvoteAgent = asyncHandler(async (req, res) => {
   const { txHash } = req.body
   const voterWallet = req.walletAddress
 
-  const agent = await prisma.agent.findUnique({ where: { agentId } })
+  const agent = await prisma.agent.findFirst({ where: buildAgentLookup(agentId) })
   if (!agent) return res.status(404).json({ error: 'Agent not found' })
 
   if (agent.ownerWallet === voterWallet) {
@@ -407,8 +472,11 @@ const checkUpvote = asyncHandler(async (req, res) => {
   const { agentId } = req.params
   const walletAddress = req.walletAddress
 
+  const agent = await prisma.agent.findFirst({ where: buildAgentLookup(agentId) })
+  if (!agent) return res.status(404).json({ error: 'Agent not found' })
+
   const existing = await prisma.agentUpvote.findUnique({
-    where: { agentId_voterWallet: { agentId, voterWallet: walletAddress } },
+    where: { agentId_voterWallet: { agentId: agent.agentId, voterWallet: walletAddress } },
   })
 
   res.json({ hasUpvoted: !!existing })
@@ -420,7 +488,7 @@ const checkAccess = asyncHandler(async (req, res) => {
   const { agentId } = req.params
   const walletAddress = req.walletAddress
 
-  const agent = await prisma.agent.findUnique({ where: { agentId } })
+  const agent = await prisma.agent.findFirst({ where: buildAgentLookup(agentId) })
   if (!agent) return res.status(404).json({ error: 'Agent not found' })
 
   // Owner always has access
@@ -455,7 +523,7 @@ const updateAgent = asyncHandler(async (req, res) => {
   if (data.name) {
     const existingAgent = await prisma.agent.findFirst({
       where: {
-        OR: [{ id: req.params.id }, { agentId: req.params.id }],
+        OR: [{ id: req.params.id }, { agentId: req.params.id }, ...( /^\d+$/.test(String(req.params.id || '').trim()) ? [{ contractAgentId: Number(req.params.id) }] : [])],
       },
     })
 

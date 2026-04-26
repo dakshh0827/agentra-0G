@@ -2,6 +2,15 @@ import prisma from '../lib/prisma.js'
 import { asyncHandler } from '../middlewares/errorHandler.js'
 import { z } from 'zod'
 
+function buildAgentLookup(id) {
+  const value = String(id || '').trim()
+  const isContractAgentId = /^\d+$/.test(value)
+  if (isContractAgentId) {
+    return { OR: [{ agentId: value }, { contractAgentId: Number(value) }] }
+  }
+  return { agentId: value }
+}
+
 const createSchema = z.object({
   content: z.string().min(1).max(5000),
   rating: z.number().int().min(0).max(5).optional().default(0),
@@ -15,7 +24,7 @@ const getReviews = asyncHandler(async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit) || 20, 100)
 
   const agent = await prisma.agent.findFirst({
-    where: { agentId },
+    where: buildAgentLookup(agentId),
     select: { agentId: true },
   })
   if (!agent) return res.status(404).json({ error: 'Agent not found' })
@@ -112,7 +121,7 @@ const createReview = asyncHandler(async (req, res) => {
 
   // Always look up by agentId (cuid)
   const agent = await prisma.agent.findFirst({
-    where: { agentId },
+    where: buildAgentLookup(agentId),
     select: { agentId: true, ownerWallet: true, id: true, rating: true, ratingCount: true },
   })
   if (!agent) return res.status(404).json({ error: 'Agent not found' })

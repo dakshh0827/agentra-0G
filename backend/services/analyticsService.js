@@ -139,8 +139,13 @@ class AnalyticsService {
   }
 
   async getAgentMetrics(agentId) {
+    const normalized = String(agentId || '').trim()
+    const isContractAgentId = /^\d+$/.test(normalized)
+
     const agent = await prisma.agent.findFirst({
-      where: { OR: [{ id: agentId }, { agentId }] },
+      where: isContractAgentId
+        ? { OR: [{ id: normalized }, { agentId: normalized }, { contractAgentId: Number(normalized) }] }
+        : { OR: [{ id: normalized }, { agentId: normalized }] },
       include: {
         metrics: true,
         _count: { select: { interactions: true } },

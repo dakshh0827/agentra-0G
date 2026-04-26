@@ -7,7 +7,7 @@ import { asyncHandler } from '../middlewares/errorHandler.js'
 const callAgentSchema = z.object({
   task: z.string().min(1).max(10000),
   targetAgentName: z.string().min(2).max(64).optional(),
-  targetAgentId: z.string().optional(),
+  targetAgentId: z.union([z.string(), z.number()]).transform((v) => String(v)).optional(),
   autoDiscover: z.boolean().optional().default(false),
   txHash: z.string().min(10).optional(),
 })
@@ -19,7 +19,7 @@ const discoverSchema = z.object({
 
 const commsTargetSchema = z.object({
   targetAgentName: z.string().min(2).max(64).optional(),
-  targetAgentId: z.string().optional(),
+  targetAgentId: z.union([z.string(), z.number()]).transform((v) => String(v)).optional(),
 })
 
 function _isObjectId(value) {
@@ -27,10 +27,19 @@ function _isObjectId(value) {
 }
 
 async function _resolveAgent(idOrAgentId) {
+  const normalized = String(idOrAgentId || '').trim()
+  const contractAgentId = /^\d+$/.test(normalized) ? Number(normalized) : null
+
   return prisma.agent.findFirst({
-    where: _isObjectId(idOrAgentId)
-      ? { OR: [{ id: idOrAgentId }, { agentId: idOrAgentId }] }
-      : { OR: [{ agentId: idOrAgentId }, { name: { equals: idOrAgentId, mode: 'insensitive' } }] },
+    where: _isObjectId(normalized)
+      ? { OR: [{ id: normalized }, { agentId: normalized }] }
+      : {
+          OR: [
+            { agentId: normalized },
+            ...(contractAgentId !== null ? [{ contractAgentId }] : []),
+            { name: { equals: normalized, mode: 'insensitive' } },
+          ],
+        },
   })
 }
 
@@ -216,8 +225,7 @@ const callAgent = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Target agent comms price is not configured' })
   }
 
-  const isTargetOwner = callerWallet === targetAgent.ownerWallet
-  const priceWei = isTargetOwner ? 0n : basePriceWei
+  const priceWei = basePriceWei
   const platformFeeWei = (priceWei * 20n) / 100n
   const creatorAmountWei = priceWei - platformFeeWei
 

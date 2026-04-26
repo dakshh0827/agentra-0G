@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Radio, Bell, ChevronDown } from 'lucide-react'
+import { Radio, Bell, ChevronDown, Cpu } from 'lucide-react'
 import { useWeb3Modal } from '@web3modal/wagmi/react'
 import { useAccount, useDisconnect, useReadContract } from 'wagmi'
 import { formatUnits } from 'viem'
@@ -9,25 +9,16 @@ import NeonButton from '../ui/NeonButton'
 import { analyticsAPI } from '../../api/analytics'
 import { CHAIN_CONFIG } from '../../config/chains.config'
 
-// ERC20 ABI (minimal)
 const ERC20_ABI = [
-  {
-    name: 'balanceOf',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'account', type: 'address' }],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
+  { name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] },
 ]
 
 export default function TopBar() {
   const { open } = useWeb3Modal()
   const { address, isConnected, chain } = useAccount()
   const { disconnect } = useDisconnect()
-
   const [stats, setStats] = useState(null)
 
-  // Sync connected wallet to localStorage so axios interceptor picks it up
   useEffect(() => {
     if (address) {
       localStorage.setItem('wallet-address', address.toLowerCase())
@@ -36,100 +27,82 @@ export default function TopBar() {
     }
   }, [address])
 
-  // Resolve AGT token address from current chain
   const currentNetwork = chain?.id ? CHAIN_CONFIG[chain.id] : null
   const tokenAddress = currentNetwork?.contracts?.AgentToken?.address
   const tokenAbi = currentNetwork?.contracts?.AgentToken?.abi || ERC20_ABI
 
-  // AGT token balance
   const { data: tokenBalance } = useReadContract({
     address: tokenAddress,
     abi: tokenAbi,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
-    query: {
-      enabled: !!address && !!tokenAddress,
-    },
+    query: { enabled: !!address && !!tokenAddress },
   })
 
   useEffect(() => {
-    analyticsAPI
-      .getGlobalStats()
-      .then(res => setStats(res.data))
-      .catch(console.error)
+    analyticsAPI.getGlobalStats().then(res => setStats(res.data)).catch(console.error)
   }, [])
 
   return (
-    <header className="h-13 glass-panel border-b border-[var(--color-border)] flex items-center justify-between px-4 sm:px-5 shrink-0 z-10">
+    <header
+      className="h-14 flex items-center justify-between px-4 sm:px-6 shrink-0 z-10 border-b border-[rgba(180,92,202,0.08)]"
+      style={{ background: 'rgba(10, 8, 18, 0.95)', backdropFilter: 'blur(20px)' }}
+    >
       {/* Left */}
       <div className="flex items-center gap-4">
-        <Link to="/" className="lg:hidden flex items-center gap-2 shrink-0">
-          <div className="w-7 h-7 rounded-md bg-[var(--color-accent-pink)] border border-[var(--color-border)] flex items-center justify-center">
-            <img src="/logo.png" className="w-7 h-7 object-contain" alt="Agentra" />
+        {/* Mobile logo */}
+        <Link to="/" className="lg:hidden flex items-center gap-2.5 shrink-0">
+          <div className="w-7 h-7 rounded-xl bg-[rgba(180,92,202,0.12)] border border-[rgba(180,92,202,0.25)] flex items-center justify-center">
+            <Cpu size={13} className="text-[#B45CCA]" />
           </div>
-          <span className="font-display font-bold text-xs text-[var(--color-text-primary)] ">
-            AGENTRA
-          </span>
+          <span className="font-display font-black text-xs text-[#F5F0FF] tracking-tight">AGENTRA</span>
         </Link>
 
-        {/* <div className="hidden sm:flex items-center gap-2 text-[var(--color-success)] text-sm font-mono ">
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] pulse-dot" />
-          NETWORK ONLINE
-        </div> */}
-
-        <div className="hidden md:flex items-center gap-1.5 text-[var(--color-text-dim)] text-sm font-mono  uppercase">
-          <Radio size={11} />
-          {isConnected && chain ? chain.name : 'DISCONNECTED'}
+        {/* Network status */}
+        <div className="hidden md:flex items-center gap-2 text-xs font-mono text-[#5A4E70] tracking-widest uppercase">
+          <Radio size={10} />
+          {isConnected && chain ? chain.name : 'Disconnected'}
         </div>
+
+        {/* Agents live pill */}
+        <motion.div
+          animate={{ opacity: [0.6, 1, 0.6] }}
+          transition={{ duration: 3, repeat: Infinity }}
+          className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full border border-[rgba(52,211,153,0.15)] bg-[rgba(52,211,153,0.05)] text-xs font-mono text-[#5A4E70] tracking-widest uppercase"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-[#34D399] pulse-dot" />
+          {stats?.activeAgents ?? 0} Online
+        </motion.div>
       </div>
 
       {/* Right */}
       <div className="flex items-center gap-3">
-        <motion.div
-          animate={{ opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 3, repeat: Infinity }}
-          className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--color-nebula-deep)] border border-[var(--color-border)] text-sm font-mono text-[var(--color-text-dim)]"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)] pulse-dot" />
-          AGENTS: {stats?.activeAgents ?? 0} ONLINE
-        </motion.div>
-
-        <Bell
-          size={16}
-          className="text-[var(--color-text-dim)] hover:text-[var(--color-text-secondary)] cursor-pointer transition-colors"
-        />
+        <button className="p-2 rounded-lg text-[#5A4E70] hover:text-[#8B7FA0] hover:bg-[rgba(180,92,202,0.06)] transition-colors">
+          <Bell size={15} />
+        </button>
 
         {isConnected ? (
-          <div className="flex items-center gap-2">
-            {/* Wallet */}
-            <button
-              onClick={() => disconnect()}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--color-accent-pink)] border border-[var(--color-border)] text-[var(--color-primary)] hover:border-[var(--color-primary-dark)] hover:shadow-[var(--shadow-glow-soft)] transition-all cursor-pointer"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)] pulse-dot" />
-
-              <span className="text-sm font-mono">
-                {`${address.slice(0, 6)}...${address.slice(-4)}`}
+          <button
+            onClick={() => disconnect()}
+            className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-[rgba(180,92,202,0.2)] bg-[rgba(180,92,202,0.06)] text-[#B45CCA] hover:border-[rgba(180,92,202,0.4)] hover:bg-[rgba(180,92,202,0.1)] transition-all cursor-pointer"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-[#34D399] pulse-dot" />
+            <span className="text-xs font-mono tracking-tight">
+              {`${address.slice(0, 6)}...${address.slice(-4)}`}
+            </span>
+            {tokenBalance !== undefined && (
+              <span className="hidden sm:inline text-xs font-mono text-[#5A4E70]">
+                {Number(formatUnits(tokenBalance, 18)).toFixed(2)} AGT
               </span>
-
-              {/* AGT Balance */}
-              {tokenBalance !== undefined && (
-                <span className="hidden sm:inline text-sm font-mono text-[var(--color-text-muted)]">
-                  {Number(formatUnits(tokenBalance, 18)).toFixed(2)} AGT
-                </span>
-              )}
-
-              <ChevronDown size={11} />
-            </button>
-          </div>
+            )}
+            <ChevronDown size={12} />
+          </button>
         ) : (
           <NeonButton size="sm" onClick={() => open()}>
-            CONNECT WALLET
+            Connect Wallet
           </NeonButton>
         )}
       </div>
     </header>
   )
 }
-
-

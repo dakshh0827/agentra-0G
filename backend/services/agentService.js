@@ -2,6 +2,16 @@ import prisma from '../lib/prisma.js'
 import { v4 as uuidv4 } from 'uuid'
 import axios from 'axios'
 
+function buildAgentLookup(id) {
+  const value = String(id || '').trim()
+  const isObjectId = /^[a-f\d]{24}$/i.test(value)
+  const isContractAgentId = /^\d+$/.test(value)
+
+  if (isObjectId) return { id: value }
+  if (isContractAgentId) return { contractAgentId: Number(value) }
+  return { agentId: value }
+}
+
 async function ensureUniqueAgentName(name, excludeAgentId = null) {
   const existing = await prisma.agent.findFirst({
     where: {
@@ -167,10 +177,8 @@ class AgentService {
   }
 
   async getById(id) {
-    const isObjectId = /^[a-f\d]{24}$/i.test(id)
-
     const agent = await prisma.agent.findFirst({
-      where: isObjectId ? { id } : { agentId: id },
+      where: buildAgentLookup(id),
       include: {
         metrics: true,
         _count: { select: { interactions: true } },
@@ -182,9 +190,8 @@ class AgentService {
   }
 
   async updateAgent(id, updates, wallet) {
-    const isObjectId = /^[a-f\d]{24}$/i.test(id)
     const agent = await prisma.agent.findFirst({
-      where: isObjectId ? { id } : { agentId: id },
+      where: buildAgentLookup(id),
     })
 
     if (!agent) throw Object.assign(new Error('Agent not found'), { status: 404 })
@@ -220,9 +227,8 @@ class AgentService {
   }
 
   async deactivateAgent(id, wallet) {
-    const isObjectId = /^[a-f\d]{24}$/i.test(id)
     const agent = await prisma.agent.findFirst({
-      where: isObjectId ? { id } : { agentId: id },
+      where: buildAgentLookup(id),
     })
 
     if (!agent) throw Object.assign(new Error('Agent not found'), { status: 404 })

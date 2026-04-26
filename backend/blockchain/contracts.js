@@ -9,7 +9,7 @@ const AGENTRA_ABI = [
   'function deployAgent(uint8 tier, uint256 monthlyPrice, string metadataURI, bool commsEnabled, uint256 commsPricePerCall)',
   'function purchaseAccess(uint256 agentId, bool isLifetime)',
   'function upvote(uint256 agentId)',
-  'function agents(uint256) view returns (uint256 id, address creator, uint8 tier, uint256 monthlyPrice, string metadataURI, uint256 upvotes)',
+  'function agents(uint256) view returns (uint256 id, address creator, uint8 tier, uint256 monthlyPrice, string metadataURI, uint256 upvotes, bool commsEnabled, uint256 commsPricePerCall)',
   'function hasAccess(uint256 agentId, address user) view returns (bool)',
 
   'event AgentDeployed(uint256 indexed agentId, address indexed creator, uint8 tier)',

@@ -135,6 +135,48 @@ export default function DeployStudio() {
   const platformMonthly = (monthlyNum * 0.2).toFixed(4)
   const creatorLifetime = (lifetimeNum * 0.8).toFixed(4)
 
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+  const normalizeTxHash = (txResult, label) => {
+    const hash = typeof txResult === 'string'
+      ? txResult
+      : txResult?.hash || txResult?.transactionHash
+
+    if (!/^0x[a-fA-F0-9]{64}$/.test(String(hash || ''))) {
+      throw new Error(`${label} transaction hash is missing or invalid.`)
+    }
+
+    return hash
+  }
+
+  const waitForReceiptWithRetry = async (hash, label, maxAttempts = 8) => {
+    let lastError = null
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await publicClient.waitForTransactionReceipt({
+          hash,
+          pollingInterval: 3000,
+          timeout: 180000,
+        })
+      } catch (error) {
+        lastError = error
+        const message = String(error?.shortMessage || error?.message || '').toLowerCase()
+        const isTransientReceiptDelay =
+          message.includes('receipt') &&
+          (message.includes('could not be found') || message.includes('not be processed on a block yet') || message.includes('not found') || message.includes('timed out'))
+
+        if (!isTransientReceiptDelay || attempt === maxAttempts) {
+          throw error
+        }
+
+        await sleep(Math.min(12000, 1500 * attempt))
+      }
+    }
+
+    throw lastError || new Error(`${label} receipt could not be found`)
+  }
+
   const handleDeploy = async () => {
     if (!isConnected) return
     setDeploying(true)
@@ -198,26 +240,32 @@ export default function DeployStudio() {
 
       // Step 2: Approve listing fee
       const listingFeeWei = parseUnits(selectedTier?.listingFee || '50', 18)
-      const approveTx = await writeContractAsync({
+      const approveTxResult = await writeContractAsync({
         address: AgentToken.address,
         abi: AgentToken.abi,
         functionName: 'approve',
         args: [Agentra.address, listingFeeWei],
       })
-      await publicClient.waitForTransactionReceipt({ hash: approveTx })
+      const approveTx = normalizeTxHash(approveTxResult, 'Approval')
+      await waitForReceiptWithRetry(approveTx, 'Approval')
 
       // Step 3: Deploy agent on-chain (monthly price goes into contract for access checks)
       const monthlyPriceWei = parseUnits(form.monthlyPrice || '0', 18)
       const commsPricePerCallWei = form.commsEnabled
         ? parseUnits(form.commsPricePerCall || '0', 18)
         : 0n
-      const deployTx = await writeContractAsync({
+      const deployTxResult = await writeContractAsync({
         address: Agentra.address,
         abi: Agentra.abi,
         functionName: 'deployAgent',
         args: [form.tierIndex, monthlyPriceWei, metadataURI, !!form.commsEnabled, commsPricePerCallWei],
       })
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: deployTx })
+      const deployTx = normalizeTxHash(deployTxResult, 'Deploy')
+      const receipt = await waitForReceiptWithRetry(deployTx, 'Deploy')
+
+      if (receipt.status !== 'success') {
+        throw new Error('On-chain deploy transaction reverted. Draft rollback initiated.')
+      }
 
       // Step 4: Parse AgentDeployed event
       let contractAgentId = null
@@ -231,6 +279,10 @@ export default function DeployStudio() {
         } catch { /* skip */ }
       }
 
+      if (!contractAgentId) {
+        throw new Error('On-chain deploy did not emit AgentDeployed event. Draft rollback initiated.')
+      }
+
       // Step 5: Confirm in backend
       await agentsAPI.confirmDeploy(draftId, receipt.transactionHash, contractAgentId)
       setDeployed(true)
@@ -240,7 +292,10 @@ export default function DeployStudio() {
       const msg = error.shortMessage || error.message || 'Unknown error'
       setDeployError(msg)
       if (draftId && isBlockchain) {
-        await agentsAPI.cancelDraft(draftId).catch(e => console.error('Rollback failed:', e))
+        const preserveDraft = /receipt.*could not be found|not be processed on a block yet|timed out|not found|missing or invalid parameters/i.test(String(msg))
+        if (!preserveDraft) {
+          await agentsAPI.cancelDraft(draftId).catch(e => console.error('Rollback failed:', e))
+        }
       }
     } finally {
       setDeploying(false)

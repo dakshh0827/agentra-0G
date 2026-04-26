@@ -1,7 +1,6 @@
 import axios from 'axios'
 import prisma from '../lib/prisma.js'
 import agentService from '../services/agentService.js'
-import contractManager from '../lib/contractManager.js'
 import config from '../config/config.js'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -47,6 +46,15 @@ class Orchestrator {
       )
     }
 
+    if (!agent.endpoint) {
+      chain.delete(agentId)
+      if (chain.size === 0) this.activeChains.delete(callChainId)
+      throw Object.assign(
+        new Error(`Agent "${agent.name}" has no endpoint configured`),
+        { status: 400 }
+      )
+    }
+
     const interactionId = uuidv4()
     const startTime = Date.now()
     let interactionRecord
@@ -74,6 +82,9 @@ class Orchestrator {
         callDepth,
         callChainId,
         interactionId: interactionRecord?.id,
+        callerWallet,
+        agentId: agent.agentId,
+        contractAgentId: agent.contractAgentId ?? null,
       })
 
       response = result.data
@@ -146,7 +157,12 @@ class Orchestrator {
   async _callAgentEndpoint(endpoint, task, meta = {}) {
     const timeout = config.platform.callTimeoutMs
 
-    const payload = {
+    const baseEndpoint = String(endpoint || '').trim().replace(/\/+$/, '')
+    if (!baseEndpoint) {
+      throw new Error('Agent endpoint is empty')
+    }
+
+    const basePayload = {
       task,
       meta: {
         platform: 'agentra',
@@ -155,26 +171,61 @@ class Orchestrator {
       },
     }
 
-    try {
-      return await axios.post(`${endpoint}/execute`, payload, {
-        timeout,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    } catch (err) {
-      if (err.response?.status === 404) {
-        return await axios.post(endpoint, payload, {
+    const compatibilityPayload = {
+      ...basePayload,
+      input: task,
+      prompt: task,
+      query: task,
+      message: task,
+    }
+
+    const attempts = [
+      { url: `${baseEndpoint}/execute`, payload: basePayload },
+      { url: baseEndpoint, payload: basePayload },
+      { url: `${baseEndpoint}/execute`, payload: compatibilityPayload },
+      { url: baseEndpoint, payload: compatibilityPayload },
+    ]
+
+    let lastError = null
+
+    for (const attempt of attempts) {
+      try {
+        return await axios.post(attempt.url, attempt.payload, {
           timeout,
           headers: { 'Content-Type': 'application/json' },
         })
+      } catch (err) {
+        lastError = err
       }
-      throw err
     }
+
+    if (!lastError) {
+      throw new Error('Agent endpoint call failed without an error response')
+    }
+
+    const status = lastError.response?.status
+    const responseMsg =
+      lastError.response?.data?.error ||
+      lastError.response?.data?.message ||
+      (typeof lastError.response?.data === 'string' ? lastError.response.data : '') ||
+      lastError.message
+
+    if (status) {
+      throw new Error(`Endpoint responded with status ${status}: ${responseMsg}`)
+    }
+
+    throw lastError
   }
 
   async getInteractionHistory(agentId, limit = 50) {
-    // Support both DB id and agentId string
+    // Support DB id, DB agentId string, and on-chain contractAgentId
+    const normalized = String(agentId || '').trim()
+    const isContractAgentId = /^\d+$/.test(normalized)
+
     const agent = await prisma.agent.findFirst({
-      where: { OR: [{ id: agentId }, { agentId }] },
+      where: isContractAgentId
+        ? { OR: [{ id: normalized }, { agentId: normalized }, { contractAgentId: Number(normalized) }] }
+        : { OR: [{ id: normalized }, { agentId: normalized }] },
     })
 
     if (!agent) return []

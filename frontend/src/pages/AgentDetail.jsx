@@ -20,6 +20,7 @@ import OutputRenderer from '../components/ui/OutputRenderer'
 import { useInteractionStore } from '../stores/interactionStore'
 import { agentsAPI } from '../api/agents'
 import { CHAIN_CONFIG } from '../config/chains.config'
+import { getAgentExternalId } from '../utils/helpers'
 
 function FadeInSection({ children, className = '', delay = 0 }) {
   const ref = useRef(null)
@@ -376,7 +377,7 @@ function DbPurchasePanel({ agent, onSuccess }) {
         if (!txHash) txHash = platformTx
       }
 
-      await agentsAPI.purchaseAccess(agent.agentId, isLifetime, txHash)
+      await agentsAPI.purchaseAccess(getAgentExternalId(agent), isLifetime, txHash)
       onSuccess()
     } catch (e) {
       setError(e?.shortMessage || e?.response?.data?.error || e.message || 'Purchase failed')
@@ -411,7 +412,7 @@ function BlockchainPurchasePanel({ agent, onSuccess }) {
       await publicClient.waitForTransactionReceipt({ hash: approveTx })
       const purchaseTx = await writeContractAsync({ address: contracts.Agentra.address, abi: contracts.Agentra.abi, functionName: 'purchaseAccess', args: [BigInt(agent.contractAgentId), isLifetime] })
       const receipt = await publicClient.waitForTransactionReceipt({ hash: purchaseTx })
-      await agentsAPI.purchaseAccess(agent.agentId, isLifetime, receipt.transactionHash)
+      await agentsAPI.purchaseAccess(getAgentExternalId(agent), isLifetime, receipt.transactionHash)
       onSuccess()
     } catch (e) { setError(e?.shortMessage || e?.response?.data?.error || e.message || 'Transaction failed') }
     finally { setIsPurchasing(false) }
@@ -581,6 +582,7 @@ export default function AgentDetail() {
   const currentWallet = address?.toLowerCase()
   const isOwner = !!(currentWallet && ownerWallet && currentWallet === ownerWallet)
   const isBlockchainAgent = agent?.contractAgentId !== null && agent?.contractAgentId !== undefined
+  const externalAgentId = getAgentExternalId(agent)
 
   const userHasAccess = (hasValidAccess && accessGrantedForWallet.current === currentWallet) || isOwner
 
@@ -613,7 +615,7 @@ export default function AgentDetail() {
 
     setAccessLoading(true)
     try {
-      const res = await agentsAPI.checkAccess(agentData.agentId)
+      const res = await agentsAPI.checkAccess(getAgentExternalId(agentData))
       const granted = res.data?.hasAccess || false
       const stillSameWallet = address?.toLowerCase() === normalized
       if (stillSameWallet) {
@@ -666,7 +668,7 @@ export default function AgentDetail() {
     addLog({ level: 'info', message: `Task: ${task}` })
     try {
       addLog({ level: 'info', message: 'Routing to agent endpoint...' })
-      const response = await agentsAPI.execute(agent.agentId || agent.id, task)
+      const response = await agentsAPI.execute(externalAgentId, task)
       addLog({ level: 'success', message: 'Agent responded successfully' })
       const data = response.data
       setResult({ output: data.response || data.output || data.result || data || `Task completed.\n\n${new Date().toISOString()}`, latency: data.latency || Math.floor(Math.random() * 500) + 100, success: true })
@@ -868,7 +870,7 @@ export default function AgentDetail() {
 
                 <FadeInSection delay={0.15}>
                   <UpvoteButton
-                    agentId={agent.agentId}
+                    agentId={externalAgentId}
                     contractAgentId={agent.contractAgentId}
                     ownerWallet={agent.ownerWallet}
                     initialUpvotes={agent.upvotes}
@@ -936,7 +938,7 @@ export default function AgentDetail() {
         {activeTab === 'comms' && (
           <FadeInSection>
             <AgentCommsPanel
-              agentId={agent.agentId || agent.id}
+              agentId={externalAgentId}
               agentName={agent.name}
               isOwner={isOwner}
               commsEnabled={agent.commsEnabled}
@@ -949,7 +951,7 @@ export default function AgentDetail() {
         {activeTab === 'reviews' && (
           <FadeInSection>
             <div className="glass-card-landing rounded-xl p-5 sm:p-6">
-              <ReviewSection agentId={agent.agentId || agent.id} />
+              <ReviewSection agentId={externalAgentId} />
             </div>
           </FadeInSection>
         )}

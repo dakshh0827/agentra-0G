@@ -26,3 +26,13 @@ export const timeAgo = (date) => {
 export const generateAgentId = () => {
   return 'AGT-' + Math.random().toString(36).substring(2, 10).toUpperCase()
 }
+
+export const getAgentExternalId = (agent) => {
+  if (!agent) return ''
+
+  if (agent.contractAgentId !== null && agent.contractAgentId !== undefined) {
+    return String(agent.contractAgentId)
+  }
+
+  return String(agent.agentId || agent.id || agent._id || '')
+}

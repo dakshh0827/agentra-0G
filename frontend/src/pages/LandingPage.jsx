@@ -1,25 +1,78 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import StarField from '../components/ui/StarField'
-import { motion, useInView } from 'framer-motion'
+import { motion, useInView, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import {
   Cpu, Zap, Shield, BarChart3, Globe, Upload,
-  ArrowRight, ChevronRight, Activity,
-  Layers, Lock, Rocket, Code2,
+  ArrowRight, Activity, Layers, Lock, Rocket, Code2,
+  ChevronDown, Sparkles, Network, Database,
 } from 'lucide-react'
 import { analyticsAPI } from '../api/analytics'
 
-/* ── Fade-in wrapper (triggers when scrolled into view) ── */
-function FadeInSection({ children, className = '', delay = 0 }) {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: '-60px' })
+/* ── Lenis-style smooth scroll via CSS + JS ── */
+function useSmoothScroll() {
+  useEffect(() => {
+    let scrollY = 0
+    let targetY = 0
+    let rafId = null
+    const ease = 0.08
 
+    const onWheel = (e) => {
+      e.preventDefault()
+      targetY = Math.max(0, Math.min(targetY + e.deltaY, document.body.scrollHeight - window.innerHeight))
+    }
+
+    const tick = () => {
+      scrollY += (targetY - scrollY) * ease
+      window.scrollTo(0, scrollY)
+      rafId = requestAnimationFrame(tick)
+    }
+
+    // Only enable on desktop
+    if (window.innerWidth > 768) {
+      window.addEventListener('wheel', onWheel, { passive: false })
+      rafId = requestAnimationFrame(tick)
+    }
+
+    return () => {
+      window.removeEventListener('wheel', onWheel)
+      cancelAnimationFrame(rafId)
+    }
+  }, [])
+}
+
+/* ── Animated counter ── */
+function Counter({ value, suffix = '', duration = 2000 }) {
+  const [count, setCount] = useState(0)
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true })
+
+  useEffect(() => {
+    if (!inView) return
+    let start = 0
+    const end = parseInt(value) || 0
+    if (end === 0) return
+    const step = end / (duration / 16)
+    const timer = setInterval(() => {
+      start += step
+      if (start >= end) { setCount(end); clearInterval(timer) }
+      else setCount(Math.floor(start))
+    }, 16)
+    return () => clearInterval(timer)
+  }, [inView, value, duration])
+
+  return <span ref={ref}>{count}{suffix}</span>
+}
+
+/* ── Section wrapper ── */
+function Section({ children, className = '', delay = 0 }) {
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true, margin: '-80px' })
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 24 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, delay, ease: 'easeOut' }}
+      initial={{ opacity: 0, y: 40 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
       className={className}
     >
       {children}
@@ -27,368 +80,463 @@ function FadeInSection({ children, className = '', delay = 0 }) {
   )
 }
 
-/* ── Data ── */
+/* ── Noise texture overlay ── */
+function NoiseOverlay() {
+  return (
+    <div
+      className="fixed inset-0 pointer-events-none z-0 opacity-[0.025]"
+      style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+        backgroundRepeat: 'repeat',
+        backgroundSize: '200px 200px',
+        mixBlendMode: 'overlay',
+      }}
+    />
+  )
+}
+
 const FEATURES = [
-  {
-    icon: Zap,
-    title: 'Instant Execution',
-    description: 'Execute AI agents on-demand with sub-second routing. Pay-per-call pricing keeps costs transparent.',
-  },
-  {
-    icon: Shield,
-    title: 'Trustless & Secure',
-    description: 'On-chain smart contracts ensure immutable ownership, transparent payments, and verifiable execution logs.',
-  },
-  {
-    icon: Globe,
-    title: 'MCP Protocol',
-    description: 'Standardized Model Context Protocol endpoints enable seamless agent composition and interoperability.',
-  },
-  {
-    icon: BarChart3,
-    title: 'Real-time Analytics',
-    description: 'Track revenue, usage, and performance metrics across all your deployed agents from a single dashboard.',
-  },
-  {
-    icon: Layers,
-    title: 'Agent Composition',
-    description: 'Chain multiple agents together to build complex workflows. One agent\'s output becomes another\'s input.',
-  },
-  {
-    icon: Lock,
-    title: 'Wallet Identity',
-    description: 'Your wallet is your identity. Deploy, execute, and earn — all tied to your on-chain address.',
-  },
+  { num: '01', icon: Zap, title: 'Instant Execution', desc: 'Execute AI agents on-demand with sub-second routing. Pay-per-call pricing keeps costs transparent and fair.' },
+  { num: '02', icon: Shield, title: 'Trustless & Secure', desc: 'On-chain smart contracts ensure immutable ownership, transparent payments, and verifiable execution logs.' },
+  { num: '03', icon: Globe, title: 'MCP Protocol', desc: 'Standardized Model Context Protocol endpoints enable seamless agent composition and interoperability.' },
+  { num: '04', icon: BarChart3, title: 'Real-time Analytics', desc: 'Track revenue, usage, and performance metrics across all your deployed agents from a unified dashboard.' },
+  { num: '05', icon: Layers, title: 'Agent Composition', desc: "Chain multiple agents together to build complex workflows. One agent's output becomes another's input." },
+  { num: '06', icon: Lock, title: 'Wallet Identity', desc: 'Your wallet is your identity. Deploy, execute, and earn — all tied to your on-chain address.' },
 ]
 
 const STEPS = [
-  {
-    num: '01',
-    icon: Upload,
-    title: 'Deploy Your Agent',
-    description: 'Configure your AI agent with an MCP endpoint, set pricing, and publish to the marketplace in minutes.',
-  },
-  {
-    num: '02',
-    icon: Globe,
-    title: 'Get Discovered',
-    description: 'Your agent appears in the marketplace where developers can search, filter, and evaluate capabilities.',
-  },
-  {
-    num: '03',
-    icon: Activity,
-    title: 'Earn Per Execution',
-    description: 'Every time someone executes your agent, you earn ETH. Revenue flows directly to your wallet.',
-  },
-  {
-    num: '04',
-    icon: BarChart3,
-    title: 'Scale & Optimize',
-    description: 'Monitor analytics, climb the leaderboard, and optimize based on real usage data and community votes.',
-  },
+  { num: '01', icon: Upload, title: 'Deploy Your Agent', desc: 'Configure your AI agent with an MCP endpoint, set pricing, and publish to the marketplace in minutes.' },
+  { num: '02', icon: Globe, title: 'Get Discovered', desc: 'Your agent appears in the marketplace where developers can search, filter, and evaluate capabilities.' },
+  { num: '03', icon: Activity, title: 'Earn Per Execution', desc: 'Every time someone executes your agent, you earn AGT. Revenue flows directly to your wallet.' },
+  { num: '04', icon: BarChart3, title: 'Scale & Optimize', desc: 'Monitor analytics, climb the leaderboard, and optimize based on real usage data and community votes.' },
 ]
+
+const TECH_STACK = ['MCP Protocol', 'Zero Gravity Chain', 'Smart Contracts', 'AGT Token', 'Pay-per-Call', 'Open Source']
 
 export default function LandingPage() {
   const [stats, setStats] = useState(null)
+  const { scrollY } = useScroll()
+  const heroY = useTransform(scrollY, [0, 600], [0, -80])
+  const heroOpacity = useTransform(scrollY, [0, 400], [1, 0])
 
   useEffect(() => {
-    analyticsAPI.getGlobalStats()
-      .then(res => setStats(res.data))
-      .catch(console.error)
+    analyticsAPI.getGlobalStats().then(r => setStats(r.data)).catch(() => {})
   }, [])
 
-  // Dynamic stats calculated from the backend
-const STATS = [
-  { value: 'MCP', label: 'Standard Protocol' },
-  { value: 'ETH', label: 'Settlement' },
-  { value: '0G', label: 'Storage' },
-  { value: 'Live', label: 'Status' },
-]
+  const STAT_ITEMS = [
+    { value: stats?.totalAgents ?? '—', suffix: '+', label: 'Agents Deployed' },
+    { value: stats?.totalCalls ?? '—', suffix: '+', label: 'Executions' },
+    { value: stats?.activeAgents ?? '—', suffix: '', label: 'Active Now' },
+    { value: '0G', suffix: '', label: 'Storage Layer' },
+  ]
 
   return (
-    <div className="relative min-h-screen bg-[var(--color-bg)] overflow-hidden">
-      {/* ── HERO SECTION ── */}
-      <section className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 text-center">
+    <div className="relative min-h-screen overflow-hidden" style={{ background: '#0A0812' }}>
+      <NoiseOverlay />
 
-        {/* Dynamic Badge */}
-        {/* <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[rgba(124,58,237,0.25)] bg-[rgba(124,58,237,0.06)] mb-8"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] pulse-dot" />
-          <span className="text-[11px] font-mono text-[var(--color-purple-pale)] ">
-            NETWORK LIVE — {stats?.activeAgents || 0} AGENTS ONLINE
-          </span>
-        </motion.div> */}
+      {/* ── AMBIENT ORBS ── */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="orb orb-primary w-[700px] h-[700px]" style={{ top: '-200px', left: '50%', transform: 'translateX(-50%)' }} />
+        <div className="orb orb-secondary w-[500px] h-[500px]" style={{ bottom: '10%', left: '-10%' }} />
+        <div className="orb orb-pink w-[600px] h-[600px]" style={{ top: '40%', right: '-15%' }} />
+      </div>
 
-        {/* Heading */}
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.2 }}
-          className="flex flex-col items-center font-display font-bold text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-[var(--color-text-primary)] leading-tight tracking-normal max-w-5xl"
-        >
-          <span>Deploy & Monetize</span>
-          <span className="text-[var(--color-primary)]">AI Agents</span>
-          <span>with Trust</span>
-        </motion.h1>
+      {/* ── DOT GRID ── */}
+      <div className="fixed inset-0 dot-grid pointer-events-none z-0 opacity-40" />
 
-        {/* Subtitle */}
-        <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-8 text-[var(--color-text-secondary)] text-lg sm:text-xl max-w-3xl leading-relaxed font-body"
-        >
-          Agentra is the decentralized platform for listing, discovering, and executing AI agents.
-          Get paid per execution, maintain full ownership, and tap into a growing developer community.
-        </motion.p>
+      {/* ══════════════════════════════════════════
+          HERO SECTION
+      ══════════════════════════════════════════ */}
+      <section className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 text-center pt-20">
+        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="w-full flex flex-col items-center">
 
-        {/* CTA Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="flex flex-col sm:flex-row gap-4 mt-10"
-        >
-          <Link to="/marketplace">
-            <button className="btn-glow px-8 py-3.5 rounded-lg inline-flex items-center gap-3 cursor-pointer text-base font-semibold">
-              <Rocket size={18} />
-              Explore Agents
-              <ArrowRight size={16} />
-            </button>
-          </Link>
-          <Link to="/deploy">
-            <button className="btn-outline-glow px-8 py-3.5 rounded-lg inline-flex items-center gap-3 cursor-pointer text-base font-semibold">
-              <Code2 size={18} />
-              Deploy Your Agent
-            </button>
-          </Link>
+          {/* Live badge */}
+          {/* <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full border border-[rgba(180,92,202,0.25)] bg-[rgba(180,92,202,0.06)] mb-10 backdrop-blur-sm"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-[#34D399] pulse-dot" />
+            <span className="text-xs font-mono text-[#C4B8D8] tracking-widest uppercase">
+              Neural Marketplace — {stats?.activeAgents ?? 0} Agents Online
+            </span>
+          </motion.div> */}
+
+          {/* Hero heading */}
+          <div className="overflow-hidden mb-6">
+            <motion.h1
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.9, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="font-display font-black leading-none tracking-tighter text-[clamp(3rem,8vw,7rem)]"
+            >
+              <span className="block text-[#F5F0FF]">Deploy &</span>
+              <span className="block gradient-text-purple">Monetize</span>
+              <span className="block text-[#F5F0FF]">AI Agents</span>
+            </motion.h1>
+          </div>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="max-w-2xl text-[#8B7FA0] text-lg leading-relaxed mb-12 font-light"
+          >
+            The decentralized platform for listing, discovering, and executing autonomous AI agents.
+            Get paid per execution, maintain full ownership, and tap into a growing developer community.
+          </motion.p>
+
+          {/* CTA group */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+            className="flex flex-col sm:flex-row gap-4 mb-20"
+          >
+            <Link to="/marketplace">
+              <button className="btn-glow px-8 py-3.5 rounded-xl inline-flex items-center gap-3 text-sm font-semibold tracking-tight">
+                <Rocket size={16} />
+                Explore Agents
+                <ArrowRight size={14} />
+              </button>
+            </Link>
+            <Link to="/deploy">
+              <button className="btn-outline-glow px-8 py-3.5 rounded-xl inline-flex items-center gap-3 text-sm font-semibold tracking-tight">
+                <Code2 size={16} />
+                Deploy Your Agent
+              </button>
+            </Link>
+          </motion.div>
+
+          {/* Stats row */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 1.0 }}
+            className="grid grid-cols-2 sm:grid-cols-4 gap-8 sm:gap-16"
+          >
+            {STAT_ITEMS.map((s, i) => (
+              <motion.div
+                key={s.label}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.1 + i * 0.1 }}
+                className="text-center"
+              >
+                <div className="font-display font-bold text-2xl sm:text-3xl text-[#F5F0FF] tracking-tighter mb-1">
+                  {typeof s.value === 'number'
+                    ? <Counter value={s.value} suffix={s.suffix} />
+                    : <>{s.value}{s.suffix}</>
+                  }
+                </div>
+                <div className="text-xs font-mono text-[#5A4E70] tracking-widest uppercase">{s.label}</div>
+              </motion.div>
+            ))}
+          </motion.div>
         </motion.div>
 
-        {/* Dynamic Stats row */}
+        {/* Scroll hint */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.9 }}
-          className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-12"
+          transition={{ delay: 2 }}
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
         >
-          {STATS.map((stat, i) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1 + i * 0.1 }}
-              className="text-center"
-            >
-              <div className="font-display font-bold text-2xl sm:text-3xl text-[var(--color-text-primary)]">{stat.value}</div>
-              <div className="text-sm font-mono text-[var(--color-text-muted)]  mt-1 uppercase">{stat.label}</div>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* Scroll indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.4 }}
-          transition={{ delay: 1.5 }}
-          className="absolute bottom-10 left-1/2 -translate-x-1/2"
-        >
-          <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 2, repeat: Infinity }}>
-            <ChevronRight size={20} className="rotate-90 text-[var(--color-text-dim)]" />
+          <span className="text-xs font-mono text-[#5A4E70] tracking-widest uppercase">Scroll</span>
+          <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}>
+            <ChevronDown size={16} className="text-[#5A4E70]" />
           </motion.div>
         </motion.div>
       </section>
 
-      {/* ── FEATURES SECTION ── */}
-      <section className="relative z-10 py-24 sm:py-32 px-6">
-        <div className="max-w-6xl mx-auto">
-          <FadeInSection className="text-center mb-16">
-            <span className="text-sm font-mono text-[var(--color-primary)]  uppercase">Platform Capabilities</span>
-            <h2 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl text-[var(--color-text-primary)] mt-3 leading-tight">
-              Built for the Agent Economy
-            </h2>
-            <p className="text-[var(--color-text-secondary)] text-sm sm:text-base max-w-xl mx-auto mt-4">
-              Everything you need to deploy, monetize, and scale autonomous AI agents.
-            </p>
-          </FadeInSection>
+      {/* ── MARQUEE ── */}
+      <div className="relative z-10 py-8 border-y border-[rgba(180,92,202,0.08)] overflow-hidden bg-[rgba(17,13,30,0.4)] backdrop-blur-sm">
+        <div className="flex">
+          <div className="marquee-track">
+            {[...TECH_STACK, ...TECH_STACK, ...TECH_STACK, ...TECH_STACK].map((item, i) => (
+              <span key={i} className="mx-8 text-xs font-mono tracking-widest text-[#5A4E70] uppercase flex items-center gap-3">
+                <span className="w-1 h-1 rounded-full bg-[rgba(180,92,202,0.4)]" />
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {FEATURES.map((feature, i) => {
-              const Icon = feature.icon
-              return (
-                <FadeInSection key={feature.title} delay={i * 0.08}>
-                  <div className="glass-card-landing rounded-xl p-6 h-full">
-                    <div className="w-10 h-10 rounded-lg bg-[rgba(124,58,237,0.08)] border border-[rgba(124,58,237,0.2)] flex items-center justify-center mb-4">
-                      <Icon size={18} className="text-[var(--color-primary)]" />
+      {/* ══════════════════════════════════════════
+          WHO WE ARE — 0G-style numbered section
+      ══════════════════════════════════════════ */}
+      <section className="relative z-10 py-32 px-6">
+        <div className="max-w-6xl mx-auto">
+          <Section className="mb-20">
+            <div className="flex flex-col lg:flex-row items-start gap-16">
+              <div className="lg:w-1/2">
+                <span className="text-xs font-mono text-[#5A4E70] tracking-widest uppercase block mb-6">Who We Are</span>
+                <h2 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl leading-none tracking-tighter text-[#F5F0FF] mb-8">
+                  The Agent<br />
+                  <span className="gradient-text-purple">Economy</span><br />
+                  Infrastructure.
+                </h2>
+                <p className="text-[#8B7FA0] text-base leading-relaxed max-w-md font-light">
+                  Agentra provides verifiable agent execution, trustless payments, and decentralized
+                  storage — built for autonomous AI systems that need to scale.
+                </p>
+              </div>
+              <div className="lg:w-1/2 grid grid-cols-1 gap-4">
+                {[
+                  { num: '01', title: 'Infinitely Scalable', desc: 'Limitless scalability, enabling AI agents to grow without performance limits.' },
+                  { num: '02', title: 'Fully Verifiable', desc: 'Execution runs with complete transparency, security, and on-chain verifiability.' },
+                  { num: '03', title: 'Seamlessly Composable', desc: 'Effortless integration allows developers to create, connect and scale AI-driven workflows.' },
+                ].map((item, i) => (
+                  <motion.div
+                    key={item.num}
+                    initial={{ opacity: 0, x: 30 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.15, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    className="glass-card-landing rounded-2xl p-6 flex gap-5"
+                  >
+                    <span className="num-badge mt-0.5">{item.num}</span>
+                    <div>
+                      <h3 className="font-display font-bold text-[#F5F0FF] text-base mb-1.5">{item.title}</h3>
+                      <p className="text-[#8B7FA0] text-sm leading-relaxed font-light">{item.desc}</p>
                     </div>
-                    <h3 className="font-display font-bold text-base text-[var(--color-text-primary)] mb-2">{feature.title}</h3>
-                    <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">{feature.description}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </Section>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          FEATURES GRID
+      ══════════════════════════════════════════ */}
+      <section className="relative z-10 py-32 px-6">
+        <div className="max-w-6xl mx-auto">
+          <Section className="text-center mb-20">
+            <span className="text-xs font-mono text-[#5A4E70] tracking-widest uppercase block mb-6">Platform Capabilities</span>
+            <h2 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl leading-none tracking-tighter">
+              <span className="text-[#F5F0FF]">Built for the</span><br />
+              <span className="gradient-text-purple">Agent Economy</span>
+            </h2>
+          </Section>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[rgba(180,92,202,0.08)] rounded-2xl overflow-hidden border border-[rgba(180,92,202,0.08)]">
+            {FEATURES.map((f, i) => {
+              const Icon = f.icon
+              return (
+                <motion.div
+                  key={f.num}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="bg-[#0A0812] p-8 group hover:bg-[rgba(17,13,30,0.9)] transition-colors duration-300"
+                >
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-[rgba(180,92,202,0.1)] border border-[rgba(180,92,202,0.2)] flex items-center justify-center group-hover:border-[rgba(180,92,202,0.4)] transition-colors">
+                      <Icon size={18} className="text-[#B45CCA]" />
+                    </div>
+                    <span className="text-xs font-mono text-[#5A4E70]">{f.num}</span>
                   </div>
-                </FadeInSection>
+                  <h3 className="font-display font-bold text-[#F5F0FF] text-base mb-3 group-hover:gradient-text-purple transition-all">{f.title}</h3>
+                  <p className="text-[#8B7FA0] text-sm leading-relaxed font-light">{f.desc}</p>
+                </motion.div>
               )
             })}
           </div>
         </div>
       </section>
 
-      {/* Divider */}
-      <div className="section-divider max-w-4xl mx-auto" />
-
-      {/* ── HOW IT WORKS ── */}
-      <section className="relative z-10 py-24 sm:py-32 px-6">
+      {/* ══════════════════════════════════════════
+          HOW IT WORKS
+      ══════════════════════════════════════════ */}
+      <section className="relative z-10 py-32 px-6">
         <div className="max-w-5xl mx-auto">
-          <FadeInSection className="text-center mb-16">
-            <span className="text-sm font-mono text-[var(--color-primary)]  uppercase">How It Works</span>
-            <h2 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl text-[var(--color-text-primary)] mt-3 leading-tight">
-              From Code to Revenue in Minutes
+          <Section className="text-center mb-20">
+            <span className="text-xs font-mono text-[#5A4E70] tracking-widest uppercase block mb-6">How It Works</span>
+            <h2 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl leading-none tracking-tighter">
+              <span className="text-[#F5F0FF]">From Code to</span><br />
+              <span className="gradient-text-purple">Revenue</span>
+              <span className="text-[#F5F0FF]"> in Minutes</span>
             </h2>
-          </FadeInSection>
+          </Section>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {STEPS.map((step, i) => {
-              const Icon = step.icon
-              return (
-                <FadeInSection key={step.num} delay={i * 0.1}>
-                  <div className="glass-card-landing rounded-xl p-6 flex gap-5">
-                    <div className="shrink-0">
-                      <div className="w-12 h-12 rounded-xl bg-[rgba(124,58,237,0.06)] border border-[rgba(124,58,237,0.15)] flex items-center justify-center relative">
-                        <Icon size={20} className="text-[var(--color-primary)]" />
-                        <span className="absolute -top-2 -right-2 text-xs font-bold text-[var(--color-purple-pale)] bg-[rgba(124,58,237,0.15)] border border-[rgba(124,58,237,0.3)] rounded-full w-5 h-5 flex items-center justify-center">
-                          {step.num}
-                        </span>
+          <div className="relative">
+            {/* Connecting line */}
+            <div className="hidden lg:block absolute left-[28px] top-10 bottom-10 w-px bg-gradient-to-b from-[rgba(180,92,202,0.5)] via-[rgba(180,92,202,0.2)] to-transparent" />
+
+            <div className="space-y-6">
+              {STEPS.map((s, i) => {
+                const Icon = s.icon
+                return (
+                  <motion.div
+                    key={s.num}
+                    initial={{ opacity: 0, x: -30 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.15, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    className="flex gap-8 items-start group"
+                  >
+                    <div className="relative shrink-0">
+                      <div className="w-14 h-14 rounded-2xl bg-[rgba(180,92,202,0.08)] border border-[rgba(180,92,202,0.2)] flex items-center justify-center group-hover:border-[rgba(180,92,202,0.5)] group-hover:bg-[rgba(180,92,202,0.12)] transition-all duration-300">
+                        <Icon size={22} className="text-[#B45CCA]" />
                       </div>
                     </div>
-                    <div>
-                      <h3 className="font-display font-bold text-base text-[var(--color-text-primary)] mb-1.5">{step.title}</h3>
-                      <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">{step.description}</p>
+                    <div className="glass-card-landing rounded-2xl p-6 flex-1">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="text-xs font-mono text-[#5A4E70]">{s.num}</span>
+                        <h3 className="font-display font-bold text-[#F5F0FF] text-base">{s.title}</h3>
+                      </div>
+                      <p className="text-[#8B7FA0] text-sm leading-relaxed font-light">{s.desc}</p>
                     </div>
-                  </div>
-                </FadeInSection>
-              )
-            })}
+                  </motion.div>
+                )
+              })}
+            </div>
           </div>
 
-          {/* CTA after steps */}
-          <FadeInSection delay={0.4} className="text-center mt-14">
+          <Section delay={0.4} className="text-center mt-16">
             <Link to="/deploy">
-              <button className="btn-glow px-10 py-4 rounded-xl inline-flex items-center gap-3 text-sm cursor-pointer">
+              <button className="btn-glow px-10 py-4 rounded-xl inline-flex items-center gap-3 text-sm font-semibold tracking-tight">
                 <Upload size={16} />
-                START DEPLOYING
+                Start Deploying
                 <ArrowRight size={14} />
               </button>
             </Link>
-          </FadeInSection>
+          </Section>
         </div>
       </section>
 
-      {/* Divider */}
-      <div className="section-divider max-w-4xl mx-auto" />
-
-      {/* ── ABOUT / WHY AGENTRA ── */}
-      <section className="relative z-10 py-24 sm:py-32 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <FadeInSection>
-            <span className="text-sm font-mono text-[var(--color-primary)]  uppercase">Why Agentra</span>
-            <h2 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl text-[var(--color-text-primary)] mt-3 leading-tight">
-              The Future of Autonomous AI
+      {/* ══════════════════════════════════════════
+          MODULAR STACK (inspired by 0G)
+      ══════════════════════════════════════════ */}
+      <section className="relative z-10 py-32 px-6 overflow-hidden">
+        <div className="max-w-6xl mx-auto">
+          <Section className="text-center mb-20">
+            <span className="text-xs font-mono text-[#5A4E70] tracking-widest uppercase block mb-6">The Agentra Stack</span>
+            <h2 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl leading-none tracking-tighter">
+              <span className="text-[#F5F0FF]">Modular Stack for</span><br />
+              <span className="gradient-text-purple">AI Agents</span>
             </h2>
-            <p className="text-[var(--color-text-secondary)] text-sm sm:text-base max-w-2xl mx-auto mt-6 leading-relaxed">
-              Agentra is the decentralized infrastructure layer for autonomous AI agents.
-              We provide the marketplace, protocol, and tooling that lets developers deploy intelligent agents
-              and earn revenue from every execution — transparently, securely, and at scale.
-            </p>
-            <p className="text-[var(--color-text-muted)] text-sm max-w-2xl mx-auto mt-4 leading-relaxed">
-              Whether you're building data analysis pipelines, code generation tools, security auditors,
-              or DeFi strategy agents — Agentra gives your creation a home, an audience, and a revenue stream.
-            </p>
-          </FadeInSection>
+          </Section>
 
-          {/* Tech badges */}
-          <FadeInSection delay={0.2} className="flex flex-wrap justify-center gap-3 mt-10">
-            {['MCP Protocol', 'Ethereum', 'Smart Contracts', 'Pay-per-Call', 'Open Source', 'Community Governed'].map(tag => (
-              <span
-                key={tag}
-                className="px-4 py-2 rounded-lg border border-[rgba(124,58,237,0.15)] bg-[rgba(124,58,237,0.04)] text-[11px] font-mono text-[var(--color-purple-pale)] "
-              >
-                {tag}
-              </span>
-            ))}
-          </FadeInSection>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { icon: Network, title: 'Agent Registry', desc: 'Decentralized hub for AI agents and services, fueling an open and trustless AI economy.', color: '#B45CCA' },
+              { icon: Shield, title: 'Access Control', desc: 'Smart-contract-enforced access with monthly and lifetime subscription models.', color: '#34D399' },
+              { icon: Database, title: '0G Storage', desc: 'Decentralized, AI-optimized storage with ultra-low costs and verifiable permanence.', color: '#93C5FD' },
+              { icon: Zap, title: 'MCP Execution', desc: 'Standardized execution layer that routes tasks to the right agent endpoint instantly.', color: '#FBBF24' },
+              { icon: BarChart3, title: 'Analytics Engine', desc: 'Real-time metrics on executions, revenue, and performance across all deployed agents.', color: '#D946EF' },
+              { icon: Layers, title: 'Agent Comms', desc: 'Native agent-to-agent communication protocol with automatic fee distribution.', color: '#B45CCA' },
+            ].map((item, i) => {
+              const Icon = item.icon
+              return (
+                <motion.div
+                  key={item.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.08, duration: 0.5 }}
+                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                  className="glass-card-landing rounded-2xl p-6 relative overflow-hidden group cursor-default"
+                >
+                  <div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    style={{ background: `radial-gradient(circle at 50% 0%, ${item.color}08, transparent 70%)` }}
+                  />
+                  <div className="relative z-10">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center mb-5 border"
+                      style={{
+                        background: `${item.color}12`,
+                        borderColor: `${item.color}25`,
+                      }}
+                    >
+                      <Icon size={18} style={{ color: item.color }} />
+                    </div>
+                    <h3 className="font-display font-bold text-[#F5F0FF] text-base mb-2">{item.title}</h3>
+                    <p className="text-[#8B7FA0] text-sm leading-relaxed font-light">{item.desc}</p>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </div>
         </div>
       </section>
 
-      {/* ── FINAL CTA ── */}
-      <section className="relative z-10 py-24 sm:py-32 px-6">
-        <div className="max-w-3xl mx-auto text-center">
-          <FadeInSection>
-            <div className="glass-card-landing rounded-2xl p-10 sm:p-14 relative overflow-hidden">
-              {/* Ambient glow inside card */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[200px] rounded-full pointer-events-none"
-                style={{ background: 'radial-gradient(ellipse, rgba(124,58,237,0.12) 0%, transparent 70%)' }} />
+      {/* ══════════════════════════════════════════
+          FINAL CTA
+      ══════════════════════════════════════════ */}
+      <section className="relative z-10 py-32 px-6">
+        <div className="max-w-4xl mx-auto">
+          <Section>
+            <div className="relative rounded-3xl overflow-hidden border border-[rgba(180,92,202,0.2)] bg-[rgba(17,13,30,0.8)] backdrop-blur-sm p-12 sm:p-20 text-center">
+              {/* Inner glow */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none"
+                style={{ background: 'radial-gradient(ellipse, rgba(180,92,202,0.2) 0%, transparent 70%)' }} />
+              <div className="dot-grid absolute inset-0 opacity-30" />
 
               <div className="relative z-10">
-                <Cpu size={36} className="mx-auto text-[var(--color-primary)] mb-5 opacity-70" />
-                <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-[var(--color-text-primary)] leading-tight">
-                  Ready to Launch?
+                <div className="w-16 h-16 rounded-2xl bg-[rgba(180,92,202,0.12)] border border-[rgba(180,92,202,0.3)] flex items-center justify-center mx-auto mb-8">
+                  <Cpu size={28} className="text-[#B45CCA]" />
+                </div>
+                <h2 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl leading-none tracking-tighter mb-6">
+                  <span className="text-[#F5F0FF]">Ready to</span><br />
+                  <span className="gradient-text-purple">Launch?</span>
                 </h2>
-                <p className="text-[var(--color-text-secondary)] text-sm sm:text-base mt-4 mb-8 max-w-lg mx-auto">
-                  Join hundreds of developers already earning from their AI agents on Agentra.
+                <p className="text-[#8B7FA0] text-base max-w-lg mx-auto mb-10 font-light">
+                  Join developers already earning from their AI agents on Agentra.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link to="/marketplace">
-                    <button className="btn-glow px-8 py-3.5 rounded-xl inline-flex items-center gap-2.5 cursor-pointer">
-                      EXPLORE MARKETPLACE
+                    <button className="btn-glow px-8 py-4 rounded-xl inline-flex items-center gap-2.5 text-sm font-semibold tracking-tight">
+                      Explore Marketplace
                       <ArrowRight size={14} />
                     </button>
                   </Link>
                   <Link to="/deploy">
-                    <button className="btn-outline-glow px-8 py-3.5 rounded-xl inline-flex items-center gap-2.5 cursor-pointer">
-                      DEPLOY AGENT
+                    <button className="btn-outline-glow px-8 py-4 rounded-xl inline-flex items-center gap-2.5 text-sm font-semibold tracking-tight">
+                      Deploy Agent
                     </button>
                   </Link>
                 </div>
               </div>
             </div>
-          </FadeInSection>
+          </Section>
         </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="relative z-10 border-t border-[var(--color-border)] py-10 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+      <footer className="relative z-10 border-t border-[rgba(180,92,202,0.08)] py-12 px-6">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-8">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[var(--color-accent-pink)] border border-[var(--color-border)] flex items-center justify-center">
-              <Cpu size={15} className="text-[var(--color-primary)]" />
+            <div className="w-8 h-8 rounded-xl bg-[rgba(180,92,202,0.15)] border border-[rgba(180,92,202,0.3)] flex items-center justify-center">
+              <Cpu size={15} className="text-[#B45CCA]" />
             </div>
             <div>
-              <div className="font-display font-bold text-sm text-[var(--color-text-primary)] ">AGENTRA</div>
-              <div className="font-semibold text-xs text-[var(--color-text-dim)] ">NEURAL MARKETPLACE</div>
+              <div className="font-display font-black text-sm text-[#F5F0FF] tracking-tight">AGENTRA</div>
+              <div className="text-xs text-[#5A4E70] font-mono tracking-widest uppercase">Neural Marketplace</div>
             </div>
           </div>
 
           <div className="flex items-center gap-8">
-            <Link to="/marketplace" className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] text-xs font-mono  transition-colors">
-              MARKETPLACE
-            </Link>
-            <Link to="/deploy" className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] text-xs font-mono  transition-colors">
-              DEPLOY
-            </Link>
-            <Link to="/leaderboard" className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] text-xs font-mono  transition-colors">
-              LEADERBOARD
-            </Link>
+            {['MARKETPLACE', 'DEPLOY', 'LEADERBOARD'].map(link => (
+              <Link
+                key={link}
+                to={`/${link.toLowerCase()}`}
+                className="text-[#5A4E70] hover:text-[#8B7FA0] text-xs font-mono tracking-widest transition-colors"
+              >
+                {link}
+              </Link>
+            ))}
           </div>
 
-          <div className="text-[var(--color-text-dim)] text-sm font-mono ">
-            © 2026 AGENTRA
-          </div>
+          <div className="text-[#5A4E70] text-xs font-mono tracking-widest">© 2026 AGENTRA</div>
         </div>
       </footer>
     </div>
   )
 }
-
-
-

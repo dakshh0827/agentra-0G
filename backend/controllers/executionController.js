@@ -12,20 +12,29 @@ const executeSchema = z.object({
 
 const composeSchema = z.object({
   agents: z.array(z.object({
-    agentId: z.string(),
+    agentId: z.union([z.string(), z.number()]).transform((v) => String(v)),
     task: z.string().min(1),
   })).min(2).max(5),
   sequential: z.boolean().optional(),
 })
+
+function buildAgentLookup(id) {
+  const value = String(id || '').trim()
+  const isObjectId = /^[a-f\d]{24}$/i.test(value)
+  const isContractAgentId = /^\d+$/.test(value)
+
+  if (isObjectId) return { id: value }
+  if (isContractAgentId) return { OR: [{ agentId: value }, { contractAgentId: Number(value) }] }
+  return { agentId: value }
+}
  
 const executeAgent = asyncHandler(async (req, res) => {
   const { task } = executeSchema.parse(req.body)
   const { id } = req.params
   const callerWallet = req.walletAddress
 
-  const isObjectId = /^[a-f\d]{24}$/i.test(id)
   const agent = await prisma.agent.findFirst({
-    where: isObjectId ? { id } : { agentId: id },
+    where: buildAgentLookup(id),
   })
 
   if (!agent) return res.status(404).json({ error: 'Agent not found' })
@@ -78,7 +87,7 @@ const composeAgents = asyncHandler(async (req, res) => {
 
     for (const [i, agentInput] of agents.entries()) {
       const agent = await prisma.agent.findFirst({
-        where: { agentId: agentInput.agentId },
+        where: buildAgentLookup(agentInput.agentId),
       })
 
       if (!agent) continue
@@ -107,7 +116,7 @@ const composeAgents = asyncHandler(async (req, res) => {
     results = await Promise.all(
       agents.map(async (agentInput, i) => {
         const agent = await prisma.agent.findFirst({
-          where: { agentId: agentInput.agentId },
+          where: buildAgentLookup(agentInput.agentId),
         })
 
         if (!agent) return null

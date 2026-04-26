@@ -2,27 +2,23 @@ import React from 'react'
 import clsx from 'clsx'
 
 const colorMap = {
-  purple: 'text-[var(--color-primary)] bg-[rgba(124,58,237,0.08)] border-[rgba(124,58,237,0.25)]',
-  blue: 'text-[var(--color-star-blue)] bg-[rgba(147,197,253,0.07)] border-[rgba(147,197,253,0.2)]',
-  green: 'text-[var(--color-success)] bg-[rgba(52,211,153,0.07)] border-[rgba(52,211,153,0.2)]',
-  yellow: 'text-[var(--color-warning)] bg-[rgba(251,191,36,0.07)] border-[rgba(251,191,36,0.2)]',
-  red: 'text-[var(--color-danger)] bg-[rgba(248,113,113,0.07)] border-[rgba(248,113,113,0.2)]',
+  purple: { text: 'text-[#B45CCA]', border: 'border-[rgba(180,92,202,0.2)]', bg: 'bg-[rgba(180,92,202,0.06)]', glow: 'rgba(180,92,202,0.1)' },
+  blue: { text: 'text-[#93C5FD]', border: 'border-[rgba(147,197,253,0.2)]', bg: 'bg-[rgba(147,197,253,0.06)]', glow: 'rgba(147,197,253,0.08)' },
+  green: { text: 'text-[#34D399]', border: 'border-[rgba(52,211,153,0.2)]', bg: 'bg-[rgba(52,211,153,0.06)]', glow: 'rgba(52,211,153,0.08)' },
+  yellow: { text: 'text-[#FBBF24]', border: 'border-[rgba(251,191,36,0.2)]', bg: 'bg-[rgba(251,191,36,0.06)]', glow: 'rgba(251,191,36,0.08)' },
+  red: { text: 'text-[#F87171]', border: 'border-[rgba(248,113,113,0.2)]', bg: 'bg-[rgba(248,113,113,0.06)]', glow: 'rgba(248,113,113,0.08)' },
 }
 
 export default function MetricBadge({ label, value, color = 'purple', icon: Icon, sublabel }) {
+  const c = colorMap[color] || colorMap.purple
   return (
-    <div className={clsx(
-      'glass-panel rounded-xl p-4 border',
-      colorMap[color]
-    )}>
-      <div className="flex items-center gap-2 mb-1.5">
+    <div className={clsx('rounded-xl p-4 border', c.bg, c.border)}>
+      <div className={clsx('flex items-center gap-2 mb-2', c.text)}>
         {Icon && <Icon size={13} />}
-        <span className="text-sm font-mono uppercase  opacity-60">{label}</span>
+        <span className="text-xs font-mono tracking-widest uppercase opacity-60">{label}</span>
       </div>
-      <div className="text-2xl font-display font-bold tracking-tight">{value}</div>
-      {sublabel && <div className="text-xs opacity-50 mt-0.5 font-mono">{sublabel}</div>}
+      <div className={clsx('text-2xl font-display font-bold tracking-tighter', c.text)}>{value}</div>
+      {sublabel && <div className={clsx('text-xs font-mono mt-1 opacity-50', c.text)}>{sublabel}</div>}
     </div>
   )
 }
-
-
