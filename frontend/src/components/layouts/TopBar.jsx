@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Radio, Bell, ChevronDown, Cpu } from 'lucide-react'
+import { Radio, Bell, ChevronDown } from 'lucide-react'
 import { useWeb3Modal } from '@web3modal/wagmi/react'
 import { useAccount, useDisconnect, useReadContract } from 'wagmi'
 import { formatUnits } from 'viem'
@@ -45,21 +45,19 @@ export default function TopBar() {
 
   return (
     <header
-      className="h-14 flex items-center justify-between px-4 sm:px-6 shrink-0 z-10 border-b border-[rgba(180,92,202,0.08)]"
-      style={{ background: 'rgba(10, 8, 18, 0.95)', backdropFilter: 'blur(20px)' }}
+      className="h-14 flex items-center justify-between px-4 sm:px-6 shrink-0 z-10 border-b border-border"
+      style={{ background: 'var(--color-panel)' }}
     >
       {/* Left */}
       <div className="flex items-center gap-4">
         {/* Mobile logo */}
         <Link to="/" className="lg:hidden flex items-center gap-2.5 shrink-0">
-          <div className="w-7 h-7 rounded-xl bg-[rgba(180,92,202,0.12)] border border-[rgba(180,92,202,0.25)] flex items-center justify-center">
-            <Cpu size={13} className="text-[#B45CCA]" />
-          </div>
-          <span className="font-display font-black text-xs text-[#F5F0FF] tracking-tight">AGENTRA</span>
+            <img src="/logo/logo32.png" alt="Agentra" className="w-7 h-7 rounded-xl" />
+          <span className="font-display font-semibold text-xs text-text-primary tracking-tight">AGENTRA</span>
         </Link>
 
         {/* Network status */}
-        <div className="hidden md:flex items-center gap-2 text-xs font-mono text-[#5A4E70] tracking-widest uppercase">
+        <div className="hidden md:flex items-center gap-2 text-xs font-mono text-text-dim tracking-wide uppercase">
           <Radio size={10} />
           {isConnected && chain ? chain.name : 'Disconnected'}
         </div>
@@ -68,30 +66,31 @@ export default function TopBar() {
         <motion.div
           animate={{ opacity: [0.6, 1, 0.6] }}
           transition={{ duration: 3, repeat: Infinity }}
-          className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full border border-[rgba(52,211,153,0.15)] bg-[rgba(52,211,153,0.05)] text-xs font-mono text-[#5A4E70] tracking-widest uppercase"
+          className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-mono text-text-dim tracking-wide uppercase"
+          style={{ borderColor: '#d9c6b5', background: '#f4ebdf' }}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#34D399] pulse-dot" />
+          <span className="w-1.5 h-1.5 rounded-full bg-success pulse-dot" />
           {stats?.activeAgents ?? 0} Online
         </motion.div>
       </div>
 
       {/* Right */}
       <div className="flex items-center gap-3">
-        <button className="p-2 rounded-lg text-[#5A4E70] hover:text-[#8B7FA0] hover:bg-[rgba(180,92,202,0.06)] transition-colors">
+        <button className="p-2 rounded-lg text-text-dim hover:text-primary hover:bg-accent-pink transition-colors">
           <Bell size={15} />
         </button>
 
         {isConnected ? (
           <button
             onClick={() => disconnect()}
-            className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-[rgba(180,92,202,0.2)] bg-[rgba(180,92,202,0.06)] text-[#B45CCA] hover:border-[rgba(180,92,202,0.4)] hover:bg-[rgba(180,92,202,0.1)] transition-all cursor-pointer"
+            className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-[#d7b4c8] bg-accent-pink text-primary hover:border-[#c99eb8] hover:bg-[#f4d6e6] transition-all cursor-pointer"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#34D399] pulse-dot" />
+            <span className="w-1.5 h-1.5 rounded-full bg-success pulse-dot" />
             <span className="text-xs font-mono tracking-tight">
               {`${address.slice(0, 6)}...${address.slice(-4)}`}
             </span>
             {tokenBalance !== undefined && (
-              <span className="hidden sm:inline text-xs font-mono text-[#5A4E70]">
+              <span className="hidden sm:inline text-xs font-mono text-text-dim">
                 {Number(formatUnits(tokenBalance, 18)).toFixed(2)} AGT
               </span>
             )}

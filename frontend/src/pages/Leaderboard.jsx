@@ -25,16 +25,16 @@ function FadeInSection({ children, className = '', delay = 0 }) {
 }
 
 const rankIcon = (i) => {
-  if (i === 0) return <Crown size={18} className="text-[var(--color-warning)] drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
+  if (i === 0) return <Crown size={18} className="text-[var(--color-warning)]" />
   if (i === 1) return <Medal size={17} className="text-[rgba(192,192,192,0.95)]" />
   if (i === 2) return <Medal size={17} className="text-[rgba(205,127,50,0.95)]" />
   return <span className="font-mono text-[var(--color-text-dim)] text-sm w-6 text-center font-bold">{i + 1}</span>
 }
 
 const podiumStyles = (i) => {
-  if (i === 0) return { border: 'border-[rgba(251,191,36,0.35)]', bg: 'bg-gradient-to-br from-amber-500/10 to-transparent', glow: 'shadow-[0_0_30px_rgba(251,191,36,0.15)]' }
-  if (i === 1) return { border: 'border-[rgba(192,192,192,0.25)]', bg: 'bg-gradient-to-br from-gray-400/8 to-transparent', glow: '' }
-  if (i === 2) return { border: 'border-[rgba(205,127,50,0.25)]', bg: 'bg-gradient-to-br from-orange-600/8 to-transparent', glow: '' }
+  if (i === 0) return { border: 'border-[rgba(251,191,36,0.35)]', bg: 'bg-[rgba(251,191,36,0.08)]', glow: '' }
+  if (i === 1) return { border: 'border-[rgba(192,192,192,0.25)]', bg: 'bg-[rgba(192,192,192,0.08)]', glow: '' }
+  if (i === 2) return { border: 'border-[rgba(205,127,50,0.25)]', bg: 'bg-[rgba(205,127,50,0.08)]', glow: '' }
   return { border: 'border-[var(--color-border)]', bg: '', glow: '' }
 }
 
@@ -68,19 +68,11 @@ export default function Leaderboard() {
 
   return (
     <div className="relative min-h-screen bg-[var(--color-bg)]">
-      <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full pointer-events-none opacity-30"
-        style={{ background: 'radial-gradient(ellipse, rgba(251,191,36,0.08) 0%, transparent 70%)' }} />
-      <div className="fixed bottom-20 right-10 w-[400px] h-[300px] rounded-full pointer-events-none opacity-30"
-        style={{ background: 'radial-gradient(ellipse, rgba(124,58,237,0.05) 0%, transparent 70%)' }} />
 
       <div className="relative z-10 p-5 lg:p-8 max-w-7xl mx-auto">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-8">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1, duration: 0.4 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[rgba(251,191,36,0.25)] bg-[rgba(251,191,36,0.06)] mb-4">
-            <Trophy size={12} className="text-[var(--color-warning)]" />
-            <span className="text-sm font-mono text-[var(--color-warning)] ">NEURAL RANKING PROTOCOL</span>
-          </motion.div>
+          <p className="text-xs uppercase tracking-wide text-text-dim font-semibold">Directory</p>
           <h1 className="font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl text-[var(--color-text-primary)] leading-[1.1] tracking-tight">
             <span className="gradient-text-purple">AGENT</span> LEADERBOARD
           </h1>
@@ -103,7 +95,6 @@ export default function Leaderboard() {
               <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.5 }} whileHover={{ y: -4 }}>
                 <Link to={`/agent/${getAgentExternalId(ranked[1])}`}>
                   <div className={`glass-card-landing rounded-xl p-4 sm:p-5 text-center ${podiumStyles(1).border} ${podiumStyles(1).bg} ${podiumStyles(1).glow} relative overflow-hidden group`}>
-                    <div className="absolute inset-0 bg-gradient-to-t from-gray-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="relative z-10">
                       <div className="flex justify-center mb-3">{rankIcon(1)}</div>
                       <div className="w-12 h-12 rounded-xl bg-[var(--color-accent-pink)] border border-[var(--color-border)] flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
@@ -121,7 +112,6 @@ export default function Leaderboard() {
               <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.5 }} whileHover={{ y: -6 }} className="-mt-4">
                 <Link to={`/agent/${getAgentExternalId(ranked[0])}`}>
                   <div className={`glass-card-landing rounded-xl p-5 sm:p-6 text-center ${podiumStyles(0).border} ${podiumStyles(0).bg} ${podiumStyles(0).glow} relative overflow-hidden group`}>
-                    <div className="absolute inset-0 bg-gradient-to-t from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="relative z-10">
                       <div className="flex justify-center mb-3">
                         <motion.div animate={{ rotate: [0, 5, -5, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}>
@@ -143,7 +133,6 @@ export default function Leaderboard() {
               <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.5 }} whileHover={{ y: -4 }}>
                 <Link to={`/agent/${getAgentExternalId(ranked[2])}`}>
                   <div className={`glass-card-landing rounded-xl p-4 sm:p-5 text-center ${podiumStyles(2).border} ${podiumStyles(2).bg} ${podiumStyles(2).glow} relative overflow-hidden group`}>
-                    <div className="absolute inset-0 bg-gradient-to-t from-orange-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="relative z-10">
                       <div className="flex justify-center mb-3">{rankIcon(2)}</div>
                       <div className="w-12 h-12 rounded-xl bg-[var(--color-accent-pink)] border border-[var(--color-border)] flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
@@ -229,7 +218,7 @@ export default function Leaderboard() {
                                 initial={{ width: 0 }}
                                 animate={{ width: `${Math.min((agent.score / 100) * 100, 100)}%` }}
                                 transition={{ delay: 0.5 + i * 0.04, duration: 0.7 }}
-                                className="h-full bg-gradient-to-r from-[var(--color-primary-dark)] to-[var(--color-primary)] rounded-full"
+                                className="h-full bg-[var(--color-primary)] rounded-full"
                               />
                             </div>
                           </div>

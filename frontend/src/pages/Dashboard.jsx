@@ -96,12 +96,8 @@ export default function Dashboard() {
 
   if (!isConnected || !walletAddress) return (
     <div className="relative min-h-[80vh] flex items-center justify-center p-6">
-      <div className="fixed top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse, rgba(124,58,237,0.06) 0%, transparent 70%)' }} />
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
         className="glass-card-landing rounded-2xl p-10 sm:p-14 text-center max-w-md relative overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] h-[150px] rounded-full pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse, rgba(124,58,237,0.12) 0%, transparent 70%)' }} />
         <div className="relative z-10">
           <div className="w-20 h-20 rounded-2xl bg-[rgba(124,58,237,0.1)] border border-[rgba(124,58,237,0.25)] flex items-center justify-center mx-auto mb-6">
             <Wallet size={36} className="text-[var(--color-primary)] opacity-70" />
@@ -131,27 +127,19 @@ export default function Dashboard() {
   const activityFeed = dashData?.activityFeed || []
 
   const metricCards = [
-    { label: 'TOTAL REVENUE', value: `${parseFloat(metrics.totalRevenue || 0).toFixed(4)} AGT`, color: 'green', icon: DollarSign, sublabel: 'All time earnings', gradient: 'from-emerald-500/15 to-transparent' },
-    { label: 'TOTAL CALLS', value: (metrics.totalCalls || 0).toLocaleString(), color: 'blue', icon: Activity, sublabel: 'Total executions', gradient: 'from-blue-500/15 to-transparent' },
-    { label: 'MY AGENTS', value: myAgents.length, color: 'purple', icon: Zap, sublabel: 'Deployed on network', gradient: 'from-purple-500/15 to-transparent' },
-    { label: 'SUCCESS RATE', value: `${(metrics.successRate || 0).toFixed(1)}%`, color: 'yellow', icon: TrendingUp, sublabel: 'Avg across agents', gradient: 'from-amber-500/15 to-transparent' },
+    { label: 'TOTAL REVENUE', value: `${parseFloat(metrics.totalRevenue || 0).toFixed(4)} AGT`, color: 'green', icon: DollarSign, sublabel: 'All time earnings' },
+    { label: 'TOTAL CALLS', value: (metrics.totalCalls || 0).toLocaleString(), color: 'blue', icon: Activity, sublabel: 'Total executions' },
+    { label: 'MY AGENTS', value: myAgents.length, color: 'purple', icon: Zap, sublabel: 'Deployed on network' },
+    { label: 'SUCCESS RATE', value: `${(metrics.successRate || 0).toFixed(1)}%`, color: 'yellow', icon: TrendingUp, sublabel: 'Avg across agents' },
   ]
 
   return (
     <div className="relative min-h-screen bg-[var(--color-bg)]">
-      <div className="fixed top-10 right-20 w-[450px] h-[350px] rounded-full pointer-events-none opacity-40"
-        style={{ background: 'radial-gradient(ellipse, rgba(52,211,153,0.06) 0%, transparent 70%)' }} />
-      <div className="fixed bottom-20 left-10 w-[400px] h-[300px] rounded-full pointer-events-none opacity-40"
-        style={{ background: 'radial-gradient(ellipse, rgba(124,58,237,0.05) 0%, transparent 70%)' }} />
 
       <div className="relative z-10 p-5 lg:p-8 max-w-7xl mx-auto">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-8">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1, duration: 0.4 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[rgba(52,211,153,0.25)] bg-[rgba(52,211,153,0.06)] mb-4">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] pulse-dot" />
-            <span className="text-sm font-mono text-[var(--color-success)] ">ANALYTICS DASHBOARD — LIVE</span>
-          </motion.div>
+          <p className="text-xs uppercase tracking-wide text-text-dim font-semibold">Directory</p>
           <h1 className="font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl text-[var(--color-text-primary)] leading-[1.1] tracking-tight">
             <span className="gradient-text-purple">REVENUE</span> CONTROL
           </h1>
@@ -166,7 +154,6 @@ export default function Dashboard() {
             <motion.div key={m.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
               onMouseEnter={() => setHoveredMetric(m.label)} onMouseLeave={() => setHoveredMetric(null)} className="group">
               <div className={`glass-card-landing rounded-xl p-4 sm:p-5 relative overflow-hidden transition-all duration-300 ${hoveredMetric === m.label ? 'scale-[1.02]' : ''}`}>
-                <div className={`absolute inset-0 bg-gradient-to-br ${m.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
                 <div className="relative z-10"><MetricBadge {...m} /></div>
               </div>
             </motion.div>
@@ -187,17 +174,11 @@ export default function Dashboard() {
               {revenueData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={200}>
                   <AreaChart data={revenueData}>
-                    <defs>
-                      <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(124,58,237,0.1)" />
                     <XAxis dataKey="day" stroke="rgba(124,58,237,0.3)" tick={{ fontSize: 10, fontFamily: 'Space Mono', fill: 'var(--color-text-dim)' }} />
                     <YAxis stroke="rgba(124,58,237,0.3)" tick={{ fontSize: 10, fontFamily: 'Space Mono', fill: 'var(--color-text-dim)' }} />
                     <Tooltip content={<CustomTooltip />} />
-                    <Area type="monotone" dataKey="eth" stroke="#a855f7" strokeWidth={2} fill="url(#revGrad)" name="AGT" />
+                    <Area type="monotone" dataKey="eth" stroke="#a855f7" strokeWidth={2} fill="rgba(168,85,247,0.12)" name="AGT" />
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (

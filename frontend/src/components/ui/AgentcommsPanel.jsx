@@ -59,25 +59,25 @@ function DiscoveryResult({ agent, onSelect, selected }) {
       onClick={() => onSelect(agent)}
       className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
         selected?.agentId === agent.agentId
-          ? 'border-[var(--color-primary-dark)] bg-[rgba(124,58,237,0.1)]'
-          : 'border-[var(--color-border)] hover:border-[var(--color-border)] bg-[rgba(255,255,255,0.02)]'
+          ? 'border-primary-dark bg-[rgba(124,58,237,0.1)]'
+          : 'border-border hover:border-border bg-bg-secondary'
       }`}
     >
-      <div className="w-9 h-9 rounded-lg bg-[var(--color-nebula-deep)] border border-[var(--color-border)] flex items-center justify-center shrink-0">
-        <Bot size={16} className="text-[var(--color-primary)]" />
+      <div className="w-9 h-9 rounded-lg bg-bg-secondary border border-border flex items-center justify-center shrink-0">
+        <Bot size={16} className="text-primary" />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="font-display font-bold text-sm text-[var(--color-text-primary)] truncate">{agent.name}</div>
-        <div className="text-xs font-mono text-[var(--color-text-dim)] flex items-center gap-2">
-          <span className="text-[var(--color-primary)]">{agent.category}</span>
+        <div className="font-display font-bold text-sm text-text-primary truncate">{agent.name}</div>
+        <div className="text-xs font-mono text-text-dim flex items-center gap-2">
+          <span className="text-primary">{agent.category}</span>
           <span>·</span>
           <span>{formatWeiToAgt(agent.commsPricePerCall)} AGT/call</span>
           <span>·</span>
-          <span className="text-[var(--color-success)]">{agent.successRate}%</span>
+          <span className="text-success">{agent.successRate}%</span>
         </div>
       </div>
       {selected?.agentId === agent.agentId && (
-        <CheckCircle size={16} className="text-[var(--color-primary)] shrink-0" />
+        <CheckCircle size={16} className="text-primary shrink-0" />
       )}
     </motion.div>
   )
@@ -98,47 +98,47 @@ function CallResultDisplay({ result }) {
       {/* Chain visualization */}
       <div className="flex items-center gap-3 p-4 rounded-xl bg-[rgba(52,211,153,0.05)] border border-[rgba(52,211,153,0.2)]">
         <div className="flex items-center gap-2 text-xs font-mono">
-          <Cpu size={14} className="text-[var(--color-primary)]" />
-          <span className="text-[var(--color-primary)]">{sourceAgent?.name || 'Source'}</span>
+          <Cpu size={14} className="text-primary" />
+          <span className="text-primary">{sourceAgent?.name || 'Source'}</span>
         </div>
-        <ArrowRight size={16} className="text-[var(--color-text-dim)] shrink-0" />
+        <ArrowRight size={16} className="text-text-dim shrink-0" />
         <div className="flex items-center gap-2 text-xs font-mono">
-          <Bot size={14} className="text-[var(--color-success)]" />
-          <span className="text-[var(--color-success)]">{targetAgent?.name}</span>
+          <Bot size={14} className="text-success" />
+          <span className="text-success">{targetAgent?.name}</span>
         </div>
-        <span className="ml-auto text-xs font-mono text-[var(--color-text-dim)]">
+        <span className="ml-auto text-xs font-mono text-text-dim">
           {execResult?.latency}ms
         </span>
       </div>
 
       {/* Response */}
       <div className="p-3 rounded-xl bg-[rgba(124,58,237,0.06)] border border-[rgba(124,58,237,0.2)]">
-        <div className="text-xs font-mono  text-[var(--color-text-dim)] mb-2">DELEGATION BILLING</div>
+        <div className="text-xs font-mono text-text-dim mb-2">DELEGATION BILLING</div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] font-mono">
-          <div className="rounded-lg p-2 bg-black/20 border border-[var(--color-border)]">
-            <div className="text-[var(--color-text-dim)] text-xs">CHARGED</div>
-            <div className="text-[var(--color-primary)]">{formatWeiToAgt(billing?.chargedWei)} AGT</div>
+          <div className="rounded-lg p-2 bg-bg-secondary border border-border">
+            <div className="text-text-dim text-xs">CHARGED</div>
+            <div className="text-primary">{formatWeiToAgt(billing?.chargedWei)} AGT</div>
           </div>
-          <div className="rounded-lg p-2 bg-black/20 border border-[var(--color-border)]">
-            <div className="text-[var(--color-text-dim)] text-xs">CREATOR</div>
-            <div className="text-[var(--color-success)]">{formatWeiToAgt(billing?.creatorAmountWei)} AGT</div>
+          <div className="rounded-lg p-2 bg-bg-secondary border border-border">
+            <div className="text-text-dim text-xs">CREATOR</div>
+            <div className="text-success">{formatWeiToAgt(billing?.creatorAmountWei)} AGT</div>
           </div>
-          <div className="rounded-lg p-2 bg-black/20 border border-[var(--color-border)]">
-            <div className="text-[var(--color-text-dim)] text-xs">PLATFORM</div>
-            <div className="text-[var(--color-text-secondary)]">{formatWeiToAgt(billing?.platformFeeWei)} AGT</div>
+          <div className="rounded-lg p-2 bg-bg-secondary border border-border">
+            <div className="text-text-dim text-xs">PLATFORM</div>
+            <div className="text-text-secondary">{formatWeiToAgt(billing?.platformFeeWei)} AGT</div>
           </div>
         </div>
       </div>
 
       {readableText && (
-        <div className="p-3 rounded-xl bg-[rgba(255,255,255,0.03)] border border-[var(--color-border)]">
-          <div className="text-xs font-mono  text-[var(--color-text-dim)] mb-2">READABLE RESPONSE</div>
-          <pre className="whitespace-pre-wrap break-words text-[12px] leading-relaxed text-[var(--color-text-secondary)] font-sans">{readableText}</pre>
+        <div className="p-3 rounded-xl bg-[rgba(255,255,255,0.03)] border border-border">
+          <div className="text-xs font-mono text-text-dim mb-2">READABLE RESPONSE</div>
+          <pre className="whitespace-pre-wrap wrap-break-word text-[12px] leading-relaxed text-text-secondary font-sans">{readableText}</pre>
         </div>
       )}
 
-      <div className="p-3 rounded-xl bg-[rgba(255,255,255,0.02)] border border-[var(--color-border)]">
-        <div className="text-xs font-mono  text-[var(--color-text-dim)] mb-2">JSON RESPONSE</div>
+      <div className="p-3 rounded-xl bg-bg-secondary border border-border">
+        <div className="text-xs font-mono text-text-dim mb-2">JSON RESPONSE</div>
         <OutputRenderer
           response={execResult?.response}
           agentName={targetAgent?.name}
@@ -164,7 +164,7 @@ function MessageHistory({ agentId }) {
 
   if (loading) return (
     <div className="flex items-center justify-center py-8">
-      <Loader2 size={20} className="animate-spin text-[var(--color-primary)]" />
+      <Loader2 size={20} className="animate-spin text-primary" />
     </div>
   )
 
@@ -176,8 +176,8 @@ function MessageHistory({ agentId }) {
 
   if (allMessages.length === 0) return (
     <div className="text-center py-8">
-      <MessageCircle size={28} className="mx-auto mb-2 text-[var(--color-text-dim)] opacity-20" />
-      <div className="text-[var(--color-text-dim)] text-xs font-mono">No inter-agent messages yet</div>
+      <MessageCircle size={28} className="mx-auto mb-2 text-text-dim opacity-20" />
+      <div className="text-text-dim text-xs font-mono">No inter-agent messages yet</div>
     </div>
   )
 
@@ -192,20 +192,20 @@ function MessageHistory({ agentId }) {
               : 'border-[rgba(52,211,153,0.2)] bg-[rgba(52,211,153,0.04)]'
           }`}>
             <div className="flex items-center gap-2 mb-1">
-              <span className={`text-xs font-bold ${isSent ? 'text-[var(--color-primary)]' : 'text-[var(--color-success)]'}`}>
+              <span className={`text-xs font-bold ${isSent ? 'text-primary' : 'text-success'}`}>
                 {isSent ? '→ SENT TO' : '← RECEIVED FROM'}
               </span>
-              <span className="font-semibold text-xs text-[var(--color-text-dim)]">
+              <span className="font-semibold text-xs text-text-dim">
                 {isSent ? msg.toAgentId : msg.fromAgentId}
               </span>
               <span className={`ml-auto text-xs px-1.5 py-0.5 rounded font-mono ${
-                msg.status === 'success' ? 'text-[var(--color-success)] bg-[rgba(52,211,153,0.1)]'
-                : msg.status === 'failed' ? 'text-[var(--color-danger)] bg-[rgba(248,113,113,0.1)]'
-                : 'text-[var(--color-text-dim)]'
+                msg.status === 'success' ? 'text-success bg-[rgba(52,211,153,0.1)]'
+                : msg.status === 'failed' ? 'text-danger bg-[rgba(248,113,113,0.1)]'
+                : 'text-text-dim'
               }`}>{msg.status}</span>
             </div>
-            <p className="text-[var(--color-text-muted)] truncate">{msg.task}</p>
-            {msg.latency && <span className="text-xs font-mono text-[var(--color-text-dim)]">{msg.latency}ms</span>}
+            <p className="text-text-muted truncate">{msg.task}</p>
+            {msg.latency && <span className="text-xs font-mono text-text-dim">{msg.latency}ms</span>}
           </div>
         )
       })}
@@ -374,15 +374,15 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
 
   if (!isConnected) return (
     <div className="glass-card-landing rounded-xl p-6 text-center">
-      <Network size={28} className="mx-auto mb-2 text-[var(--color-text-dim)] opacity-30" />
-      <p className="text-[var(--color-text-muted)] text-sm font-mono">Connect wallet to use agent-to-agent communication</p>
+      <Network size={28} className="mx-auto mb-2 text-text-dim opacity-30" />
+      <p className="text-text-muted text-sm font-mono">Connect wallet to use agent-to-agent communication</p>
     </div>
   )
 
   return (
     <div className="glass-card-landing rounded-xl overflow-hidden">
       {/* Tabs */}
-      <div className="flex border-b border-[var(--color-border)]">
+      <div className="flex border-b border-border">
         {[
           { id: 'call', label: 'CALL AGENT', icon: Network },
           { id: 'history', label: 'MESSAGE LOG', icon: Activity },
@@ -394,8 +394,8 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
               onClick={() => setTab(t.id)}
               className={`flex items-center gap-2 px-5 py-3.5 font-semibold text-sm  border-b-2 transition-all cursor-pointer ${
                 tab === t.id
-                  ? 'border-[var(--color-primary)] text-[var(--color-primary)] bg-[rgba(124,58,237,0.05)]'
-                  : 'border-transparent text-[var(--color-text-dim)] hover:text-[var(--color-text-secondary)]'
+                  ? 'border-primary text-primary bg-[rgba(124,58,237,0.05)]'
+                  : 'border-transparent text-text-dim hover:text-text-secondary'
               }`}
             >
               <Icon size={13} />
@@ -409,16 +409,16 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
         {tab === 'call' && (
           <div className="space-y-5">
             {isOwner && (
-              <div className="rounded-xl border border-[var(--color-border)] bg-black/20 p-4 space-y-3">
-                <div className="text-sm font-mono  text-[var(--color-primary)]">OWNER COMMS SETTINGS</div>
+              <div className="rounded-xl border border-border bg-bg-secondary p-4 space-y-3">
+                <div className="text-sm font-mono text-primary">OWNER COMMS SETTINGS</div>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-[11px] font-mono text-[var(--color-text-dim)]">Enable agent-to-agent delegation</span>
+                  <span className="text-[11px] font-mono text-text-dim">Enable agent-to-agent delegation</span>
                   <button
                     onClick={() => setOwnerCommsEnabled(!ownerCommsEnabled)}
                     className={`px-3 py-1.5 rounded-lg border text-sm font-mono cursor-pointer ${
                       ownerCommsEnabled
-                        ? 'border-[var(--color-success)] text-[var(--color-success)] bg-[rgba(52,211,153,0.1)]'
-                        : 'border-[var(--color-border)] text-[var(--color-text-dim)]'
+                        ? 'border-success text-success bg-[rgba(52,211,153,0.1)]'
+                        : 'border-border text-text-dim'
                     }`}
                   >
                     {ownerCommsEnabled ? 'ENABLED' : 'DISABLED'}
@@ -426,7 +426,7 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
                 </div>
                 {ownerCommsEnabled && (
                   <div>
-                    <label className="text-xs font-mono text-[var(--color-text-dim)]  uppercase block mb-2">PRICE PER CALL (AGT)</label>
+                    <label className="text-xs font-mono text-text-dim uppercase block mb-2">PRICE PER CALL (AGT)</label>
                     <input
                       type="number"
                       min="0"
@@ -440,7 +440,7 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
                 <button
                   onClick={handleSaveCommsConfig}
                   disabled={savingConfig}
-                  className="px-4 py-2 rounded-lg text-sm font-mono  border border-[var(--color-primary-dark)] text-[var(--color-primary)] bg-[rgba(124,58,237,0.08)] hover:bg-[rgba(124,58,237,0.16)] disabled:opacity-50 cursor-pointer"
+                  className="px-4 py-2 rounded-lg text-sm font-mono border border-primary-dark text-primary bg-[rgba(124,58,237,0.08)] hover:bg-[rgba(124,58,237,0.16)] disabled:opacity-50 cursor-pointer"
                 >
                   {savingConfig ? 'SAVING...' : 'SAVE COMMS CONFIG'}
                 </button>
@@ -448,14 +448,14 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
             )}
 
             <div>
-              <p className="text-[var(--color-text-muted)] text-xs leading-relaxed mb-4">
-                <strong className="text-[var(--color-primary)]">{agentName}</strong> can delegate tasks to other agents on the marketplace.
+              <p className="text-text-muted text-xs leading-relaxed mb-4">
+                <strong className="text-primary">{agentName}</strong> can delegate tasks to other agents on the marketplace.
                 Either specify a target agent name or let the system auto-discover the best match.
               </p>
 
               {/* Task input */}
               <div className="mb-4">
-                <label className="text-xs font-mono text-[var(--color-text-dim)]  uppercase block mb-2">TASK TO DELEGATE</label>
+                <label className="text-xs font-mono text-text-dim uppercase block mb-2">TASK TO DELEGATE</label>
                 <textarea
                   value={task}
                   onChange={e => setTask(e.target.value)}
@@ -476,8 +476,8 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
                     onClick={() => { setMode(m.id); setSelectedAgent(null); setDiscoveryResults([]) }}
                     className={`flex-1 py-2.5 rounded-lg font-semibold text-sm border transition-all cursor-pointer ${
                       mode === m.id
-                        ? 'border-[var(--color-primary-dark)] bg-[rgba(124,58,237,0.1)] text-[var(--color-primary)]'
-                        : 'border-[var(--color-border)] text-[var(--color-text-dim)] hover:border-[var(--color-border)]'
+                        ? 'border-primary-dark bg-[rgba(124,58,237,0.1)] text-primary'
+                        : 'border-border text-text-dim hover:border-border'
                     }`}
                   >
                     {m.label}
@@ -503,13 +503,13 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
                     <button
                       onClick={handleDiscover}
                       disabled={!task.trim() || discovering}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[rgba(124,58,237,0.3)] bg-[rgba(124,58,237,0.06)] text-[var(--color-primary)] font-semibold text-base disabled:opacity-40 hover:bg-[rgba(124,58,237,0.12)] transition-all cursor-pointer"
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[rgba(124,58,237,0.3)] bg-[rgba(124,58,237,0.06)] text-primary font-semibold text-base disabled:opacity-40 hover:bg-[rgba(124,58,237,0.12)] transition-all cursor-pointer"
                     >
                       {discovering ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />}
                       FIND AGENTS
                     </button>
                     {selectedAgent && (
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[rgba(52,211,153,0.08)] border border-[rgba(52,211,153,0.25)] text-[var(--color-success)] font-semibold text-base">
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[rgba(52,211,153,0.08)] border border-[rgba(52,211,153,0.25)] text-success font-semibold text-base">
                         <CheckCircle size={13} />
                         {selectedAgent.name}
                         <button onClick={() => setSelectedAgent(null)} className="ml-1 opacity-50 hover:opacity-100 cursor-pointer">×</button>
@@ -534,7 +534,7 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
 
               {/* Error */}
               {error && (
-                <div className="flex items-center gap-2 text-[var(--color-danger)] text-xs p-3 rounded-lg bg-[rgba(248,113,113,0.08)] border border-[rgba(248,113,113,0.2)] mb-4">
+                <div className="flex items-center gap-2 text-danger text-xs p-3 rounded-lg bg-[rgba(248,113,113,0.08)] border border-[rgba(248,113,113,0.2)] mb-4">
                   <AlertCircle size={13} /> {error}
                 </div>
               )}
@@ -543,7 +543,7 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
               <button
                 onClick={handleCall}
                 disabled={calling || !task.trim()}
-                className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl bg-[var(--color-primary-dark)] hover:bg-[var(--color-primary)] text-white font-semibold text-base  disabled:opacity-40 transition-all cursor-pointer shadow-[0_0_20px_rgba(124,58,237,0.25)]"
+                className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl bg-primary-dark hover:bg-primary text-white font-semibold text-base disabled:opacity-40 transition-all cursor-pointer"
               >
                 {calling ? <Loader2 size={15} className="animate-spin" /> : <Zap size={15} />}
                 {calling ? 'DELEGATING...' : 'DELEGATE TASK'}

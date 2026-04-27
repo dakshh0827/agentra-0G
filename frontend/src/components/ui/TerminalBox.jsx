@@ -27,7 +27,7 @@ export default function TerminalBox({ logs = [], title = 'SYSTEM LOG', className
           <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-success)] opacity-50" />
         </div>
       </div>
-      <div className="p-4 h-64 overflow-y-auto font-mono text-xs space-y-1.5 bg-black/40">
+      <div className="p-4 h-64 overflow-y-auto font-mono text-xs space-y-1.5 bg-black/15">
         {logs.length === 0 ? (
           <div className="text-[var(--color-text-dim)] terminal-cursor">Awaiting input...</div>
         ) : (

@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutGrid, Upload, BarChart3, Trophy,
-  Cpu, ChevronLeft, ChevronRight, Home,
+  ChevronLeft, ChevronRight, Home, PanelLeft,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -15,31 +15,28 @@ const navItems = [
 ]
 
 export default function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
   const location = useLocation()
 
   return (
     <>
-      {/* ── Desktop sidebar ── */}
       <motion.aside
-        animate={{ width: collapsed ? 64 : 220 }}
-        transition={{ type: 'spring', stiffness: 350, damping: 35 }}
-        className="hidden lg:flex flex-col h-screen relative z-20 overflow-hidden shrink-0"
+        animate={{ width: collapsed ? 84 : 250 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className="hidden lg:flex flex-col h-[calc(100vh-1.5rem)] my-3 ml-3 mr-2 rounded-2xl z-20 overflow-hidden shrink-0 border"
         style={{
-          background: 'rgba(10, 8, 18, 0.97)',
-          borderRight: '1px solid rgba(180, 92, 202, 0.08)',
+          background: 'var(--color-panel)',
+          borderColor: 'var(--color-panel-border)',
+          boxShadow: '0 10px 20px rgba(89, 58, 40, 0.08)',
         }}
       >
-        {/* Logo header */}
         <div className={clsx(
-          "flex items-center justify-between py-5",
+          "flex items-center justify-between py-4",
           collapsed ? "px-4" : "px-5",
-          "border-b border-[rgba(180,92,202,0.08)]"
+          "border-b border-border"
         )}>
           <NavLink to="/" className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-[rgba(180,92,202,0.12)] border border-[rgba(180,92,202,0.25)] flex items-center justify-center shrink-0">
-              <Cpu size={15} className="text-[#B45CCA]" />
-            </div>
+            <img src="/logo/logo48.png" alt="Agentra" className="w-9 h-9 rounded-xl shrink-0" />
             <AnimatePresence>
               {!collapsed && (
                 <motion.div
@@ -49,8 +46,8 @@ export default function Sidebar() {
                   transition={{ duration: 0.15 }}
                   className="min-w-0"
                 >
-                  <div className="font-display font-black text-sm text-[#F5F0FF] tracking-tight leading-none">AGENTRA</div>
-                  <div className="text-xs text-[#5A4E70] font-mono tracking-widest mt-0.5">Neural Platform</div>
+                  <div className="font-display font-semibold text-sm text-text-primary tracking-tight leading-none">AGENTRA</div>
+                  <div className="text-xs text-text-dim font-mono tracking-wide mt-0.5">Control Hub</div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -58,32 +55,31 @@ export default function Sidebar() {
 
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-1.5 rounded-lg text-[#5A4E70] hover:text-[#B45CCA] hover:bg-[rgba(180,92,202,0.08)] transition-all shrink-0"
+            className="p-2 rounded-lg text-text-dim hover:text-primary hover:bg-accent-pink transition-all shrink-0"
           >
             {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </button>
         </div>
 
-        {/* Nav items */}
-        <nav className="flex-1 p-3 space-y-1 overflow-hidden">
+        <nav className="flex-1 p-3 space-y-2 overflow-hidden">
           {navItems.map(({ to, icon: Icon, label, sublabel }) => {
             const isActive = location.pathname.startsWith(to)
             return (
               <NavLink key={to} to={to}>
                 <motion.div
-                  whileHover={{ x: collapsed ? 0 : 3 }}
+                  whileHover={{ x: collapsed ? 0 : 2 }}
                   transition={{ duration: 0.15 }}
                   className={clsx(
                     'flex items-center gap-3 rounded-xl transition-all duration-200',
                     collapsed ? 'px-3 py-3 justify-center' : 'px-3 py-2.5',
                     isActive
-                      ? 'bg-[rgba(180,92,202,0.12)] border border-[rgba(180,92,202,0.2)]'
-                      : 'border border-transparent hover:bg-[rgba(180,92,202,0.05)] hover:border-[rgba(180,92,202,0.08)]'
+                      ? 'nav-link-active'
+                      : 'nav-link-idle'
                   )}
                 >
                   <Icon
                     size={16}
-                    className={isActive ? 'text-[#B45CCA] shrink-0' : 'text-[#5A4E70] shrink-0'}
+                    className={isActive ? 'text-primary shrink-0' : 'text-text-dim shrink-0'}
                   />
                   <AnimatePresence>
                     {!collapsed && (
@@ -95,16 +91,16 @@ export default function Sidebar() {
                       >
                         <div className={clsx(
                           'text-sm font-semibold tracking-tight',
-                          isActive ? 'text-[#D084DA]' : 'text-[#8B7FA0]'
+                          isActive ? 'text-primary-dark' : 'text-text-secondary'
                         )}>
                           {label}
                         </div>
-                        <div className="text-xs text-[#5A4E70] leading-none mt-0.5">{sublabel}</div>
+                        <div className="text-xs text-text-dim leading-none mt-0.5">{sublabel}</div>
                       </motion.div>
                     )}
                   </AnimatePresence>
                   {isActive && !collapsed && (
-                    <div className="w-1 h-1 rounded-full bg-[#B45CCA] shrink-0" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                   )}
                 </motion.div>
               </NavLink>
@@ -112,36 +108,33 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* Home link */}
         <div className={clsx("px-3 pb-2", collapsed && "flex justify-center")}>
           <NavLink to="/">
             <div className={clsx(
-              "flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all border border-transparent hover:bg-[rgba(180,92,202,0.05)] hover:border-[rgba(180,92,202,0.08)]",
+              "flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all border border-transparent hover:bg-bg-secondary hover:border-border",
               collapsed && "justify-center"
             )}>
-              <Home size={16} className="text-[#5A4E70] shrink-0" />
+              <Home size={16} className="text-text-dim shrink-0" />
               {!collapsed && (
-                <span className="text-sm font-semibold text-[#5A4E70] tracking-tight">Home</span>
+                <span className="text-sm font-semibold text-text-secondary tracking-tight">Home</span>
               )}
             </div>
           </NavLink>
         </div>
 
-        {/* Bottom status */}
-        {!collapsed && (
-          <div className="px-4 py-4 border-t border-[rgba(180,92,202,0.08)]">
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#34D399] pulse-dot" />
-              <span className="text-xs font-mono text-[#5A4E70] tracking-widest uppercase">Network Live</span>
+        {!collapsed ? (
+          <div className="px-4 py-3 border-t border-border">
+            <div className="rounded-lg bg-bg-secondary border border-border px-3 py-2.5 flex items-center gap-2">
+              <PanelLeft size={13} className="text-primary" />
+              <span className="text-xs font-mono text-text-dim tracking-wide">Compact Nav Enabled</span>
             </div>
           </div>
-        )}
+        ) : null}
       </motion.aside>
 
-      {/* ── Mobile bottom navigation ── */}
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-[rgba(180,92,202,0.1)]"
-        style={{ background: 'rgba(10, 8, 18, 0.97)', backdropFilter: 'blur(20px)' }}
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border"
+        style={{ background: 'var(--color-panel)' }}
       >
         <div className="flex items-center justify-around py-2 px-1 safe-area-inset-bottom">
           {navItems.map(({ to, icon: Icon, label }) => {
@@ -150,11 +143,11 @@ export default function Sidebar() {
               <NavLink key={to} to={to} className="flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-colors">
                 <Icon
                   size={18}
-                  className={isActive ? 'text-[#B45CCA]' : 'text-[#5A4E70]'}
+                  className={isActive ? 'text-primary' : 'text-text-dim'}
                 />
                 <span className={clsx(
                   'text-xs font-semibold tracking-tight',
-                  isActive ? 'text-[#B45CCA]' : 'text-[#5A4E70]'
+                  isActive ? 'text-primary' : 'text-text-dim'
                 )}>
                   {label.slice(0, 7)}
                 </span>

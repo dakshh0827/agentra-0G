@@ -707,8 +707,7 @@ export default function AgentDetail() {
         </motion.div>
       )}
 
-      <div className="fixed top-20 right-10 w-[500px] h-[400px] rounded-full pointer-events-none opacity-25"
-        style={{ background: 'radial-gradient(ellipse, rgba(124,58,237,0.08) 0%, transparent 70%)' }} />
+      <div className="fixed top-20 right-10 w-[500px] h-[400px] rounded-full pointer-events-none opacity-25 bg-[var(--color-bg-secondary)]" />
 
       <div className="relative z-10 p-5 lg:p-8 max-w-7xl mx-auto">
         <Link to="/marketplace">
@@ -723,7 +722,7 @@ export default function AgentDetail() {
           <div className="glass-card-landing rounded-2xl p-6 sm:p-8 relative overflow-hidden ">
             <div className="absolute top-0 right-0 w-[300px] h-[200px] rounded-full pointer-events-none" />
             <div className="relative z-10 flex flex-col lg:flex-row items-start gap-6">
-              <motion.div whileHover={{ scale: 1.05 }} className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-[rgba(124,58,237,0.2)] to-[rgba(124,58,237,0.05)] border border-[rgba(124,58,237,0.3)] flex items-center justify-center shrink-0">
+              <motion.div whileHover={{ scale: 1.05 }} className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[var(--color-accent-pink)] border border-[#d9b6c9] flex items-center justify-center shrink-0">
                 <Cpu size={32} className="text-[var(--color-primary)]" />
               </motion.div>
               <div className="flex-1 min-w-0">
@@ -746,7 +745,7 @@ export default function AgentDetail() {
                 </div>
               </div>
             </div>
-            <div className="relative z-10 mt-6 flex items-center gap-3 p-3 rounded-xl bg-black/30 border border-[var(--color-border)] font-semibold text-base">
+            {/* <div className="relative z-10 mt-6 flex items-center gap-3 p-3 rounded-xl bg-black/30 border border-[var(--color-border)] font-semibold text-base">
               <ExternalLink size={13} className="text-[var(--color-text-dim)] shrink-0" />
               <span className="text-[var(--color-text-muted)] flex-1 truncate">
                 {userHasAccess ? agent.endpoint : '****** (LOCKED — purchase access to reveal) ******'}
@@ -756,7 +755,7 @@ export default function AgentDetail() {
                   {copied ? <CheckCircle size={14} className="text-[var(--color-success)]" /> : <Copy size={14} />}
                 </button>
               )}
-            </div>
+            </div> */}
           </div>
         </motion.div>
 
@@ -896,7 +895,7 @@ export default function AgentDetail() {
                             <span className="text-[var(--color-text-muted)] font-bold">{stat.value}</span>
                           </div>
                           <div className="h-1.5 bg-[var(--color-nebula-deep)] rounded-full overflow-hidden">
-                            <motion.div initial={{ width: 0 }} animate={{ width: `${stat.bar}%` }} transition={{ delay: 0.6 + i * 0.1, duration: 0.8 }} className={`h-full rounded-full bg-gradient-to-r ${stat.color}`} />
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${stat.bar}%` }} transition={{ delay: 0.6 + i * 0.1, duration: 0.8 }} className="h-full rounded-full bg-[var(--color-primary)]" />
                           </div>
                         </div>
                       ))}

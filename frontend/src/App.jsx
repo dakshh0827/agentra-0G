@@ -1,32 +1,36 @@
-import React from 'react'
+import React, { Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Layout from './components/layouts/Layout'
-import LandingLayout from './components/layouts/LandingLayout'
-import LandingPage from './pages/LandingPage'
-import Marketplace from './pages/Marketplace'
-import AgentDetail from './pages/AgentDetail'
-import DeployStudio from './pages/DeployStudio'
-import Dashboard from './pages/Dashboard'
-import Leaderboard from './pages/Leaderboard'
+import AppLoader from './components/ui/AppLoader'
+
+const Layout = lazy(() => import('./components/layouts/Layout'))
+const LandingLayout = lazy(() => import('./components/layouts/LandingLayout'))
+const LandingPage = lazy(() => import('./pages/LandingPage'))
+const Marketplace = lazy(() => import('./pages/Marketplace'))
+const AgentDetail = lazy(() => import('./pages/AgentDetail'))
+const DeployStudio = lazy(() => import('./pages/DeployStudio'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Leaderboard = lazy(() => import('./pages/Leaderboard'))
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Landing page with its own layout (navbar, no sidebar) */}
-        <Route element={<LandingLayout />}>
-          <Route path="/" element={<LandingPage />} />
-        </Route>
+      <Suspense fallback={<AppLoader />}>
+        <Routes>
+          {/* Landing page with its own layout (navbar, no sidebar) */}
+          <Route element={<LandingLayout />}>
+            <Route path="/" element={<LandingPage />} />
+          </Route>
 
-        {/* App pages with sidebar layout */}
-        <Route element={<Layout />}>
-          <Route path="marketplace" element={<Marketplace />} />
-          <Route path="agent/:id" element={<AgentDetail />} />
-          <Route path="deploy" element={<DeployStudio />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="leaderboard" element={<Leaderboard />} />
-        </Route>
-      </Routes>
+          {/* App pages with sidebar layout */}
+          <Route element={<Layout />}>
+            <Route path="marketplace" element={<Marketplace />} />
+            <Route path="agent/:id" element={<AgentDetail />} />
+            <Route path="deploy" element={<DeployStudio />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="leaderboard" element={<Leaderboard />} />
+          </Route>
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   )
 }

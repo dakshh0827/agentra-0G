@@ -17,7 +17,6 @@ export default function GlassCard({
       onClick={onClick}
       className={clsx(
         'glass-panel rounded-xl transition-all duration-300',
-        glow && 'glow-border',
         hover && 'hover:border-[var(--color-border)]',
         onClick && 'cursor-pointer',
         className

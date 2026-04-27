@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Cpu, Menu, X } from 'lucide-react'
-import StarField from '../ui/StarField'
-import NeuralGrid from '../ui/NeuralGrid'
+import { Menu, X } from 'lucide-react'
 
 const navLinks = [
   { to: '/marketplace', label: 'MARKETPLACE' },
@@ -27,55 +25,45 @@ export default function LandingLayout() {
   useEffect(() => { setMobileOpen(false) }, [location.pathname])
 
   return (
-    <div className="min-h-screen relative" style={{ background: '#000' }}>
-      <StarField />
-      <NeuralGrid />
+    <div className="min-h-screen relative bg-bg text-text-primary">
 
-      {/* ── Sticky Navbar ── */}
       <header className={`landing-nav ${scrolled ? 'scrolled' : ''} fixed top-0 left-0 right-0 z-50`}>
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 h-16">
-          {/* Logo */}
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-5 h-16">
           <Link to="/" className="flex items-center gap-3 shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-[var(--color-accent-pink)] border border-[var(--color-border)] flex items-center justify-center">
-              <Cpu size={15} className="text-[var(--color-primary)]" />
-            </div>
+            <img src="/logo/logo32.png" alt="Agentra" className="w-8 h-8 rounded-xl" />
             <div>
-              <div className="font-display font-bold text-sm text-[var(--color-text-primary)] ">AGENTRA</div>
+              <div className="font-display font-semibold text-sm text-text-primary">AGENTRA</div>
             </div>
           </Link>
 
-          {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map(link => (
               <Link
                 key={link.to}
                 to={link.to}
-                className="px-4 py-2 rounded-lg text-[11px] font-mono  text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:bg-[rgba(255,255,255,0.03)] transition-all duration-200"
+                className="px-4 py-2 rounded-lg text-[11px] font-mono text-text-muted hover:text-primary hover:bg-accent-pink transition-all duration-200"
               >
                 {link.label}
               </Link>
             ))}
           </nav>
 
-          {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3">
             <Link to="/marketplace">
-              <button className="btn-glow px-5 py-2 rounded-lg text-[11px] inline-flex items-center gap-2 cursor-pointer">
+              <button className="btn-primary px-5 py-2 rounded-lg text-[11px] inline-flex items-center gap-2 cursor-pointer">
                 LAUNCH APP
               </button>
             </Link>
           </div>
 
-          {/* Mobile menu toggle */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden text-[var(--color-text-secondary)] p-2 rounded-lg hover:bg-[rgba(255,255,255,0.05)] transition-colors cursor-pointer"
+            className="md:hidden text-text-secondary p-2 rounded-lg hover:bg-bg-secondary transition-colors cursor-pointer"
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
 
-        {/* Mobile nav */}
         <AnimatePresence>
           {mobileOpen && (
             <motion.div
@@ -83,20 +71,20 @@ export default function LandingLayout() {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="md:hidden border-t border-[var(--color-border)] overflow-hidden"
+              className="md:hidden border-t border-border overflow-hidden bg-panel"
             >
               <nav className="flex flex-col p-4 gap-1">
                 {navLinks.map(link => (
                   <Link
                     key={link.to}
                     to={link.to}
-                    className="px-4 py-3 rounded-lg text-[11px] font-mono  text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:bg-[rgba(255,255,255,0.03)] transition-all"
+                    className="px-4 py-3 rounded-lg text-[11px] font-mono text-text-muted hover:text-primary hover:bg-accent-pink transition-all"
                   >
                     {link.label}
                   </Link>
                 ))}
                 <Link to="/marketplace" className="mt-2">
-                  <button className="btn-glow w-full px-5 py-2.5 rounded-lg text-[11px] inline-flex items-center justify-center gap-2 cursor-pointer">
+                  <button className="btn-primary w-full px-5 py-2.5 rounded-lg text-[11px] inline-flex items-center justify-center gap-2 cursor-pointer">
                     LAUNCH APP
                   </button>
                 </Link>
@@ -106,7 +94,6 @@ export default function LandingLayout() {
         </AnimatePresence>
       </header>
 
-      {/* ── Page Content ── */}
       <main className="relative z-10">
         <Outlet />
       </main>
