@@ -36,15 +36,14 @@ app.use(
 
 app.use(
   cors({
-    origin: config.isDev
-      ? [
-          'http://localhost:3000',
-          'http://localhost:5173',
-          'http://127.0.0.1:5173',
-          'http://localhost:5174',
-          'https://www.agentra.live',
-        ]
-      : process.env.ALLOWED_ORIGINS?.split(',') || [],
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+      'http://localhost:5174',
+      'https://www.agentra.live',
+      'https://agentra.live',
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
@@ -52,7 +51,7 @@ app.use(
       'Authorization',
       'x-wallet-address',
       'Cache-Control',
-      'Pragma'
+      'Pragma',
     ],
   })
 )
