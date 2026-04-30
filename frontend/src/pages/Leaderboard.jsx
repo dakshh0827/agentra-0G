@@ -64,7 +64,7 @@ export default function Leaderboard() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <div className="p-6 max-w-7xl mx-auto"><LoadingPulse rows={8} /></div>
+  if (loading) return <div className="p-6 max-w-7xl mx-auto"><LoadingPulse /></div>
 
   return (
     <div className="relative min-h-screen bg-[var(--color-bg)]">

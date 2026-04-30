@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Search, SlidersHorizontal, RefreshCw, Activity, Cpu, TrendingUp, Sparkles, Star, PhoneCall, Zap } from 'lucide-react'
+import { Search, SlidersHorizontal, RefreshCw, Activity, Cpu, TrendingUp, Sparkles, Star, PhoneCall, Zap, Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import LoadingPulse from '../components/ui/LoadingPulse'
 import NeonButton from '../components/ui/NeonButton'
@@ -22,10 +22,15 @@ export default function Marketplace() {
   const { agents, isLoading } = useAgents()
   const { filters, search, setFilter, setSearch } = useMarketplaceStore()
   const [stats, setStats] = useState(null)
+  const [statsLoading, setStatsLoading] = useState(true)
   const [searchInput, setSearchInput] = useState(search)
 
   useEffect(() => {
-    analyticsAPI.getGlobalStats().then((r) => setStats(r.data)).catch(() => {})
+    setStatsLoading(true)
+    analyticsAPI.getGlobalStats()
+      .then((r) => setStats(r.data))
+      .catch(() => {})
+      .finally(() => setStatsLoading(false))
   }, [])
 
   useEffect(() => {
@@ -158,7 +163,9 @@ export default function Marketplace() {
                       <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-text-dim font-medium">{item.label}</div>
                       <Icon size={14} className="text-primary opacity-80" />
                     </div>
-                    <div className="text-xl sm:text-2xl font-bold text-text-primary">{String(item.value)}</div>
+                    <div className="text-xl sm:text-2xl font-bold text-text-primary">
+                      {statsLoading ? <Loader2 size={16} className="animate-spin text-primary" /> : String(item.value)}
+                    </div>
                   </div>
                 )
               })}
@@ -166,7 +173,7 @@ export default function Marketplace() {
 
             {/* AGENT CARDS GRID */}
             {isLoading ? (
-              <LoadingPulse rows={5} />
+              <LoadingPulse />
             ) : (
               <>
                 {filteredAgents.length > 0 ? (

@@ -118,7 +118,7 @@ export default function Dashboard() {
     </div>
   )
 
-  if (loading) return <div className="p-6 max-w-7xl mx-auto"><LoadingPulse rows={6} /></div>
+  if (loading) return <div className="p-6 max-w-7xl mx-auto"><LoadingPulse /></div>
 
   // dashData shape: { metrics, agents, revenueData, agentPerf, activityFeed, globalStats }
   const metrics = dashData?.metrics || {}

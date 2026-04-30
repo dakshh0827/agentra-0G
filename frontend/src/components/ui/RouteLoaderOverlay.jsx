@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useLocation } from 'react-router-dom'
+import { Loader2 } from 'lucide-react'
 
 export default function RouteLoaderOverlay({ duration = 420 }) {
   const location = useLocation()
@@ -20,15 +21,16 @@ export default function RouteLoaderOverlay({ duration = 420 }) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.22, ease: 'easeOut' }}
-          className="fixed inset-0 z-[70] bg-bg/85 backdrop-blur-[2px] pointer-events-none"
+          className="fixed inset-0 z-70 bg-bg/85 backdrop-blur-[2px] pointer-events-none"
         >
-          <div className="absolute inset-x-0 top-16 h-[2px] bg-border overflow-hidden">
+          <div className="absolute inset-0 flex items-center justify-center">
             <motion.div
-              initial={{ x: '-60%' }}
-              animate={{ x: '120%' }}
-              transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
-              className="h-full w-1/3 route-loader-sheen"
-            />
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1.1, repeat: Infinity, ease: 'linear' }}
+              className="w-12 h-12 rounded-full border border-border bg-panel flex items-center justify-center shadow-sm"
+            >
+              <Loader2 size={20} className="text-primary" />
+            </motion.div>
           </div>
         </motion.div>
       )}

@@ -22,7 +22,8 @@ import {
   Github,
   MessageCircle,
   FileText,
-  Gem
+  Gem,
+  Loader2
 } from 'lucide-react'
 import { analyticsAPI } from '../api/analytics'
 
@@ -305,38 +306,16 @@ function Counter({ value }) {
 
 const WorkflowStep = ({ x, y, emoji, label, sublabel, delay }) => (
   <motion.g initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-    transition={{ delay, duration: 0.5, ease: 'backOut' }}>
-    <motion.circle cx={x} cy={y} r="60" fill="white" stroke="#e0c8f0" strokeWidth="1.5" />
-    <motion.circle cx={x} cy={y} r="53" fill="#faf5ff" stroke="#d4b8ea" strokeWidth="1"
-      animate={{ r: [53, 55, 53] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay }}
+    transition={{ delay, duration: 0.5, ease: 'backOut' }}
+    style={{ transformOrigin: `${x}px ${y}px` }}>
+    <circle cx={x} cy={y} r="72" fill="white" stroke="#e0c8f0" strokeWidth="1.5" />
+    <motion.circle cx={x} cy={y} r="65" fill="#faf5ff" stroke="#d4b8ea" strokeWidth="1"
+      animate={{ r: [65, 68, 65] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay }}
     />
-    <text x={x} y={y - 20} fontSize="26" textAnchor="middle" dominantBaseline="middle">{emoji}</text>
-    <text
-      x={x}
-      y={y + 8}
-      fontSize="11.5"
-      fontWeight="600"
-      textAnchor="middle"
-      dominantBaseline="middle"
-      fill="#5a3a80"
-      lengthAdjust="spacingAndGlyphs"
-      textLength="94"
-    >
-      {label}
-    </text>
+    <text x={x} y={y - 22} fontSize="24" textAnchor="middle" dominantBaseline="middle">{emoji}</text>
+    <text x={x} y={y + 8} fontSize="12" fontWeight="600" textAnchor="middle" dominantBaseline="middle" fill="#5a3a80">{label}</text>
     {sublabel && (
-      <text
-        x={x}
-        y={y + 24}
-        fontSize="8.5"
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fill="#9880b8"
-        lengthAdjust="spacingAndGlyphs"
-        textLength="92"
-      >
-        {sublabel}
-      </text>
+      <text x={x} y={y + 26} fontSize="10" textAnchor="middle" dominantBaseline="middle" fill="#9880b8">{sublabel}</text>
     )}
   </motion.g>
 )
@@ -347,6 +326,8 @@ const WorkflowArrow = ({ x1, y1, x2, y2, label, delay, curved }) => {
   const d = curved
     ? `M ${x1} ${y1} Q ${curved.cx} ${curved.cy} ${x2} ${y2}`
     : `M ${x1} ${y1} L ${x2} ${y2}`
+  const lx = curved ? curved.cx : mx
+  const ly = curved ? curved.cy - 12 : my - 12
   return (
     <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay, duration: 0.4 }}>
       <motion.path d={d} stroke="#d0b0e8" strokeWidth="1.5" fill="none"
@@ -355,9 +336,7 @@ const WorkflowArrow = ({ x1, y1, x2, y2, label, delay, curved }) => {
         transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
       />
       {label && (
-        <text x={curved ? curved.cx : mx} y={(curved ? curved.cy : my) - 8}
-          fontSize="9.5" textAnchor="middle" fill="#a080c0" fontStyle="italic">{label}
-        </text>
+        <text x={lx} y={ly} fontSize="10" textAnchor="middle" fill="#a080c0" fontStyle="italic">{label}</text>
       )}
     </motion.g>
   )
@@ -365,8 +344,8 @@ const WorkflowArrow = ({ x1, y1, x2, y2, label, delay, curved }) => {
 
 const ImprovedWorkflow = () => (
   <div className="w-full overflow-x-auto py-6">
-    <div className="min-w-310 h-140">
-      <svg width="1240" height="560" viewBox="0 0 1240 560" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <div style={{ minWidth: '900px' }}>
+      <svg width="100%" viewBox="0 0 1240 580" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <marker id="wf-arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M 2 2 L 10 6 L 2 10" fill="none" stroke="#c0a0d8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -406,25 +385,25 @@ const ImprovedWorkflow = () => (
           strokeLinecap="round"
         />
 
-        {/* Steps on a broken-wave flow (not pentagon) */}
-        <WorkflowStep x={150} y={176} emoji="🏗️" label="Developers Deploy" sublabel="via Deploy Studio" delay={0} />
-        <WorkflowStep x={360} y={334} emoji="🛒" label="Users Discover" sublabel="& purchase agents" delay={0.15} />
-        <WorkflowStep x={610} y={168} emoji="⚡" label="Agents Execute" sublabel="tasks on demand" delay={0.3} />
-        <WorkflowStep x={860} y={334} emoji="🔗" label="A2A Collaboration" sublabel="agents hire agents" delay={0.45} />
-        <WorkflowStep x={1088} y={174} emoji="💰" label="AGT Revenue" sublabel="flows on-chain" delay={0.6} />
+        {/* Nodes — same wave positions, bigger circles, fixed text */}
+        <WorkflowStep x={150} y={196} emoji="🏗️" label="Developers Deploy" sublabel="via Deploy Studio" delay={0} />
+        <WorkflowStep x={370} y={354} emoji="🛒" label="Users Discover" sublabel="& purchase agents" delay={0.15} />
+        <WorkflowStep x={620} y={188} emoji="⚡" label="Agents Execute" sublabel="tasks on demand" delay={0.3} />
+        <WorkflowStep x={870} y={354} emoji="🔗" label="A2A Collaboration" sublabel="agents hire agents" delay={0.45} />
+        <WorkflowStep x={1090} y={194} emoji="💰" label="AGT Revenue" sublabel="flows on-chain" delay={0.6} />
 
-        {/* Arrows */}
-        <WorkflowArrow x1={205} y1={216} x2={318} y2={294} label="listed as NFT" delay={0.8} curved={{ cx: 270, cy: 220 }} />
-        <WorkflowArrow x1={410} y1={296} x2={565} y2={206} label="pay per call" delay={0.95} curved={{ cx: 490, cy: 320 }} />
-        <WorkflowArrow x1={655} y1={208} x2={812} y2={292} label="sub-tasks delegated" delay={1.1} curved={{ cx: 738, cy: 194 }} />
-        <WorkflowArrow x1={908} y1={292} x2={1048} y2={216} label="billing settled" delay={1.25} curved={{ cx: 986, cy: 328 }} />
+        {/* Arrows — adjusted to match new node positions/sizes */}
+        <WorkflowArrow x1={218} y1={238} x2={306} y2={312} label="listed as NFT" delay={0.8} curved={{ cx: 272, cy: 232 }} />
+        <WorkflowArrow x1={432} y1={316} x2={556} y2={226} label="pay per call" delay={0.95} curved={{ cx: 500, cy: 336 }} />
+        <WorkflowArrow x1={686} y1={228} x2={806} y2={312} label="sub-tasks delegated" delay={1.1} curved={{ cx: 750, cy: 204 }} />
+        <WorkflowArrow x1={936} y1={312} x2={1022} y2={234} label="billing settled" delay={1.25} curved={{ cx: 992, cy: 348 }} />
 
-        {/* Centre label */}
+        {/* Centre AGENTRA badge */}
         <motion.g animate={{ scale: [1, 1.04, 1] }} transition={{ duration: 4, repeat: Infinity }}
-          style={{ transformOrigin: '620px 260px' }}>
-          <circle cx="620" cy="260" r="74" fill="#faf4ff" stroke="#e0c8f0" strokeWidth="1.5" />
-          <text x="620" y="252" fontSize="16" fontWeight="700" textAnchor="middle" dominantBaseline="middle" fill="#6030a0">AGENTRA</text>
-          <text x="620" y="276" fontSize="11" textAnchor="middle" dominantBaseline="middle" fill="#a080c0">ECOSYSTEM</text>
+            style={{ transformOrigin: '620px 300px' }}>
+            <circle cx="620" cy="300" r="74" fill="#faf4ff" stroke="#e0c8f0" strokeWidth="1.5" />
+            <text x="620" y="292" fontSize="16" fontWeight="700" textAnchor="middle" dominantBaseline="middle" fill="#6030a0">AGENTRA</text>
+            <text x="620" y="314" fontSize="11" textAnchor="middle" dominantBaseline="middle" fill="#a080c0">ECOSYSTEM</text>
         </motion.g>
       </svg>
     </div>
@@ -562,8 +541,13 @@ const Footer = () => (
 
 export default function LandingPage() {
   const [stats, setStats] = useState(null)
+  const [statsLoading, setStatsLoading] = useState(true)
   useEffect(() => {
-    analyticsAPI.getGlobalStats().then((r) => setStats(r.data)).catch(() => {})
+    setStatsLoading(true)
+    analyticsAPI.getGlobalStats()
+      .then((r) => setStats(r.data))
+      .catch(() => {})
+      .finally(() => setStatsLoading(false))
   }, [])
 
   const quickStats = useMemo(() => ([
@@ -607,10 +591,10 @@ export default function LandingPage() {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.08 }}
-            className="lg:col-span-4 rounded-2xl border border-panel-border bg-panel-light px-5 py-6">
+            className="lg:col-span-4 rounded-2xl border border-panel-border bg-panel-light">
             <div className="w-full h-full rounded-xl overflow-hidden">
               <video autoPlay loop muted playsInline className="w-full h-full object-cover bg-black/5">
-                <source src="/videos/ai-blockchain.mp4" type="video/mp4" />
+                <source src="/videos/earth.mp4" type="video/mp4" />
               </video>
             </div>
           </motion.div>
@@ -625,7 +609,7 @@ export default function LandingPage() {
               viewport={{ once: true }} transition={{ duration: 0.35, delay: idx * 0.06 }}
               className="rounded-xl border border-border bg-panel px-4 py-4 text-left">
               <div className="text-2xl font-semibold tracking-tight text-primary">
-                {typeof item.value === 'number' ? <Counter value={item.value} /> : item.value}{item.suffix}
+                {statsLoading ? <Loader2 size={18} className="animate-spin" /> : (typeof item.value === 'number' ? <Counter value={item.value} /> : item.value)}{statsLoading ? '' : item.suffix}
               </div>
               <div className="mt-1 text-xs uppercase tracking-wide text-text-dim">{item.label}</div>
             </motion.div>

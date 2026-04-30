@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Radio, Bell, ChevronDown } from 'lucide-react'
+import { Radio, Bell, ChevronDown, Loader2 } from 'lucide-react'
 import { useWeb3Modal } from '@web3modal/wagmi/react'
 import { useAccount, useDisconnect, useReadContract } from 'wagmi'
 import { formatUnits } from 'viem'
@@ -18,6 +18,7 @@ export default function TopBar() {
   const { address, isConnected, chain } = useAccount()
   const { disconnect } = useDisconnect()
   const [stats, setStats] = useState(null)
+  const [statsLoading, setStatsLoading] = useState(true)
 
   useEffect(() => {
     if (address) {
@@ -40,7 +41,11 @@ export default function TopBar() {
   })
 
   useEffect(() => {
-    analyticsAPI.getGlobalStats().then(res => setStats(res.data)).catch(console.error)
+    setStatsLoading(true)
+    analyticsAPI.getGlobalStats()
+      .then(res => setStats(res.data))
+      .catch(console.error)
+      .finally(() => setStatsLoading(false))
   }, [])
 
   return (
@@ -69,8 +74,12 @@ export default function TopBar() {
           className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-mono text-text-dim tracking-wide uppercase"
           style={{ borderColor: '#d9c6b5', background: '#f4ebdf' }}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-success pulse-dot" />
-          {stats?.activeAgents ?? 0} Online
+          {statsLoading ? (
+            <Loader2 size={11} className="animate-spin text-primary" />
+          ) : (
+            <span className="w-1.5 h-1.5 rounded-full bg-success pulse-dot" />
+          )}
+          {statsLoading ? 'Loading' : `${stats?.activeAgents ?? 0} Online`}
         </motion.div>
       </div>
 

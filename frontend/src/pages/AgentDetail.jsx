@@ -686,7 +686,7 @@ export default function AgentDetail() {
 
   const monthlyEth = agent?.pricing ? parseFloat(formatUnits(BigInt(agent.pricing), 18)).toFixed(4) : '0'
 
-  if (loading) return <div className="p-6 max-w-7xl mx-auto"><LoadingPulse rows={8} /></div>
+  if (loading) return <div className="p-6 max-w-7xl mx-auto"><LoadingPulse /></div>
   if (!agent) return (
     <div className="relative min-h-[60vh] flex items-center justify-center p-6">
       <div className="glass-card-landing rounded-2xl p-10 text-center">
