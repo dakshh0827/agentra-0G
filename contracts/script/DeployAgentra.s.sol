@@ -6,26 +6,20 @@ import "../src/Agentra.sol";
 
 contract DeployAgentra is Script {
     function run() external {
-        vm.startBroadcast();
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address feeCollector = vm.addr(deployerPrivateKey);
 
-        // 🛑 IMPORTANT: Paste your already deployed 0G AgentToken address here
-        address existingTokenAddress = 0x6B59511a689221eB7a0a21E3B1D6d88031C17c3d; 
-        
-        address feeCollector = msg.sender;
+        vm.startBroadcast(deployerPrivateKey);
 
-        // Deploy the new Agentra contract
-        Agentra agentra = new Agentra(existingTokenAddress, feeCollector);
-        
-        console.log("New Agentra deployed to:", address(agentra));
-
-        // Write BOTH addresses to temp_addresses.json for the formatter
-        string memory json = "{";
-        json = string.concat(json, "\"AgentToken\": \"", vm.toString(existingTokenAddress), "\",");
-        json = string.concat(json, "\"Agentra\": \"", vm.toString(address(agentra)), "\"");
-        json = string.concat(json, "}");
-        
-        vm.writeFile("./temp_addresses.json", json);
+        // Deploy Agentra (Constructor now only takes feeCollector)
+        Agentra agentra = new Agentra(feeCollector);
 
         vm.stopBroadcast();
+
+        // Write ONLY the Agentra address to temp_addresses.json
+        string memory json = string.concat("{\"Agentra\": \"", vm.toString(address(agentra)), "\"}");
+        vm.writeFile("./temp_addresses.json", json);
+
+        console.log("Agentra deployed at:", address(agentra));
     }
 }

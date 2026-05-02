@@ -57,7 +57,7 @@ export default function TopBar() {
       <div className="flex items-center gap-4">
         {/* Mobile logo */}
         <Link to="/" className="lg:hidden flex items-center gap-2.5 shrink-0">
-            <img src="/logo/logo32.png" alt="Agentra" className="w-7 h-7 rounded-xl" />
+            <img src="/logo/logo48.png" alt="Agentra" className="w-7 h-7 rounded-xl" />
           <span className="font-display font-semibold text-xs text-text-primary tracking-tight">AGENTRA</span>
         </Link>
 
