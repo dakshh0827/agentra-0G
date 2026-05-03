@@ -20,6 +20,14 @@ const AGENTRA_ABI = [
 
   'function update0GPrice(uint256 _newPriceUSD) external',
   'function current0GPriceUSD() view returns (uint256)',
+
+  'function resolveTransaction(uint256 txId) external',
+  'function refundTransaction(uint256 txId) external',
+  'function pendingTransactions(uint256) view returns (uint256 id, address user, uint256 agentId, uint256 weiAmount, uint8 txType, uint8 period, uint8 status, uint256 timestamp)',
+  'function txCounter() view returns (uint256)',
+  'event TxPending(uint256 indexed txId, address indexed user, uint256 indexed agentId, uint8 txType, uint256 weiAmount)',
+  'event TxResolved(uint256 indexed txId, address indexed user, uint256 indexed agentId)',
+  'event TxRefunded(uint256 indexed txId, address indexed user, uint256 indexed agentId)',
 ]
 
 // ─────────────────────────────────────────────
@@ -230,35 +238,39 @@ class ContractManager {
   // ─────────────────────────────────────────────
 
   onAgentDeployed(callback) {
-    if (this._mockMode) return () => {}
+    // if (this._mockMode) return () => {}
 
-    const handler = (agentId, creator, tier, event) => {
-      callback({
-        agentId: Number(agentId),
-        creator,
-        tier: Number(tier),
-        txHash: event.log.transactionHash
-      })
-    }
+    // const handler = (agentId, creator, tier, event) => {
+    //   callback({
+    //     agentId: Number(agentId),
+    //     creator,
+    //     tier: Number(tier),
+    //     txHash: event.log.transactionHash
+    //   })
+    // }
 
-    this.agentra.on('AgentDeployed', handler)
-    return () => this.agentra.off('AgentDeployed', handler)
+    // this.agentra.on('AgentDeployed', handler)
+    // return () => this.agentra.off('AgentDeployed', handler)
+    
+    return () => {}
   }
 
   onAccessPurchased(callback) {
-    if (this._mockMode) return () => {}
+    // if (this._mockMode) return () => {}
 
-    const handler = (agentId, buyer, isLifetime, event) => {
-      callback({
-        agentId: Number(agentId),
-        buyer,
-        isLifetime,
-        txHash: event.log.transactionHash
-      })
-    }
+    // const handler = (agentId, buyer, isLifetime, event) => {
+    //   callback({
+    //     agentId: Number(agentId),
+    //     buyer,
+    //     isLifetime,
+    //     txHash: event.log.transactionHash
+    //   })
+    // }
 
-    this.agentra.on('AccessPurchased', handler)
-    return () => this.agentra.off('AccessPurchased', handler)
+    // this.agentra.on('AccessPurchased', handler)
+    // return () => this.agentra.off('AccessPurchased', handler)
+
+    return () => {}
   }
 
   // ─────────────────────────────────────────────
@@ -272,48 +284,50 @@ class ContractManager {
     }
 
     // Agent deployed
-    this.onAgentDeployed(async (event) => {
-      try {
-        await prisma.agent.updateMany({
-          where: { contractAgentId: event.agentId },
-          data: { status: 'active' }
-        })
-      } catch (err) {
-        console.error('[EVENT] AgentDeployed DB error:', err.message)
-      }
-    })
+    // this.onAgentDeployed(async (event) => {
+    //   try {
+    //     await prisma.agent.updateMany({
+    //       where: { contractAgentId: event.agentId },
+    //       data: { status: 'active' }
+    //     })
+    //   } catch (err) {
+    //     console.error('[EVENT] AgentDeployed DB error:', err.message)
+    //   }
+    // })
 
-    // Access purchased
-    this.onAccessPurchased(async (event) => {
-      try {
-        await prisma.agentAccess.upsert({
-          where: {
-            agentId_userWallet: {
-              agentId: String(event.agentId),
-              userWallet: event.buyer
-            }
-          },
-          update: {
-            isLifetime: event.isLifetime,
-            expiresAt: event.isLifetime
-              ? new Date('9999-12-31')
-              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-          },
-          create: {
-            agentId: String(event.agentId),
-            userWallet: event.buyer,
-            isLifetime: event.isLifetime,
-            expiresAt: event.isLifetime
-              ? new Date('9999-12-31')
-              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-          }
-        })
-      } catch (err) {
-        console.error('[EVENT] AccessPurchased DB error:', err.message)
-      }
-    })
+    // // Access purchased
+    // this.onAccessPurchased(async (event) => {
+    //   try {
+    //     await prisma.agentAccess.upsert({
+    //       where: {
+    //         agentId_userWallet: {
+    //           agentId: String(event.agentId),
+    //           userWallet: event.buyer
+    //         }
+    //       },
+    //       update: {
+    //         isLifetime: event.isLifetime,
+    //         expiresAt: event.isLifetime
+    //           ? new Date('9999-12-31')
+    //           : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    //       },
+    //       create: {
+    //         agentId: String(event.agentId),
+    //         userWallet: event.buyer,
+    //         isLifetime: event.isLifetime,
+    //         expiresAt: event.isLifetime
+    //           ? new Date('9999-12-31')
+    //           : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    //       }
+    //     })
+    //   } catch (err) {
+    //     console.error('[EVENT] AccessPurchased DB error:', err.message)
+    //   }
+    // })
 
-    console.log('[CONTRACTS] ✅ Event listeners running')
+    // console.log('[CONTRACTS] ✅ Event listeners running')
+
+    console.log('[CONTRACTS] ⚠️ Event listeners skipped (0G RPC lacks filter support). Polling active via resolverJob.')
   }
 
   async update0GPrice(priceWei) {
@@ -336,6 +350,60 @@ class ContractManager {
     } catch (err) {
       console.error('[CONTRACTS] getCurrent0GPrice error:', err.message)
       return null
+    }
+  }
+
+  async resolveTransaction(txId) {
+    if (this._mockMode) {
+      console.log(`[CONTRACTS] Mock mode — skipping resolveTransaction(${txId})`)
+      return { hash: `0xmock_resolve_${Date.now()}` }
+    }
+    if (!this.signer) throw new Error('Signer required for resolveTransaction — set PRIVATE_KEY with RESOLVER_ROLE')
+    const tx = await this.agentra.resolveTransaction(txId)
+    const receipt = await tx.wait(1)
+    console.log(`[CONTRACTS] resolveTransaction(${txId}) ✅ tx: ${receipt.hash}`)
+    return receipt
+  }
+
+  async refundTransaction(txId) {
+    if (this._mockMode) {
+      console.log(`[CONTRACTS] Mock mode — skipping refundTransaction(${txId})`)
+      return { hash: `0xmock_refund_${Date.now()}` }
+    }
+    if (!this.signer) throw new Error('Signer required for refundTransaction — set PRIVATE_KEY with RESOLVER_ROLE')
+    const tx = await this.agentra.refundTransaction(txId)
+    const receipt = await tx.wait(1)
+    console.log(`[CONTRACTS] refundTransaction(${txId}) ✅ tx: ${receipt.hash}`)
+    return receipt
+  }
+
+  async getPendingTransaction(txId) {
+    if (this._mockMode) return null
+    try {
+      const pTx = await this.agentra.pendingTransactions(txId)
+      return {
+        id: pTx[0],
+        user: pTx[1],
+        agentId: pTx[2],
+        weiAmount: pTx[3],
+        txType: pTx[4],
+        period: pTx[5],
+        status: pTx[6],
+        timestamp: pTx[7],
+      }
+    } catch (err) {
+      console.error(`[CONTRACTS] getPendingTransaction(${txId}) error:`, err.message)
+      return null
+    }
+  }
+
+  async getTxCounter() {
+    if (this._mockMode) return 0n
+    try {
+      return await this.agentra.txCounter()
+    } catch (err) {
+      console.error('[CONTRACTS] getTxCounter error:', err.message)
+      return 0n
     }
   }
 }

@@ -18,6 +18,7 @@ import analyticsRoutes from './routes/analyticsRoutes.js'
 import reviewRoutes from './routes/reviewRoutes.js'
 
 import { startOracleJob } from './jobs/oracleJob.js'
+import { startResolverJob } from './jobs/resolverJob.js'
 
 const app = express()
 
@@ -114,6 +115,7 @@ const start = async () => {
     }
 
     startOracleJob()
+    startResolverJob()
 
     app.listen(config.port, () => {
       console.log(`\n🚀 Agentra API running on port ${config.port}`)

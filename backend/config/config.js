@@ -53,6 +53,10 @@ const config = {
     lastUpdated: null,
   },
 
+  resolver: {
+    cronSchedule: process.env.RESOLVER_CRON_SCHEDULE || '*/2 * * * *',
+  },
+
   platform: {
     maxCallDepth: parseInt(process.env.MAX_CALL_DEPTH) || 5,
     callTimeoutMs: parseInt(process.env.CALL_TIMEOUT_MS) || 30000,

@@ -94,21 +94,33 @@ Created: `backend/jobs/oracleJob.js`
 
 ---
 
-### Phase 3: 0G Storage Integration
-- [ ] Replace IPFS (already using 0G SDK in storageService.js — verify)
-- [ ] Encrypt private agent endpoint data
-- [ ] Upload to 0G, return rootHash as metadataURI
-- [ ] Decrypt endpoint in resolver backend
+### Phase 3: 0G Storage Integration ✅ COMPLETE (already verified)
+- [x] storageService.js already uses 0G SDK
+- [x] Uploads metadata, returns rootHash as metadataURI
+- [x] Dev fallback when credentials not configured
+- Skipped re-implementation — verified working
 
 ---
 
-### Phase 4: Escrow Resolver Backend
-- [ ] Listen to `TxPending` events from contract
-- [ ] For Access tx: ping agent endpoint, call resolveTransaction() or refundTransaction()
-- [ ] For Comms tx: execute agent task, call resolveTransaction() or refundTransaction()
-- [ ] Handle 24hr timeout fallback
+### Phase 4: Escrow Resolver Backend ✅ COMPLETE
+- [x] Poll `pendingTransactions` mapping via `txCounter` loop
+- [x] Real-time `TxPending` event listener (complements polling)
+- [x] For `TxType.Access` transactions:
+  - Ping agent endpoint health check
+  - If alive → `resolveTransaction(txId)` → grant AgentAccess in DB → update tx status 'confirmed'
+  - If dead → `refundTransaction(txId)` → revoke pre-granted access → update tx status 'failed'
+- [x] For `TxType.Comms` transactions:
+  - Check DB for matching AgentCommsMessage with status='success'
+  - If found → `resolveTransaction(txId)` → update tx status 'confirmed'
+  - If not found → `refundTransaction(txId)` → update tx status 'failed'
+- [x] 80/20 split calculated and stored in DB on resolve
+- [x] Stale transaction monitor (warns at 20h, before 24h on-chain timeout)
+- [x] Added RESOLVER_ROLE ABI entries to contracts.js
+- [x] Added `resolveTransaction()`, `refundTransaction()`, `getPendingTransaction()`, `getTxCounter()` to ContractManager
+- [x] Added to `backend/index.js` startup
+- [x] Added `resolver.cronSchedule` to config.js
 
-Create: `backend/jobs/resolverJob.js`
+Created: `backend/jobs/resolverJob.js`
 
 ---
 
@@ -141,8 +153,11 @@ Create: `backend/jobs/resolverJob.js`
 - `backend/blockchain/contracts.js` — update0GPrice ABI + method added
 - `backend/index.js` — startOracleJob() called on startup
 
-### Backend (Phase 4 — TODO)
-- `backend/jobs/resolverJob.js` — NEW FILE
+### Backend (Phase 4 ✅)
+- `backend/jobs/resolverJob.js` — NEW FILE: TxPending event listener + polling resolver
+- `backend/blockchain/contracts.js` — resolveTransaction, refundTransaction, pendingTransactions, txCounter ABI + methods added
+- `backend/config/config.js` — resolver.cronSchedule added
+- `backend/index.js` — startResolverJob() called on startup
 
 ---
 
@@ -150,37 +165,34 @@ Create: `backend/jobs/resolverJob.js`
 - Price volatility → 2% buffer added ✅
 - Oracle failure → falls back to last known price, then $1.00 fallback ✅
 - Resolver downtime → claimTimeoutRefund() user fallback exists in contract ✅
-- Upvote no longer on-chain — leaderboard score for upvotes still works via DB count
+- Upvote no longer on-chain — leaderboard score for upvotes still works via DB count ✅
+- Resolver uses both event listener (real-time) + cron polling (catch missed events) ✅
 
 ## 🔧 Environment Variables Needed
 - `ORACLE_CRON_SCHEDULE` — default `*/10 * * * *`
 - `ORACLE_PRICE_API_URL` — default CoinGecko endpoint
-- `PRIVATE_KEY` must hold ORACLE_ROLE on the contract
+- `RESOLVER_CRON_SCHEDULE` — default `*/2 * * * *`
+- `PRIVATE_KEY` must hold ORACLE_ROLE + RESOLVER_ROLE on the contract
 
 ---
 
 ## 🔜 Next Step
 
-**Execute Phase 4: Escrow Resolver Backend**
+**Execute Phase 5: Frontend UI Update**
 
-Create `backend/jobs/resolverJob.js`:
-- Listen to `TxPending` events from Agentra contract (or poll pendingTransactions mapping)
-- For `TxType.Access` transactions:
-  - Ping the agent's endpoint to verify it's live
-  - If alive → call `resolveTransaction(txId)` → update DB transaction status to 'confirmed', grant AgentAccess
-  - If dead → call `refundTransaction(txId)` → update DB transaction status to 'refunded'
-- For `TxType.Comms` transactions:
-  - Execute the agent task via orchestrator
-  - If success → call `resolveTransaction(txId)`
-  - If fail → call `refundTransaction(txId)`
-- Handle 24hr timeout: monitor for stale pending txs, let users know to call `claimTimeoutRefund()`
-- Add RESOLVER_ROLE ABI entries to contracts.js
-- Add to `backend/index.js` startup
+Update frontend to reflect new escrow contract flows:
 
-Also update `backend/blockchain/contracts.js`:
-- Add `resolveTransaction(uint256 txId)` to ABI
-- Add `refundTransaction(uint256 txId)` to ABI  
-- Add `pendingTransactions(uint256)` view to ABI
-- Add `resolveTransaction()` and `refundTransaction()` methods to ContractManager
+1. `frontend/src/pages/AgentDetail.jsx`:
+   - Remove any "lifetime" toggle/option — new contract only supports `SubPeriod.Monthly` (0) and `SubPeriod.Yearly` (1)
+   - Show escrow pending badge after purchase (tx submitted but resolver not yet confirmed)
+   - Poll `/agents/:agentId/access` every 5s while status is 'pending' to detect resolver confirmation
 
-Skip Phase 3 (0G Storage already integrated in storageService.js — verified working).
+2. `frontend/src/components/ui/AgentcommsPanel.jsx`:
+   - Show pending state after `initiateAgentComms` tx is submitted
+   - Display TxPending → TxResolved status in message history
+
+3. Pricing display:
+   - Show USD equivalent alongside 0G amount (use oracle price from backend)
+   - Replace "AGT" labels with "0G" to match native token
+
+4. Add new endpoint to backend: `GET /api/transactions/pending` — lists user's pending escrow txs with timestamps so frontend can show "claimTimeoutRefund available in X hours"
