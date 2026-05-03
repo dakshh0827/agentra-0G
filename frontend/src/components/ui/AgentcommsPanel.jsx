@@ -154,37 +154,46 @@ function CallResultDisplay({ result }) {
 function MessageHistory({ agentId }) {
   const [messages, setMessages] = useState(null)
   const [loading, setLoading] = useState(true)
-
+ 
   useEffect(() => {
     agentsAPI.getCommsMessages(agentId)
       .then(r => setMessages(r.data))
       .catch(() => setMessages(null))
       .finally(() => setLoading(false))
   }, [agentId])
-
+ 
   if (loading) return (
     <div className="flex items-center justify-center py-8">
       <Loader2 size={20} className="animate-spin text-primary" />
     </div>
   )
-
+ 
   if (!messages) return null
-
+ 
   const allMessages = [...(messages.sent || []), ...(messages.received || [])]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 20)
-
+ 
   if (allMessages.length === 0) return (
     <div className="text-center py-8">
       <MessageCircle size={28} className="mx-auto mb-2 text-text-dim opacity-20" />
       <div className="text-text-dim text-xs font-mono">No inter-agent messages yet</div>
     </div>
   )
-
+ 
   return (
     <div className="space-y-2">
       {allMessages.map(msg => {
         const isSent = msg.fromAgentId === messages.agentId
+        const statusClass =
+          msg.status === 'success'
+            ? 'text-success bg-[rgba(52,211,153,0.1)]'
+            : msg.status === 'failed'
+            ? 'text-danger bg-[rgba(248,113,113,0.1)]'
+            : msg.status === 'pending'
+            ? 'text-warning bg-[rgba(251,191,36,0.1)]'
+            : 'text-text-dim'
+ 
         return (
           <div key={msg.id} className={`p-3 rounded-lg border text-xs ${
             isSent
@@ -198,16 +207,9 @@ function MessageHistory({ agentId }) {
               <span className="font-semibold text-xs text-text-dim">
                 {isSent ? msg.toAgentId : msg.fromAgentId}
               </span>
-              const statusClass =
-                msg.status === 'success'
-                  ? 'text-success bg-[rgba(52,211,153,0.1)]'
-                  : msg.status === 'failed'
-                  ? 'text-danger bg-[rgba(248,113,113,0.1)]'
-                  : msg.status === 'pending'
-                  ? 'text-warning bg-[rgba(251,191,36,0.1)]'
-                  : 'text-text-dim'
-
-              <span className={`ml-auto text-xs px-1.5 py-0.5 rounded font-mono ${statusClass}`}>{msg.status}</span>
+              <span className={`ml-auto text-xs px-1.5 py-0.5 rounded font-mono ${statusClass}`}>
+                {msg.status}
+              </span>
             </div>
             <p className="text-text-muted truncate">{msg.task}</p>
             {msg.latency && <span className="text-xs font-mono text-text-dim">{msg.latency}ms</span>}

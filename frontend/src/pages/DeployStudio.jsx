@@ -251,6 +251,15 @@ export default function DeployStudio() {
         value: bufferedFee,
       })
 
+      const deployTxHash =
+        typeof deployTxResult === 'string'
+          ? deployTxResult
+          : deployTxResult?.hash
+
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: deployTxHash,
+      })
+
       // Step 4: Parse AgentDeployed event
       let contractAgentId = null
       for (const log of receipt.logs) {
@@ -268,7 +277,7 @@ export default function DeployStudio() {
       }
 
       // Step 5: Confirm in backend
-      await agentsAPI.confirmDeploy(draftId, receipt.transactionHash, contractAgentId)
+      await agentsAPI.confirmDeploy(draftId, deployTxHash, contractAgentId)
       setDeployed(true)
 
     } catch (error) {

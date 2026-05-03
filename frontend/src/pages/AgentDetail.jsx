@@ -8,7 +8,7 @@ import {
   Shield, Send, ThumbsUp,
   ExternalLink, Copy, CheckCircle, Cpu, Terminal,
   Gauge, Sparkles, MessageSquare, Network, FileText, AlertCircle,
-  Table, Lock, ShoppingCart, Loader2
+  Table, Lock, ShoppingCart, Loader2, DollarSign
 } from 'lucide-react'
 import NeonButton from '../components/ui/NeonButton'
 import TerminalBox from '../components/ui/TerminalBox'
@@ -655,6 +655,161 @@ function UpvoteButton({ agentId, contractAgentId, ownerWallet, initialUpvotes, w
   )
 }
 
+function OwnerControlsPanel({ agent, contracts, publicClient, writeContractAsync, onRefresh }) {
+  const [monthlyUSD, setMonthlyUSD] = useState('')
+  const [commsUSD, setCommsUSD] = useState('')
+  const [commsEnabled, setCommsEnabled] = useState(agent?.commsEnabled ?? false)
+  const [saving, setSaving] = useState(false)
+  const [savingComms, setSavingComms] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+ 
+  useEffect(() => {
+    setCommsEnabled(agent?.commsEnabled ?? false)
+  }, [agent?.commsEnabled])
+ 
+  if (!agent?.contractAgentId) {
+    // DB-only agent — update via API only
+    return (
+      <div className="glass-card-landing rounded-xl p-5 sm:p-6 space-y-4">
+        <h3 className="font-semibold text-sm text-[var(--color-text-dim)] uppercase flex items-center gap-2">
+          <Shield size={13} className="text-[var(--color-primary)]" /> Owner Controls
+        </h3>
+        <p className="text-xs text-[var(--color-text-dim)] font-mono">
+          This is a database-only agent. Update pricing and comms via the agent settings.
+        </p>
+      </div>
+    )
+  }
+ 
+  const handleUpdatePricing = async () => {
+    if (!contracts?.Agentra || !monthlyUSD) return
+    setSaving(true); setError(''); setSuccess('')
+
+    try {
+      const newMonthlyUSD = parseUnits(monthlyUSD, 18)
+      const newCommsUSD = commsUSD ? parseUnits(commsUSD, 18) : 0n
+
+      const txHash = await writeContractAsync({
+        address: contracts.Agentra.address,
+        abi: contracts.Agentra.abi,
+        functionName: 'updateAgentPricing',
+        args: [BigInt(agent.contractAgentId), newMonthlyUSD, newCommsUSD],
+      })
+
+      await publicClient.waitForTransactionReceipt({ hash: txHash })
+
+      // ✅ STATIC import usage
+      await agentsAPI.update(agent.agentId, {
+        pricing: parseUnits(monthlyUSD, 18).toString(),
+        commsPricePerCall: commsUSD
+          ? parseUnits(commsUSD, 18).toString()
+          : agent.commsPricePerCall,
+      })
+
+      setSuccess('Pricing updated on-chain ✓')
+      onRefresh?.()
+    } catch (e) {
+      setError(e?.shortMessage || e?.message || 'Update failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+ 
+  const handleToggleComms = async () => {
+    if (!contracts?.Agentra) return
+    setSavingComms(true); setError(''); setSuccess('')
+    try {
+      const newState = !commsEnabled
+      const txHash = await writeContractAsync({
+        address: contracts.Agentra.address,
+        abi: contracts.Agentra.abi,
+        functionName: 'toggleAgentComms',
+        args: [BigInt(agent.contractAgentId), newState],
+      })
+      await publicClient.waitForTransactionReceipt({ hash: txHash })
+ 
+      // const { agentsAPI } = await import('../api/agents')
+      await agentsAPI.update(agent.agentId, { commsEnabled: newState })
+ 
+      setCommsEnabled(newState)
+      setSuccess(`Agent comms ${newState ? 'enabled' : 'disabled'} ✓`)
+      onRefresh?.()
+    } catch (e) {
+      setError(e?.shortMessage || e?.message || 'Toggle failed')
+    } finally {
+      setSavingComms(false)
+    }
+  }
+ 
+  return (
+    <div className="glass-card-landing rounded-xl p-5 sm:p-6 space-y-5">
+      <h3 className="font-semibold text-sm text-[var(--color-text-dim)] uppercase flex items-center gap-2">
+        <Shield size={13} className="text-[var(--color-primary)]" /> Owner Controls
+      </h3>
+ 
+      {error && (
+        <div className="flex items-center gap-2 text-[var(--color-danger)] text-xs p-2 rounded-lg bg-[rgba(248,113,113,0.08)] border border-[rgba(248,113,113,0.2)]">
+          <AlertCircle size={12} className="shrink-0" /> {error}
+        </div>
+      )}
+      {success && (
+        <div className="flex items-center gap-2 text-[var(--color-success)] text-xs p-2 rounded-lg bg-[rgba(52,211,153,0.08)] border border-[rgba(52,211,153,0.2)]">
+          <CheckCircle size={12} className="shrink-0" /> {success}
+        </div>
+      )}
+ 
+      {/* Update pricing */}
+      <div className="space-y-3">
+        <div className="text-xs font-mono text-[var(--color-text-dim)] uppercase">Update Pricing (USD, 18 dec)</div>
+        <input
+          type="number" min="0" step="0.01"
+          value={monthlyUSD}
+          onChange={e => setMonthlyUSD(e.target.value)}
+          placeholder="Monthly price in USD (e.g. 5)"
+          className="input-field w-full px-3 py-2 rounded-lg text-sm"
+        />
+        <input
+          type="number" min="0" step="0.01"
+          value={commsUSD}
+          onChange={e => setCommsUSD(e.target.value)}
+          placeholder="Comms price per call in USD (e.g. 0.5)"
+          className="input-field w-full px-3 py-2 rounded-lg text-sm"
+        />
+        <button
+          onClick={handleUpdatePricing}
+          disabled={saving || !monthlyUSD}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-[var(--color-primary)] text-[var(--color-primary)] text-xs font-mono hover:bg-[rgba(124,58,237,0.1)] disabled:opacity-40 transition-all cursor-pointer"
+        >
+          {saving ? <Loader2 size={13} className="animate-spin" /> : <DollarSign size={13} />}
+          {saving ? 'UPDATING...' : 'UPDATE PRICING ON-CHAIN'}
+        </button>
+      </div>
+ 
+      {/* Toggle comms */}
+      <div className="flex items-center justify-between gap-3 pt-3 border-t border-[var(--color-border)]">
+        <div>
+          <div className="text-xs font-mono text-[var(--color-text-dim)] uppercase">Agent Comms</div>
+          <div className="text-xs text-[var(--color-text-muted)] mt-0.5">
+            Currently: <span className={commsEnabled ? 'text-[var(--color-success)]' : 'text-[var(--color-text-dim)]'}>{commsEnabled ? 'ENABLED' : 'DISABLED'}</span>
+          </div>
+        </div>
+        <button
+          onClick={handleToggleComms}
+          disabled={savingComms}
+          className={`px-3 py-2 rounded-lg border text-xs font-mono cursor-pointer disabled:opacity-40 transition-all ${
+            commsEnabled
+              ? 'border-[var(--color-danger)] text-[var(--color-danger)] hover:bg-[rgba(248,113,113,0.08)]'
+              : 'border-[var(--color-success)] text-[var(--color-success)] hover:bg-[rgba(52,211,153,0.08)]'
+          }`}
+        >
+          {savingComms ? <Loader2 size={12} className="animate-spin inline" /> : (commsEnabled ? 'DISABLE' : 'ENABLE')}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─────────────────────────────────────────────────────────────
 // MAIN PAGE
 // ─────────────────────────────────────────────────────────────
@@ -662,7 +817,11 @@ function UpvoteButton({ agentId, contractAgentId, ownerWallet, initialUpvotes, w
 export default function AgentDetail() {
   const { id } = useParams()
   const { logs, addLog, clearLogs, isExecuting, setExecuting, executionResult, setResult } = useInteractionStore()
-  const { address, isConnected } = useAccount()
+  const { address, isConnected, chain } = useAccount()
+  const publicClient = usePublicClient()
+  const { writeContractAsync } = useWriteContract()
+
+  const contracts = chain?.id ? CHAIN_CONFIG[chain.id]?.contracts : null
 
   const [agent, setAgent] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -1027,6 +1186,18 @@ const handlePurchaseSuccess = async () => {
                     isConnected={isConnected}
                   />
                 </FadeInSection>
+
+                {isOwner && (
+                  <FadeInSection delay={0.18}>
+                    <OwnerControlsPanel
+                      agent={agent}
+                      contracts={contracts}
+                      publicClient={publicClient}
+                      writeContractAsync={writeContractAsync}
+                      onRefresh={fetchAgentDetails}
+                    />
+                  </FadeInSection>
+                )}
 
                 <FadeInSection delay={0.2}>
                   <div className="glass-card-landing rounded-xl p-5 sm:p-6">

@@ -257,7 +257,7 @@ const confirmDeploy = asyncHandler(async (req, res) => {
     },
   })
 
-  const listingFeeWei = config.token.listingFeesWei[agent.tier.toLowerCase()] || config.token.listingFeesWei.standard
+  // const listingFeeWei = '0'
 
   await prisma.transaction.upsert({
     where: { txHash },
@@ -266,8 +266,8 @@ const confirmDeploy = asyncHandler(async (req, res) => {
       agentId: agent.agentId,
       callerWallet: req.walletAddress,
       ownerWallet: req.walletAddress,
-      totalAmount: listingFeeWei,
-      platformFee: listingFeeWei,
+      totalAmount: '0',
+      platformFee: '0',
       creatorAmount: '0',
     },
     create: {
@@ -277,8 +277,8 @@ const confirmDeploy = asyncHandler(async (req, res) => {
       agentId: agent.agentId,
       callerWallet: req.walletAddress,
       ownerWallet: req.walletAddress,
-      totalAmount: listingFeeWei,
-      platformFee: listingFeeWei,
+      totalAmount: '0',
+      platformFee: '0',
       creatorAmount: '0',
     },
   })

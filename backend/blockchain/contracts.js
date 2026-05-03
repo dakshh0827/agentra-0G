@@ -6,28 +6,35 @@ import config from '../config/config.js'
 // ─────────────────────────────────────────────
 
 const AGENTRA_ABI = [
-  'function deployAgent(uint8 tier, uint256 monthlyPrice, string metadataURI, bool commsEnabled, uint256 commsPricePerCall) payable',
-  'function purchaseAccess(uint256 agentId, bool isLifetime) payable',
-  'function agents(uint256) view returns (uint256 id, address creator, uint8 tier, uint256 monthlyPrice, string metadataURI, uint256 upvotes, bool commsEnabled, uint256 commsPricePerCall)',
+  'function deployAgent(uint8 tier, uint256 monthlyPriceUSD, string metadataURI, bool commsEnabled, uint256 commsPricePerCallUSD) payable returns (uint256)',
+  'function purchaseAccess(uint256 agentId, uint8 period) payable',
+  'function initiateAgentComms(uint256 callerAgentId, uint256 targetAgentId) payable',
+  'function agents(uint256) view returns (uint8 tier, uint256 monthlyPriceUSD, bool commsEnabled, uint256 commsPricePerCallUSD)',
   'function hasAccess(uint256 agentId, address user) view returns (bool)',
-
-  // New helper functions (assumed from your spec)
+  'function ownerOf(uint256 tokenId) view returns (address)',
+  'function tokenURI(uint256 tokenId) view returns (string)',
+ 
   'function listingFeesUSD(uint8 tier) view returns (uint256)',
   'function getRequiredWei(uint256 usdAmount) view returns (uint256)',
-
-  'event AgentDeployed(uint256 indexed agentId, address indexed creator, uint8 tier)',
-  'event AccessPurchased(uint256 indexed agentId, address indexed buyer, bool isLifetime)',
-
-  'function update0GPrice(uint256 _newPriceUSD) external',
+ 
+  'function update0GPrice(uint256 newPriceUSD) external',
   'function current0GPriceUSD() view returns (uint256)',
-
+ 
   'function resolveTransaction(uint256 txId) external',
   'function refundTransaction(uint256 txId) external',
+  'function claimTimeoutRefund(uint256 txId) external',
+  'function updateAgentPricing(uint256 agentId, uint256 newMonthlyUSD, uint256 newCommsUSD) external',
+  'function toggleAgentComms(uint256 agentId, bool enabled) external',
+ 
   'function pendingTransactions(uint256) view returns (uint256 id, address user, uint256 agentId, uint256 weiAmount, uint8 txType, uint8 period, uint8 status, uint256 timestamp)',
   'function txCounter() view returns (uint256)',
+ 
+  'event AgentDeployed(uint256 indexed agentId, address indexed creator, uint8 tier)',
   'event TxPending(uint256 indexed txId, address indexed user, uint256 indexed agentId, uint8 txType, uint256 weiAmount)',
   'event TxResolved(uint256 indexed txId, address indexed user, uint256 indexed agentId)',
   'event TxRefunded(uint256 indexed txId, address indexed user, uint256 indexed agentId)',
+  'event AgentCommsToggled(uint256 indexed agentId, bool enabled)',
+  'event AgentCommsPriceUpdated(uint256 indexed agentId, uint256 newPrice)',
 ]
 
 // ─────────────────────────────────────────────
