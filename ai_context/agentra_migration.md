@@ -29,117 +29,134 @@ Key features:
 ### 🔹 Core Smart Contract Flows
 
 #### 1. Deploy Agent (Mint INFT)
-- Function: `deployAgent()`
+- Function: `deployAgent()` — payable, `msg.value` = listingFee in 0G
 - Stores metadata via 0G Storage hash
 
 #### 2. Purchase Access (Escrow Start)
-- Function: `purchaseAccess()`
+- Function: `purchaseAccess(agentId, SubPeriod)` — payable
 - Emits: `TxPending`
 
 #### 3. Agent Comms (Escrow Start)
-- Function: `initiateAgentComms()`
+- Function: `initiateAgentComms(callerAgentId, targetAgentId)` — payable
 - Emits: `TxPending`
 
 #### 4. Resolve Transaction (Backend)
-- Function: `resolveTransaction()`
-- Splits:
-  - 80% creator
-  - 20% platform
+- Function: `resolveTransaction(txId)` — onlyRole(RESOLVER_ROLE)
+- Splits: 80% creator, 20% platform
 
 #### 5. Refund Transaction
-- Function: `refundTransaction()`
+- Function: `refundTransaction(txId)`
 
 #### 6. Timeout Refund (User Safety)
-- Function: `claimTimeoutRefund()`
+- Function: `claimTimeoutRefund(txId)`
 
 ---
 
 ### 🔹 Pricing Model
-- Prices stored in USD (18 decimals)
-- Converted using:
-  - `current0GPriceUSD`
-  - `getRequiredWei()`
+- Prices stored in USD (18 decimals) in contract
+- Converted using `getRequiredWei(usdAmount)`
+- Frontend fetches `getRequiredWei()` before sending tx
+- 2% buffer added for price volatility
 
 ---
 
 ### 🔹 Critical Mechanism: Auto Refund
-- Users send extra (2–5% buffer)
-- Contract refunds excess automatically
+- Users send extra (2% buffer)
+- Contract refunds excess automatically in `deployAgent`, `purchaseAccess`, `initiateAgentComms`
 
 ---
 
-## 🚀 Migration Phases (UPDATED)
+## 🚀 Migration Phases
 
-### Phase 1: Frontend Payment Migration
-- [ ] Remove ERC20 logic
-- [ ] Add msg.value transactions
-- [ ] Implement USD → Wei conversion
-- [ ] Add slippage buffer
+### Phase 1: Frontend Payment Migration ✅ COMPLETE
+- [x] Remove ERC20 approve() flows from AgentDetail.jsx
+- [x] Remove ERC20 approve() from DeployStudio.jsx
+- [x] Remove ERC20 comms payment from AgentcommsPanel.jsx
+- [x] Replace with msg.value native 0G transactions
+- [x] Implement USD → Wei conversion via getRequiredWei()
+- [x] Add 2% slippage buffer to all tx
+- [x] Remove ERC20 ABI and token contract from backend/blockchain/contracts.js
+- [x] Remove upvote on-chain tx (new contract has no upvote function)
+- [x] Remove AGT token config from backend config
+- [x] Upvote is now DB-only (no on-chain tx)
 
 ---
 
 ### Phase 2: Backend Oracle
-- [ ] Fetch 0G price
-- [ ] Call `update0GPrice()`
-- [ ] Run cron job (10 min)
+- [ ] Fetch 0G/USD price from external source
+- [ ] Call `update0GPrice()` on contract
+- [ ] Run cron job every 10 min
+- [ ] Store price in config/cache for reference
+
+Create: `backend/jobs/oracleJob.js`
 
 ---
 
 ### Phase 3: 0G Storage Integration
-- [ ] Replace IPFS
-- [ ] Encrypt private agent data
-- [ ] Upload to 0G
-- [ ] Return rootHash
+- [ ] Replace IPFS (already using 0G SDK in storageService.js — verify)
+- [ ] Encrypt private agent endpoint data
+- [ ] Upload to 0G, return rootHash as metadataURI
+- [ ] Decrypt endpoint in resolver backend
 
 ---
 
 ### Phase 4: Escrow Resolver Backend
-- [ ] Listen to `TxPending`
-- [ ] Fetch & decrypt agent endpoint
-- [ ] Ping agent
-- [ ] Call:
-  - `resolveTransaction()` OR
-  - `refundTransaction()`
+- [ ] Listen to `TxPending` events from contract
+- [ ] For Access tx: ping agent endpoint, call resolveTransaction() or refundTransaction()
+- [ ] For Comms tx: execute agent task, call resolveTransaction() or refundTransaction()
+- [ ] Handle 24hr timeout fallback
+
+Create: `backend/jobs/resolverJob.js`
 
 ---
 
 ### Phase 5: Frontend UI Update
-- [ ] Replace agentId → tokenId
-- [ ] Remove lifetime access
-- [ ] Add creator dashboard
-- [ ] Show escrow status
+- [ ] Remove "lifetime" toggle (new contract uses SubPeriod: Monthly/Yearly)
+- [ ] Show escrow pending status after purchase
+- [ ] Show TxPending → TxResolved flow in UI
+- [ ] Update pricing display to show USD equivalent + 0G amount
 
 ---
 
 ## 📂 Files Modified
 
 ### Smart Contract
-- `contracts/Agentra.sol` ✅ (FINAL — no new contract needed)
+- `contracts/Agentra.sol` ✅ (FINAL)
 
-### Frontend
-- `web3/payment.ts`
-- `components/AgentPurchase.tsx`
-- `components/CreateAgent.tsx`
+### Frontend (Phase 1 ✅)
+- `frontend/src/pages/AgentDetail.jsx` — DbPurchasePanel, BlockchainPurchasePanel, UpvoteButton migrated
+- `frontend/src/components/ui/AgentcommsPanel.jsx` — handleCall migrated to initiateAgentComms
+- `frontend/src/pages/DeployStudio.jsx` — deployAgent migrated to native 0G value tx
 
-### Backend
-- `backend/oracle.js`
-- `backend/resolver.js`
-- `backend/storage.js`
+### Backend (Phase 1 ✅)
+- `backend/blockchain/contracts.js` — ERC20 removed, native value tx
+- `backend/config/config.js` — token config removed
+- `backend/controllers/agentController.js` — upvote DB-only, remove ERC20 upvote cost
+
+### Backend (Phase 2 — TODO)
+- `backend/jobs/oracleJob.js` — NEW FILE
+
+### Backend (Phase 4 — TODO)
+- `backend/jobs/resolverJob.js` — NEW FILE
 
 ---
 
 ## ⚠️ Known Issues
-- Price volatility → must use buffer
-- Oracle failure → breaks payments
-- Resolver downtime → requires user refund fallback
+- Price volatility → 2% buffer added ✅
+- Oracle failure → breaks payments (Phase 2 mitigates)
+- Resolver downtime → claimTimeoutRefund() user fallback exists in contract ✅
+- Upvote no longer on-chain — leaderboard score for upvotes still works via DB count
 
 ---
 
 ## 🔜 Next Step
 
-**Execute Phase 1: Frontend Payment Migration**
+**Execute Phase 2: Backend Oracle Job**
 
-- Remove all ERC20 usage
-- Replace with msg.value
-- Add conversion logic using `current0GPriceUSD`
-- Add 2% buffer
+Create `backend/jobs/oracleJob.js`:
+- Fetch current 0G token price in USD from CoinGecko or similar API
+- Call `update0GPrice(newPriceUSD)` on Agentra contract (requires ORACLE_ROLE)
+- Schedule as cron job every 10 minutes
+- Add to `backend/index.js` startup
+
+Also update `backend/config/config.js` to add oracle config (API URL, cron schedule).

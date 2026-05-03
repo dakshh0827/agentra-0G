@@ -39,30 +39,10 @@ function FadeInSection({ children, className = '', delay = 0 }) {
 const CATEGORIES = ['Analysis', 'Development', 'Security', 'Data', 'NLP', 'Web3', 'Other']
 
 const TIER_OPTIONS = [
-  {
-    label: 'STANDARD',
-    tier: 'Standard',
-    tierIndex: 0,
-    listingFee: '50',
-    desc: 'Basic tier — suitable for most agents',
-    suggestedMonthly: '1',
-  },
-  {
-    label: 'PROFESSIONAL',
-    tier: 'Professional',
-    tierIndex: 1,
-    listingFee: '150',
-    desc: 'Professional tier — advanced features',
-    suggestedMonthly: '5',
-  },
-  {
-    label: 'ENTERPRISE',
-    tier: 'Enterprise',
-    tierIndex: 2,
-    listingFee: '500',
-    desc: 'Enterprise tier — full capabilities',
-    suggestedMonthly: '15',
-  },
+  // In TIER_OPTIONS, update listingFee labels to show USD
+  { label: 'STANDARD', tier: 'Standard', tierIndex: 0, listingFee: '$10', desc: '...', suggestedMonthly: '1' },
+  { label: 'PROFESSIONAL', tier: 'Professional', tierIndex: 1, listingFee: '$50', desc: '...', suggestedMonthly: '5' },
+  { label: 'ENTERPRISE', tier: 'Enterprise', tierIndex: 2, listingFee: '$200', desc: '...', suggestedMonthly: '15' },
 ]
 
 // Lifetime multiplier options
@@ -231,7 +211,10 @@ export default function DeployStudio() {
         throw new Error('Smart contracts not found for Zero Gravity Chain. Please reconnect on 0G.')
       }
 
-      const { Agentra, AgentToken } = currentNetwork.contracts
+      const { Agentra } = currentNetwork.contracts
+      if (!Agentra) {
+        throw new Error('Agentra contract not found for Zero Gravity Chain. Please reconnect on 0G.')
+      }
 
       // Step 1: Create DB draft
       const draftRes = await agentsAPI.deploy({ ...payload, deployMode: 'blockchain' })
@@ -239,33 +222,34 @@ export default function DeployStudio() {
       const metadataURI = draftRes.data.metadataUri || `0g://pending-${draftId}`
 
       // Step 2: Approve listing fee
-      const listingFeeWei = parseUnits(selectedTier?.listingFee || '50', 18)
-      const approveTxResult = await writeContractAsync({
-        address: AgentToken.address,
-        abi: AgentToken.abi,
-        functionName: 'approve',
-        args: [Agentra.address, listingFeeWei],
+      const listingFeeUSD = await publicClient.readContract({
+        address: Agentra.address,
+        abi: Agentra.abi,
+        functionName: 'listingFeesUSD',
+        args: [form.tierIndex],
       })
-      const approveTx = normalizeTxHash(approveTxResult, 'Approval')
-      await waitForReceiptWithRetry(approveTx, 'Approval')
+      const requiredWei = await publicClient.readContract({
+        address: Agentra.address,
+        abi: Agentra.abi,
+        functionName: 'getRequiredWei',
+        args: [listingFeeUSD],
+      })
+      // Add 2% buffer
+      const bufferedFee = requiredWei + (requiredWei * 2n) / 100n
 
       // Step 3: Deploy agent on-chain (monthly price goes into contract for access checks)
-      const monthlyPriceWei = parseUnits(form.monthlyPrice || '0', 18)
-      const commsPricePerCallWei = form.commsEnabled
+      const monthlyPriceUSD = parseUnits(form.monthlyPrice || '0', 18)
+      const commsPriceUSD = form.commsEnabled
         ? parseUnits(form.commsPricePerCall || '0', 18)
         : 0n
+
       const deployTxResult = await writeContractAsync({
         address: Agentra.address,
         abi: Agentra.abi,
         functionName: 'deployAgent',
-        args: [form.tierIndex, monthlyPriceWei, metadataURI, !!form.commsEnabled, commsPricePerCallWei],
+        args: [form.tierIndex, monthlyPriceUSD, metadataURI, !!form.commsEnabled, commsPriceUSD],
+        value: bufferedFee,
       })
-      const deployTx = normalizeTxHash(deployTxResult, 'Deploy')
-      const receipt = await waitForReceiptWithRetry(deployTx, 'Deploy')
-
-      if (receipt.status !== 'success') {
-        throw new Error('On-chain deploy transaction reverted. Draft rollback initiated.')
-      }
 
       // Step 4: Parse AgentDeployed event
       let contractAgentId = null
@@ -681,7 +665,7 @@ export default function DeployStudio() {
                       { label: 'COMMS PRICE PER CALL', value: form.commsEnabled && form.commsPricePerCall ? `${form.commsPricePerCall} AGT/call` : '—' },
                       { label: 'LIFETIME PRICE', value: form.monthlyPrice ? `${lifetimeNum.toFixed(4)} AGT (×${form.lifetimeMultiplier})` : '—', highlight: 'success' },
                       { label: 'YOUR MONTHLY CUT (80%)', value: form.monthlyPrice ? `${creatorMonthly} AGT` : '—', highlight: 'success' },
-                      ...(isBlockchain && selectedTier ? [{ label: 'LISTING FEE (ONE-TIME)', value: `${selectedTier.listingFee} AGT → Platform`, highlight: 'warning' }] : []),
+                      ...(isBlockchain && selectedTier ? [{ label: 'LISTING FEE (ONE-TIME)', value: `${selectedTier.listingFee} USD → Platform (paid in 0G)`, highlight: 'warning' }] : []),
                     ].map((row, i) => (
                       <motion.div key={row.label} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
                         className={`flex justify-between items-center px-5 py-3.5 ${i % 2 === 0 ? 'bg-bg' : ''}`}>

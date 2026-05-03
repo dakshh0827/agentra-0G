@@ -278,99 +278,85 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
     }
   }
 
-  const handleCall = async () => {
-    if (!task.trim() || calling) return
-    setCalling(true)
-    setResult(null)
-    setError(null)
+const handleCall = async () => {
+  if (!task.trim() || calling) return
+  setCalling(true)
+  setResult(null)
+  setError(null)
 
-    try {
-      const contracts = chain?.id ? CHAIN_CONFIG[chain.id]?.contracts : null
+  try {
+    const contracts = chain?.id ? CHAIN_CONFIG[chain.id]?.contracts : null
 
-      let target = null
-      if (mode === 'manual' && targetId) {
-        const targetRes = await agentsAPI.getCommsTarget({ targetAgentName: targetId })
-        target = targetRes.data
-      } else if (mode === 'discover' && selectedAgent) {
-        target = selectedAgent
-      } else if (mode === 'discover' && !selectedAgent) {
-        const discovery = await agentsAPI.discoverForComms(task, agentId)
-        const first = discovery.data?.agents?.[0]
-        if (!first) {
-          throw new Error('No comms-enabled target found for this task')
-        }
-        target = first
-      }
-
-      if (!target?.name) {
-        throw new Error('Target agent name is required')
-      }
-
-      if (target.status && target.status !== 'active') {
-        throw new Error('Target agent is not active')
-      }
-
-      const rawPrice = BigInt(target.commsPricePerCall || '0')
-      const shouldCharge = rawPrice > 0n
-
-      let txHash = undefined
-      if (shouldCharge) {
-        if (!contracts?.AgentToken || !contracts?.Agentra) {
-          throw new Error('Smart contracts not found for current network')
-        }
-        if (!publicClient) {
-          throw new Error('Wallet client unavailable')
-        }
-        if (!target.ownerWallet) {
-          throw new Error('Target owner wallet not available')
-        }
-
-        const platformFeeWei = (rawPrice * 20n) / 100n
-        const creatorAmountWei = rawPrice - platformFeeWei
-
-        const feeCollector = await publicClient.readContract({
-          address: contracts.Agentra.address,
-          abi: contracts.Agentra.abi,
-          functionName: 'feeCollector',
-        })
-
-        if (creatorAmountWei > 0n) {
-          const creatorTx = await writeContractAsync({
-            address: contracts.AgentToken.address,
-            abi: contracts.AgentToken.abi,
-            functionName: 'transfer',
-            args: [target.ownerWallet, creatorAmountWei],
-          })
-          const receipt = await publicClient.waitForTransactionReceipt({ hash: creatorTx })
-          txHash = receipt.transactionHash
-        }
-
-        if (platformFeeWei > 0n) {
-          const platformTx = await writeContractAsync({
-            address: contracts.AgentToken.address,
-            abi: contracts.AgentToken.abi,
-            functionName: 'transfer',
-            args: [feeCollector, platformFeeWei],
-          })
-          await publicClient.waitForTransactionReceipt({ hash: platformTx })
-          if (!txHash) txHash = platformTx
-        }
-      }
-
-      const payload = {
-        task,
-        targetAgentName: target.name,
-        ...(txHash ? { txHash } : {}),
-      }
-
-      const res = await agentsAPI.callAgent(agentId, payload)
-      setResult(res.data)
-    } catch (e) {
-      setError(e?.response?.data?.error || e?.message || 'Call failed')
-    } finally {
-      setCalling(false)
+    let target = null
+    if (mode === 'manual' && targetId) {
+      const targetRes = await agentsAPI.getCommsTarget({ targetAgentName: targetId })
+      target = targetRes.data
+    } else if (mode === 'discover' && selectedAgent) {
+      target = selectedAgent
+    } else if (mode === 'discover' && !selectedAgent) {
+      const discovery = await agentsAPI.discoverForComms(task, agentId)
+      const first = discovery.data?.agents?.[0]
+      if (!first) throw new Error('No comms-enabled target found for this task')
+      target = first
     }
+
+    if (!target?.name) throw new Error('Target agent name is required')
+    if (target.status && target.status !== 'active') throw new Error('Target agent is not active')
+
+    const rawPrice = BigInt(target.commsPricePerCall || '0')
+    const shouldCharge = rawPrice > 0n
+
+    let txHash = undefined
+    if (shouldCharge) {
+      if (!contracts?.Agentra) throw new Error('Smart contract not found for current network')
+
+      // Get source agent contractAgentId
+      const sourceRes = await agentsAPI.getCommsTarget({ targetAgentId: agentId })
+      const source = sourceRes.data
+      if (!source?.contractAgentId) throw new Error('Source agent is not registered on-chain')
+      if (!target.contractAgentId) throw new Error('Target agent is not registered on-chain')
+
+      const commsPriceUSDResult = await publicClient.readContract({
+        address: contracts.Agentra.address,
+        abi: contracts.Agentra.abi,
+        functionName: 'agents',
+        args: [BigInt(target.contractAgentId)],
+      })
+      const commsPriceUSD = commsPriceUSDResult[3]
+      const requiredWei = await publicClient.readContract({
+        address: contracts.Agentra.address,
+        abi: contracts.Agentra.abi,
+        functionName: 'getRequiredWei',
+        args: [commsPriceUSD],
+      })
+
+      const buffered = requiredWei + (requiredWei * 2n) / 100n
+
+      const commsTx = await writeContractAsync({
+        address: contracts.Agentra.address,
+        abi: contracts.Agentra.abi,
+        functionName: 'initiateAgentComms',
+        args: [BigInt(source.contractAgentId), BigInt(target.contractAgentId)],
+        value: buffered,
+      })
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: commsTx })
+      txHash = receipt.transactionHash
+    }
+
+    const payload = {
+      task,
+      targetAgentName: target.name,
+      ...(txHash ? { txHash } : {}),
+    }
+
+    const res = await agentsAPI.callAgent(agentId, payload)
+    setResult(res.data)
+  } catch (e) {
+    setError(e?.response?.data?.error || e?.message || 'Call failed')
+  } finally {
+    setCalling(false)
   }
+}
 
   if (!isConnected) return (
     <div className="glass-card-landing rounded-xl p-6 text-center">

@@ -320,64 +320,76 @@ function DbPurchasePanel({ agent, onSuccess }) {
   const [purchaseType, setPurchaseType] = useState('monthly')
   const [error, setError] = useState('')
   const multiplier = agent.lifetimeMultiplier ?? 12
-  const monthlyWei = BigInt(agent.pricing || '0')
-  const lifetimeWei = monthlyWei * BigInt(multiplier)
-  const monthlyEth = agent.pricing ? parseFloat(formatUnits(BigInt(agent.pricing), 18)).toFixed(4) : '0'
-  const lifetimeEth = agent.pricing ? parseFloat(formatUnits(BigInt(agent.pricing) * BigInt(multiplier), 18)).toFixed(4) : '0'
   const contracts = chain?.id ? CHAIN_CONFIG[chain.id]?.contracts : null
 
+  // USD pricing stored in contract (18 decimals), fetched via getRequiredWei
+  const [requiredWei, setRequiredWei] = useState({ monthly: 0n, lifetime: 0n })
+  const [priceLoading, setPriceLoading] = useState(false)
+
+  useEffect(() => {
+    if (!contracts?.Agentra?.address || !agent.contractAgentId) return
+    setPriceLoading(true)
+    ;(async () => {
+      try {
+        const monthlyUSD = await publicClient.readContract({
+          address: contracts.Agentra.address,
+          abi: contracts.Agentra.abi,
+          functionName: 'agents',
+          args: [BigInt(agent.contractAgentId)],
+        })
+        // monthlyUSD is index 1 in AgentInfo tuple: monthlyPriceUSD
+        const monthlyPriceUSD = monthlyUSD[1]
+        const yearlyPriceUSD = monthlyPriceUSD * 12n
+
+        const [weiMonthly, weiYearly] = await Promise.all([
+          publicClient.readContract({
+            address: contracts.Agentra.address,
+            abi: contracts.Agentra.abi,
+            functionName: 'getRequiredWei',
+            args: [monthlyPriceUSD],
+          }),
+          publicClient.readContract({
+            address: contracts.Agentra.address,
+            abi: contracts.Agentra.abi,
+            functionName: 'getRequiredWei',
+            args: [yearlyPriceUSD],
+          }),
+        ])
+        setRequiredWei({ monthly: weiMonthly, lifetime: weiYearly })
+      } catch (e) {
+        console.error('Price fetch failed', e)
+      } finally {
+        setPriceLoading(false)
+      }
+    })()
+  }, [contracts?.Agentra?.address, agent.contractAgentId, publicClient])
+
+  const monthlyEth = parseFloat(formatUnits(requiredWei.monthly, 18)).toFixed(6)
+  const lifetimeEth = parseFloat(formatUnits(requiredWei.lifetime, 18)).toFixed(6)
+
   const handlePurchase = async () => {
-    if (!contracts?.AgentToken || !contracts?.Agentra) {
-      setError('Smart contracts not found for current network')
-      return
-    }
-    if (!publicClient) {
-      setError('Wallet client unavailable')
-      return
-    }
-    if (!agent.ownerWallet) {
-      setError('Agent owner wallet is not available')
-      return
-    }
+    if (!contracts?.Agentra) { setError('Smart contracts not found for current network'); return }
+    if (!publicClient) { setError('Wallet client unavailable'); return }
 
     setIsPurchasing(true)
     setError('')
     try {
       const isLifetime = purchaseType === 'lifetime'
-      const totalCost = isLifetime ? lifetimeWei : monthlyWei
-      const platformFee = (totalCost * 20n) / 100n
-      const creatorAmount = totalCost - platformFee
+      // Add 2% buffer for price volatility
+      const baseWei = isLifetime ? requiredWei.lifetime : requiredWei.monthly
+      const buffered = baseWei + (baseWei * 2n) / 100n
 
-      const feeCollector = await publicClient.readContract({
+      const period = isLifetime ? 1 : 0 // SubPeriod enum: 0=Monthly, 1=Yearly
+
+      const txHash = await writeContractAsync({
         address: contracts.Agentra.address,
         abi: contracts.Agentra.abi,
-        functionName: 'feeCollector',
+        functionName: 'purchaseAccess',
+        args: [BigInt(agent.contractAgentId), period],
+        value: buffered,
       })
-
-      let txHash = null
-      if (creatorAmount > 0n) {
-        const creatorTx = await writeContractAsync({
-          address: contracts.AgentToken.address,
-          abi: contracts.AgentToken.abi,
-          functionName: 'transfer',
-          args: [agent.ownerWallet, creatorAmount],
-        })
-        const creatorReceipt = await publicClient.waitForTransactionReceipt({ hash: creatorTx })
-        txHash = creatorReceipt.transactionHash
-      }
-
-      if (platformFee > 0n) {
-        const platformTx = await writeContractAsync({
-          address: contracts.AgentToken.address,
-          abi: contracts.AgentToken.abi,
-          functionName: 'transfer',
-          args: [feeCollector, platformFee],
-        })
-        await publicClient.waitForTransactionReceipt({ hash: platformTx })
-        if (!txHash) txHash = platformTx
-      }
-
-      await agentsAPI.purchaseAccess(getAgentExternalId(agent), isLifetime, txHash)
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
+      await agentsAPI.purchaseAccess(getAgentExternalId(agent), isLifetime, receipt.transactionHash)
       onSuccess()
     } catch (e) {
       setError(e?.shortMessage || e?.response?.data?.error || e.message || 'Purchase failed')
@@ -385,7 +397,18 @@ function DbPurchasePanel({ agent, onSuccess }) {
       setIsPurchasing(false)
     }
   }
-  return <PurchasePanelUI purchaseType={purchaseType} setPurchaseType={setPurchaseType} monthlyEth={monthlyEth} lifetimeEth={lifetimeEth} multiplier={multiplier} onPurchase={handlePurchase} isPurchasing={isPurchasing} error={error} />
+
+  return <PurchasePanelUI
+    purchaseType={purchaseType}
+    setPurchaseType={setPurchaseType}
+    monthlyEth={priceLoading ? '...' : monthlyEth}
+    lifetimeEth={priceLoading ? '...' : lifetimeEth}
+    multiplier={multiplier}
+    onPurchase={handlePurchase}
+    isPurchasing={isPurchasing}
+    error={error}
+    currency="0G"
+  />
 }
 
 function BlockchainPurchasePanel({ agent, onSuccess }) {
@@ -395,29 +418,91 @@ function BlockchainPurchasePanel({ agent, onSuccess }) {
   const [isPurchasing, setIsPurchasing] = useState(false)
   const [purchaseType, setPurchaseType] = useState('monthly')
   const [error, setError] = useState('')
-  const multiplier = BigInt(agent.lifetimeMultiplier ?? 12)
-  const monthlyWei = BigInt(agent.pricing || '0')
-  const lifetimeWei = monthlyWei * multiplier
-  const monthlyEth = parseFloat(formatUnits(monthlyWei, 18)).toFixed(4)
-  const lifetimeEth = parseFloat(formatUnits(lifetimeWei, 18)).toFixed(4)
   const contracts = chain?.id ? CHAIN_CONFIG[chain.id]?.contracts : null
+
+  const [requiredWei, setRequiredWei] = useState({ monthly: 0n, lifetime: 0n })
+  const [priceLoading, setPriceLoading] = useState(false)
+
+  useEffect(() => {
+    if (!contracts?.Agentra?.address || !agent.contractAgentId) return
+    setPriceLoading(true)
+    ;(async () => {
+      try {
+        const agentInfo = await publicClient.readContract({
+          address: contracts.Agentra.address,
+          abi: contracts.Agentra.abi,
+          functionName: 'agents',
+          args: [BigInt(agent.contractAgentId)],
+        })
+        const monthlyPriceUSD = agentInfo[1]
+        const yearlyPriceUSD = monthlyPriceUSD * 12n
+
+        const [weiMonthly, weiYearly] = await Promise.all([
+          publicClient.readContract({
+            address: contracts.Agentra.address,
+            abi: contracts.Agentra.abi,
+            functionName: 'getRequiredWei',
+            args: [monthlyPriceUSD],
+          }),
+          publicClient.readContract({
+            address: contracts.Agentra.address,
+            abi: contracts.Agentra.abi,
+            functionName: 'getRequiredWei',
+            args: [yearlyPriceUSD],
+          }),
+        ])
+        setRequiredWei({ monthly: weiMonthly, lifetime: weiYearly })
+      } catch (e) {
+        console.error('Price fetch failed', e)
+      } finally {
+        setPriceLoading(false)
+      }
+    })()
+  }, [contracts?.Agentra?.address, agent.contractAgentId, publicClient])
+
+  const monthlyEth = parseFloat(formatUnits(requiredWei.monthly, 18)).toFixed(6)
+  const lifetimeEth = parseFloat(formatUnits(requiredWei.lifetime, 18)).toFixed(6)
+
   const handlePurchase = async () => {
-    if (!contracts?.Agentra || !contracts?.AgentToken) { setError('Smart contracts not found'); return }
+    if (!contracts?.Agentra) { setError('Smart contracts not found'); return }
     if (!agent.contractAgentId) { setError('Agent not registered on-chain'); return }
-    setIsPurchasing(true); setError('')
+
+    setIsPurchasing(true)
+    setError('')
     try {
       const isLifetime = purchaseType === 'lifetime'
-      const totalCost = isLifetime ? lifetimeWei : monthlyWei
-      const approveTx = await writeContractAsync({ address: contracts.AgentToken.address, abi: contracts.AgentToken.abi, functionName: 'approve', args: [contracts.Agentra.address, totalCost] })
-      await publicClient.waitForTransactionReceipt({ hash: approveTx })
-      const purchaseTx = await writeContractAsync({ address: contracts.Agentra.address, abi: contracts.Agentra.abi, functionName: 'purchaseAccess', args: [BigInt(agent.contractAgentId), isLifetime] })
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: purchaseTx })
+      const baseWei = isLifetime ? requiredWei.lifetime : requiredWei.monthly
+      const buffered = baseWei + (baseWei * 2n) / 100n
+      const period = isLifetime ? 1 : 0 // SubPeriod: 0=Monthly, 1=Yearly
+
+      const txHash = await writeContractAsync({
+        address: contracts.Agentra.address,
+        abi: contracts.Agentra.abi,
+        functionName: 'purchaseAccess',
+        args: [BigInt(agent.contractAgentId), period],
+        value: buffered,
+      })
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
       await agentsAPI.purchaseAccess(getAgentExternalId(agent), isLifetime, receipt.transactionHash)
       onSuccess()
-    } catch (e) { setError(e?.shortMessage || e?.response?.data?.error || e.message || 'Transaction failed') }
-    finally { setIsPurchasing(false) }
+    } catch (e) {
+      setError(e?.shortMessage || e?.response?.data?.error || e.message || 'Transaction failed')
+    } finally {
+      setIsPurchasing(false)
+    }
   }
-  return <PurchasePanelUI purchaseType={purchaseType} setPurchaseType={setPurchaseType} monthlyEth={monthlyEth} lifetimeEth={lifetimeEth} multiplier={Number(multiplier)} onPurchase={handlePurchase} isPurchasing={isPurchasing} error={error} />
+
+  return <PurchasePanelUI
+    purchaseType={purchaseType}
+    setPurchaseType={setPurchaseType}
+    monthlyEth={priceLoading ? '...' : monthlyEth}
+    lifetimeEth={priceLoading ? '...' : lifetimeEth}
+    multiplier={12}
+    onPurchase={handlePurchase}
+    isPurchasing={isPurchasing}
+    error={error}
+    currency="0G"
+  />
 }
 
 function PurchasePanelUI({ purchaseType, setPurchaseType, monthlyEth, lifetimeEth, multiplier, onPurchase, isPurchasing, error }) {
@@ -436,7 +521,9 @@ function PurchasePanelUI({ purchaseType, setPurchaseType, monthlyEth, lifetimeEt
           <motion.button key={opt.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setPurchaseType(opt.id)}
             className={`p-4 rounded-xl border text-center transition-all cursor-pointer ${purchaseType === opt.id ? opt.color === 'purple' ? 'bg-[rgba(124,58,237,0.15)] border-[var(--color-primary)]' : 'bg-[rgba(52,211,153,0.15)] border-[var(--color-success)]' : 'border-[var(--color-border)] bg-black/20'}`}>
             <div className="text-sm font-mono  text-[var(--color-text-dim)] mb-2">{opt.label}</div>
-            <div className={`text-xl font-bold font-display ${opt.color === 'purple' ? 'text-[var(--color-primary)]' : 'text-[var(--color-success)]'}`}>{opt.price} <span className="text-xs">AGT</span></div>
+            <div className={`text-xl font-bold font-display ${opt.color === 'purple' ? 'text-[var(--color-primary)]' : 'text-[var(--color-success)]'}`}>
+              {opt.price} <span className="text-xs">0G</span>
+            </div>
           </motion.button>
         ))}
       </div>
@@ -453,10 +540,8 @@ function PurchasePanelUI({ purchaseType, setPurchaseType, monthlyEth, lifetimeEt
 // ─────────────────────────────────────────────────────────────
 
 function UpvoteButton({ agentId, contractAgentId, ownerWallet, initialUpvotes, walletAddress, isConnected }) {
-  const { chain } = useAccount()
-  const publicClient = usePublicClient()
-  const { writeContractAsync } = useWriteContract()
-
+  // New contract has no upvote() function — track upvotes DB-only
+  // Still require wallet connection but no on-chain tx needed
   const [hasUpvoted, setHasUpvoted] = useState(false)
   const [isUpvoting, setIsUpvoting] = useState(false)
   const [upvoteCount, setUpvoteCount] = useState(initialUpvotes || 0)
@@ -464,14 +549,9 @@ function UpvoteButton({ agentId, contractAgentId, ownerWallet, initialUpvotes, w
   const [statusLoading, setStatusLoading] = useState(false)
 
   const isOwner = !!(walletAddress && ownerWallet && walletAddress.toLowerCase() === ownerWallet.toLowerCase())
-  const isBlockchainAgent = contractAgentId !== null && contractAgentId !== undefined
-  const contracts = chain?.id ? CHAIN_CONFIG[chain.id]?.contracts : null
 
   useEffect(() => {
-    if (!walletAddress || !agentId) {
-      setHasUpvoted(false)
-      return
-    }
+    if (!walletAddress || !agentId) { setHasUpvoted(false); return }
     let cancelled = false
     setStatusLoading(true)
     agentsAPI.checkUpvoteStatus(agentId)
@@ -486,33 +566,12 @@ function UpvoteButton({ agentId, contractAgentId, ownerWallet, initialUpvotes, w
     setIsUpvoting(true)
     setError('')
     try {
-      let txHash = null
-      if (isBlockchainAgent) {
-        if (!contracts?.Agentra || !contracts?.AgentToken) throw new Error('Smart contracts not found for current network')
-        const upvoteCost = parseUnits('1', 18)
-        const approveTx = await writeContractAsync({ address: contracts.AgentToken.address, abi: contracts.AgentToken.abi, functionName: 'approve', args: [contracts.Agentra.address, upvoteCost] })
-        await publicClient.waitForTransactionReceipt({ hash: approveTx })
-        const upvoteTx = await writeContractAsync({ address: contracts.Agentra.address, abi: contracts.Agentra.abi, functionName: 'upvote', args: [BigInt(contractAgentId)] })
-        const receipt = await publicClient.waitForTransactionReceipt({ hash: upvoteTx })
-        txHash = receipt.transactionHash
-      } else {
-        if (!contracts?.AgentToken) throw new Error('Smart contracts not found for current network')
-        if (!ownerWallet) throw new Error('Agent owner wallet is not available')
-        const upvoteCost = parseUnits('1', 18)
-        const upvoteTx = await writeContractAsync({
-          address: contracts.AgentToken.address,
-          abi: contracts.AgentToken.abi,
-          functionName: 'transfer',
-          args: [ownerWallet, upvoteCost],
-        })
-        const receipt = await publicClient.waitForTransactionReceipt({ hash: upvoteTx })
-        txHash = receipt.transactionHash
-      }
-      await agentsAPI.upvote(agentId, txHash)
+      // DB-only upvote — no on-chain tx required in new contract
+      await agentsAPI.upvote(agentId, null)
       setHasUpvoted(true)
       setUpvoteCount(prev => prev + 1)
     } catch (e) {
-      setError(e?.shortMessage || e?.response?.data?.error || e.message || 'Upvote failed')
+      setError(e?.response?.data?.error || e.message || 'Upvote failed')
     } finally {
       setIsUpvoting(false)
     }
@@ -520,9 +579,9 @@ function UpvoteButton({ agentId, contractAgentId, ownerWallet, initialUpvotes, w
 
   return (
     <div className="glass-card-landing rounded-xl p-5 sm:p-6">
-      <h3 className="font-semibold text-sm  text-[var(--color-text-dim)] uppercase mb-3">UPVOTE AGENT</h3>
+      <h3 className="font-semibold text-sm text-[var(--color-text-dim)] uppercase mb-3">UPVOTE AGENT</h3>
       <p className="text-xs font-mono text-[var(--color-text-dim)] mb-3 leading-relaxed">
-        * Upvoting transfers 1 AGT from your wallet.
+        * Support this agent by upvoting.
       </p>
       {error && (
         <div className="flex items-center gap-2 text-[var(--color-danger)] text-xs p-2 rounded-lg bg-[rgba(248,113,113,0.08)] border border-[rgba(248,113,113,0.2)] mb-3">

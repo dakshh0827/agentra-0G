@@ -324,11 +324,12 @@ const purchaseAccess = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'You own this agent' })
   }
 
-  // Wallet tx is required for all purchase flows.
+  // ✅ REQUIRED: escrow tx must exist
   if (!txHash) {
     return res.status(400).json({ error: 'txHash required: purchase must be processed by wallet first' })
   }
 
+  // ✅ Ensure tx is mined (not necessarily settled)
   const confirmed = await contractManager.isTransactionConfirmed(txHash)
   if (!confirmed) {
     return res.status(400).json({ error: 'Provided txHash is not confirmed on-chain' })
@@ -336,54 +337,64 @@ const purchaseAccess = asyncHandler(async (req, res) => {
 
   const multiplier = BigInt(agent.lifetimeMultiplier ?? 12)
   const monthlyWei = BigInt(agent.pricing)
-  const totalCost = isLifetime ? (monthlyWei * multiplier).toString() : monthlyWei.toString()
-
-  // 80% to creator, 20% to platform
-  const platformFee = (BigInt(totalCost) * 20n / 100n).toString()
-  const creatorAmount = (BigInt(totalCost) - BigInt(platformFee)).toString()
+  const totalCost = isLifetime
+    ? (monthlyWei * multiplier).toString()
+    : monthlyWei.toString()
 
   const expiresAt = isLifetime
     ? new Date('9999-12-31')
     : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
-  // Upsert access record
+  // ✅ Grant access immediately (UX decision)
   await prisma.agentAccess.upsert({
-    where: { agentId_userWallet: { agentId: agent.agentId, userWallet: req.walletAddress } },
-    update: { isLifetime: isLifetime || false, expiresAt, txHash: txHash || null },
+    where: {
+      agentId_userWallet: {
+        agentId: agent.agentId,
+        userWallet: req.walletAddress,
+      },
+    },
+    update: {
+      isLifetime: isLifetime || false,
+      expiresAt,
+      txHash,
+    },
     create: {
       agentId: agent.agentId,
       userWallet: req.walletAddress,
       isLifetime: isLifetime || false,
       expiresAt,
-      txHash: txHash || null,
+      txHash,
     },
   })
 
-  // Record transaction
-  const txRecord = txHash
+  // ✅ Record as PENDING (escrow not resolved yet)
   await prisma.transaction.upsert({
-    where: { txHash: txRecord },
+    where: { txHash },
     update: {},
     create: {
-      txHash: txRecord,
+      txHash,
       type: 'purchase_access',
-      status: 'confirmed',
+      status: 'pending', // 🔥 IMPORTANT CHANGE
       agentId: agent.agentId,
       callerWallet: req.walletAddress,
       ownerWallet: agent.ownerWallet,
       totalAmount: totalCost,
-      platformFee,
-      creatorAmount,
+      platformFee: '0',     // calculated later on-chain
+      creatorAmount: '0',   // calculated later on-chain
     },
   })
 
-  // Update agent revenue
-  await prisma.agent.update({
-    where: { id: agent.id },
-    data: { revenue: (BigInt(agent.revenue || '0') + BigInt(creatorAmount)).toString() },
-  })
+  // ❌ REMOVED:
+  // - platformFee calculation
+  // - creatorAmount calculation
+  // - revenue update
 
-  res.json({ success: true, txHash: txRecord, expiresAt })
+  res.json({
+    success: true,
+    txHash,
+    expiresAt,
+    status: 'pending', // optional but useful for frontend
+  })
 })
 
 // ── UPVOTE ─────────────────────────────────────────────────────
@@ -392,7 +403,7 @@ const purchaseAccess = asyncHandler(async (req, res) => {
 
 const upvoteAgent = asyncHandler(async (req, res) => {
   const { agentId } = req.params
-  const { txHash } = req.body
+  const { txHash } = req.body // optional now
   const voterWallet = req.walletAddress
 
   const agent = await prisma.agent.findFirst({ where: buildAgentLookup(agentId) })
@@ -400,16 +411,6 @@ const upvoteAgent = asyncHandler(async (req, res) => {
 
   if (agent.ownerWallet === voterWallet) {
     return res.status(400).json({ error: 'Cannot upvote your own agent' })
-  }
-
-  // Wallet tx is required for all upvotes.
-  if (!txHash) {
-    return res.status(400).json({ error: 'txHash required: upvote must be processed by wallet first' })
-  }
-
-  const confirmed = await contractManager.isTransactionConfirmed(txHash)
-  if (!confirmed) {
-    return res.status(400).json({ error: 'Provided txHash is not confirmed on-chain' })
   }
 
   // Check for duplicate upvote
@@ -421,7 +422,7 @@ const upvoteAgent = asyncHandler(async (req, res) => {
     return res.status(409).json({ error: 'Already upvoted this agent' })
   }
 
-  // Record upvote deduplication entry
+  // Record upvote
   await prisma.agentUpvote.create({
     data: {
       agentId: agent.agentId,
@@ -430,15 +431,14 @@ const upvoteAgent = asyncHandler(async (req, res) => {
     },
   })
 
-  // Increment upvote count on agent
+  // Increment upvotes
   await prisma.agent.update({
     where: { id: agent.id },
     data: { upvotes: { increment: 1 } },
   })
 
-  // Transaction record
-  const upvoteCost = config.token.upvoteCostWei
-  const txRecord = txHash
+  // Transaction record (no payment)
+  const txRecord = txHash || `upvote_${agent.agentId}_${Date.now()}`
 
   await prisma.transaction.upsert({
     where: { txHash: txRecord },
@@ -450,19 +450,11 @@ const upvoteAgent = asyncHandler(async (req, res) => {
       agentId: agent.agentId,
       callerWallet: voterWallet,
       ownerWallet: agent.ownerWallet,
-      totalAmount: upvoteCost,
+      totalAmount: '0',
       platformFee: '0',
-      creatorAmount: upvoteCost,
+      creatorAmount: '0',
     },
   })
-
-  // Update agent revenue for blockchain upvotes
-  if (BigInt(upvoteCost) > 0n) {
-    await prisma.agent.update({
-      where: { id: agent.id },
-      data: { revenue: (BigInt(agent.revenue || '0') + BigInt(upvoteCost)).toString() },
-    })
-  }
 
   res.json({ success: true, txHash: txRecord })
 })

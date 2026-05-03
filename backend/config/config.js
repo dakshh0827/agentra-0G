@@ -25,20 +25,19 @@ const config = {
     privateKey: process.env.PRIVATE_KEY || '',
     contracts: {
       agentra: process.env.AGENTRA_CONTRACT_ADDRESS || '',
-      token: process.env.AGENT_TOKEN_ADDRESS || '',
     },
   },
 
-  token: {
-    decimals: 18,
-    upvoteCostWei: process.env.UPVOTE_COST_WEI || '1000000000000000000', // 1 AGT
-    listingFeesWei: {
-      // Keyed by lowercase tier name for easy lookup
-      standard: process.env.LISTING_FEE_STANDARD || '50000000000000000000',       // 50 AGT
-      professional: process.env.LISTING_FEE_PRO || '150000000000000000000',        // 150 AGT
-      enterprise: process.env.LISTING_FEE_ENTERPRISE || '500000000000000000000',   // 500 AGT
-    },
-  },
+  // token: {
+  //   decimals: 18,
+  //   upvoteCostWei: process.env.UPVOTE_COST_WEI || '1000000000000000000', // 1 AGT
+  //   listingFeesWei: {
+  //     // Keyed by lowercase tier name for easy lookup
+  //     standard: process.env.LISTING_FEE_STANDARD || '50000000000000000000',       // 50 AGT
+  //     professional: process.env.LISTING_FEE_PRO || '150000000000000000000',        // 150 AGT
+  //     enterprise: process.env.LISTING_FEE_ENTERPRISE || '500000000000000000000',   // 500 AGT
+  //   },
+  // },
 
   storage: {
     rpcUrl: process.env.OG_STORAGE_RPC_URL || process.env.BLOCKCHAIN_RPC_URL || '',
