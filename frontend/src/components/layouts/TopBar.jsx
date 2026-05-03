@@ -100,7 +100,7 @@ export default function TopBar() {
             </span>
             {tokenBalance !== undefined && (
               <span className="hidden sm:inline text-xs font-mono text-text-dim">
-                {Number(formatUnits(tokenBalance, 18)).toFixed(2)} AGT
+                {Number(formatUnits(tokenBalance, 18)).toFixed(2)} 0G
               </span>
             )}
             <ChevronDown size={12} />

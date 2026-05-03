@@ -312,120 +312,22 @@ function ReadableOutput({ response, success }) {
 // PURCHASE PANELS
 // ─────────────────────────────────────────────────────────────
 
-function DbPurchasePanel({ agent, onSuccess }) {
+function DbPurchasePanel({ agent, onSuccess, pendingTx }) {
   const { chain } = useAccount()
   const publicClient = usePublicClient()
   const { writeContractAsync } = useWriteContract()
   const [isPurchasing, setIsPurchasing] = useState(false)
-  const [purchaseType, setPurchaseType] = useState('monthly')
+  const [purchaseType, setPurchaseType] = useState('monthly') // monthly | yearly
   const [error, setError] = useState('')
-  const multiplier = agent.lifetimeMultiplier ?? 12
   const contracts = chain?.id ? CHAIN_CONFIG[chain.id]?.contracts : null
 
-  // USD pricing stored in contract (18 decimals), fetched via getRequiredWei
-  const [requiredWei, setRequiredWei] = useState({ monthly: 0n, lifetime: 0n })
+  const [requiredWei, setRequiredWei] = useState({ monthly: 0n, yearly: 0n })
   const [priceLoading, setPriceLoading] = useState(false)
 
   useEffect(() => {
     if (!contracts?.Agentra?.address || !agent.contractAgentId) return
     setPriceLoading(true)
-    ;(async () => {
-      try {
-        const monthlyUSD = await publicClient.readContract({
-          address: contracts.Agentra.address,
-          abi: contracts.Agentra.abi,
-          functionName: 'agents',
-          args: [BigInt(agent.contractAgentId)],
-        })
-        // monthlyUSD is index 1 in AgentInfo tuple: monthlyPriceUSD
-        const monthlyPriceUSD = monthlyUSD[1]
-        const yearlyPriceUSD = monthlyPriceUSD * 12n
 
-        const [weiMonthly, weiYearly] = await Promise.all([
-          publicClient.readContract({
-            address: contracts.Agentra.address,
-            abi: contracts.Agentra.abi,
-            functionName: 'getRequiredWei',
-            args: [monthlyPriceUSD],
-          }),
-          publicClient.readContract({
-            address: contracts.Agentra.address,
-            abi: contracts.Agentra.abi,
-            functionName: 'getRequiredWei',
-            args: [yearlyPriceUSD],
-          }),
-        ])
-        setRequiredWei({ monthly: weiMonthly, lifetime: weiYearly })
-      } catch (e) {
-        console.error('Price fetch failed', e)
-      } finally {
-        setPriceLoading(false)
-      }
-    })()
-  }, [contracts?.Agentra?.address, agent.contractAgentId, publicClient])
-
-  const monthlyEth = parseFloat(formatUnits(requiredWei.monthly, 18)).toFixed(6)
-  const lifetimeEth = parseFloat(formatUnits(requiredWei.lifetime, 18)).toFixed(6)
-
-  const handlePurchase = async () => {
-    if (!contracts?.Agentra) { setError('Smart contracts not found for current network'); return }
-    if (!publicClient) { setError('Wallet client unavailable'); return }
-
-    setIsPurchasing(true)
-    setError('')
-    try {
-      const isLifetime = purchaseType === 'lifetime'
-      // Add 2% buffer for price volatility
-      const baseWei = isLifetime ? requiredWei.lifetime : requiredWei.monthly
-      const buffered = baseWei + (baseWei * 2n) / 100n
-
-      const period = isLifetime ? 1 : 0 // SubPeriod enum: 0=Monthly, 1=Yearly
-
-      const txHash = await writeContractAsync({
-        address: contracts.Agentra.address,
-        abi: contracts.Agentra.abi,
-        functionName: 'purchaseAccess',
-        args: [BigInt(agent.contractAgentId), period],
-        value: buffered,
-      })
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
-      await agentsAPI.purchaseAccess(getAgentExternalId(agent), isLifetime, receipt.transactionHash)
-      onSuccess()
-    } catch (e) {
-      setError(e?.shortMessage || e?.response?.data?.error || e.message || 'Purchase failed')
-    } finally {
-      setIsPurchasing(false)
-    }
-  }
-
-  return <PurchasePanelUI
-    purchaseType={purchaseType}
-    setPurchaseType={setPurchaseType}
-    monthlyEth={priceLoading ? '...' : monthlyEth}
-    lifetimeEth={priceLoading ? '...' : lifetimeEth}
-    multiplier={multiplier}
-    onPurchase={handlePurchase}
-    isPurchasing={isPurchasing}
-    error={error}
-    currency="0G"
-  />
-}
-
-function BlockchainPurchasePanel({ agent, onSuccess }) {
-  const { chain } = useAccount()
-  const publicClient = usePublicClient()
-  const { writeContractAsync } = useWriteContract()
-  const [isPurchasing, setIsPurchasing] = useState(false)
-  const [purchaseType, setPurchaseType] = useState('monthly')
-  const [error, setError] = useState('')
-  const contracts = chain?.id ? CHAIN_CONFIG[chain.id]?.contracts : null
-
-  const [requiredWei, setRequiredWei] = useState({ monthly: 0n, lifetime: 0n })
-  const [priceLoading, setPriceLoading] = useState(false)
-
-  useEffect(() => {
-    if (!contracts?.Agentra?.address || !agent.contractAgentId) return
-    setPriceLoading(true)
     ;(async () => {
       try {
         const agentInfo = await publicClient.readContract({
@@ -434,6 +336,7 @@ function BlockchainPurchasePanel({ agent, onSuccess }) {
           functionName: 'agents',
           args: [BigInt(agent.contractAgentId)],
         })
+
         const monthlyPriceUSD = agentInfo[1]
         const yearlyPriceUSD = monthlyPriceUSD * 12n
 
@@ -451,7 +354,8 @@ function BlockchainPurchasePanel({ agent, onSuccess }) {
             args: [yearlyPriceUSD],
           }),
         ])
-        setRequiredWei({ monthly: weiMonthly, lifetime: weiYearly })
+
+        setRequiredWei({ monthly: weiMonthly, yearly: weiYearly })
       } catch (e) {
         console.error('Price fetch failed', e)
       } finally {
@@ -460,20 +364,21 @@ function BlockchainPurchasePanel({ agent, onSuccess }) {
     })()
   }, [contracts?.Agentra?.address, agent.contractAgentId, publicClient])
 
-  const monthlyEth = parseFloat(formatUnits(requiredWei.monthly, 18)).toFixed(6)
-  const lifetimeEth = parseFloat(formatUnits(requiredWei.lifetime, 18)).toFixed(6)
+  const monthlyEth = parseFloat(formatUnits(requiredWei.monthly ?? 0n, 18)).toFixed(6)
+  const yearlyEth = parseFloat(formatUnits(requiredWei.yearly ?? 0n, 18)).toFixed(6)
 
   const handlePurchase = async () => {
-    if (!contracts?.Agentra) { setError('Smart contracts not found'); return }
-    if (!agent.contractAgentId) { setError('Agent not registered on-chain'); return }
+    if (!contracts?.Agentra) { setError('Smart contracts not found for current network'); return }
+    if (!publicClient) { setError('Wallet client unavailable'); return }
 
     setIsPurchasing(true)
     setError('')
+
     try {
-      const isLifetime = purchaseType === 'lifetime'
-      const baseWei = isLifetime ? requiredWei.lifetime : requiredWei.monthly
+      const isYearly = purchaseType === 'yearly'
+      const baseWei = isYearly ? requiredWei.yearly : requiredWei.monthly
       const buffered = baseWei + (baseWei * 2n) / 100n
-      const period = isLifetime ? 1 : 0 // SubPeriod: 0=Monthly, 1=Yearly
+      const period = isYearly ? 1 : 0
 
       const txHash = await writeContractAsync({
         address: contracts.Agentra.address,
@@ -482,8 +387,120 @@ function BlockchainPurchasePanel({ agent, onSuccess }) {
         args: [BigInt(agent.contractAgentId), period],
         value: buffered,
       })
+
       const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
-      await agentsAPI.purchaseAccess(getAgentExternalId(agent), isLifetime, receipt.transactionHash)
+
+      await agentsAPI.purchaseAccess(
+        getAgentExternalId(agent),
+        false, // ❗ always false now (no lifetime)
+        receipt.transactionHash
+      )
+
+      onSuccess()
+    } catch (e) {
+      setError(e?.shortMessage || e?.response?.data?.error || e.message || 'Purchase failed')
+    } finally {
+      setIsPurchasing(false)
+    }
+  }
+
+  return <PurchasePanelUI
+    purchaseType={purchaseType}
+    setPurchaseType={setPurchaseType}
+    monthlyEth={priceLoading ? '...' : monthlyEth}
+    yearlyEth={priceLoading ? '...' : yearlyEth}
+    onPurchase={handlePurchase}
+    isPurchasing={isPurchasing}
+    pendingTx={pendingTx}
+    error={error}
+    currency="0G"
+  />
+}
+
+function BlockchainPurchasePanel({ agent, onSuccess, pendingTx }) {
+  const { chain } = useAccount()
+  const publicClient = usePublicClient()
+  const { writeContractAsync } = useWriteContract()
+  const [isPurchasing, setIsPurchasing] = useState(false)
+  const [purchaseType, setPurchaseType] = useState('monthly') // monthly | yearly
+  const [error, setError] = useState('')
+  const contracts = chain?.id ? CHAIN_CONFIG[chain.id]?.contracts : null
+
+  const [requiredWei, setRequiredWei] = useState({ monthly: 0n, yearly: 0n })
+  const [priceLoading, setPriceLoading] = useState(false)
+
+  useEffect(() => {
+    if (!contracts?.Agentra?.address || !agent.contractAgentId) return
+    setPriceLoading(true)
+
+    ;(async () => {
+      try {
+        const agentInfo = await publicClient.readContract({
+          address: contracts.Agentra.address,
+          abi: contracts.Agentra.abi,
+          functionName: 'agents',
+          args: [BigInt(agent.contractAgentId)],
+        })
+
+        const monthlyPriceUSD = agentInfo[1]
+        const yearlyPriceUSD = monthlyPriceUSD * 12n
+
+        const [weiMonthly, weiYearly] = await Promise.all([
+          publicClient.readContract({
+            address: contracts.Agentra.address,
+            abi: contracts.Agentra.abi,
+            functionName: 'getRequiredWei',
+            args: [monthlyPriceUSD],
+          }),
+          publicClient.readContract({
+            address: contracts.Agentra.address,
+            abi: contracts.Agentra.abi,
+            functionName: 'getRequiredWei',
+            args: [yearlyPriceUSD],
+          }),
+        ])
+
+        setRequiredWei({ monthly: weiMonthly, yearly: weiYearly })
+      } catch (e) {
+        console.error('Price fetch failed', e)
+      } finally {
+        setPriceLoading(false)
+      }
+    })()
+  }, [contracts?.Agentra?.address, agent.contractAgentId, publicClient])
+
+  const monthlyEth = parseFloat(formatUnits(requiredWei.monthly ?? 0n, 18)).toFixed(6)
+  const yearlyEth = parseFloat(formatUnits(requiredWei.yearly ?? 0n, 18)).toFixed(6)
+
+  const handlePurchase = async () => {
+    if (!contracts?.Agentra) { setError('Smart contracts not found'); return }
+    if (!agent.contractAgentId) { setError('Agent not registered on-chain'); return }
+
+    setIsPurchasing(true)
+    setError('')
+
+    try {
+      const isYearly = purchaseType === 'yearly'
+      const baseWei = isYearly ? requiredWei.yearly : requiredWei.monthly
+      const buffered = baseWei + (baseWei * 2n) / 100n
+      const period = isYearly ? 1 : 0
+
+      const txHash = await writeContractAsync({
+        address: contracts.Agentra.address,
+        abi: contracts.Agentra.abi,
+        functionName: 'purchaseAccess',
+        args: [BigInt(agent.contractAgentId), period],
+        value: buffered,
+      })
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
+
+      await agentsAPI.purchaseAccess(
+        getAgentExternalId(agent),
+        false, // ❗ always false now
+        receipt.transactionHash
+      )
+
       onSuccess()
     } catch (e) {
       setError(e?.shortMessage || e?.response?.data?.error || e.message || 'Transaction failed')
@@ -496,16 +513,16 @@ function BlockchainPurchasePanel({ agent, onSuccess }) {
     purchaseType={purchaseType}
     setPurchaseType={setPurchaseType}
     monthlyEth={priceLoading ? '...' : monthlyEth}
-    lifetimeEth={priceLoading ? '...' : lifetimeEth}
-    multiplier={12}
+    yearlyEth={priceLoading ? '...' : yearlyEth}
     onPurchase={handlePurchase}
     isPurchasing={isPurchasing}
+    pendingTx={pendingTx}
     error={error}
     currency="0G"
   />
 }
 
-function PurchasePanelUI({ purchaseType, setPurchaseType, monthlyEth, lifetimeEth, multiplier, onPurchase, isPurchasing, error }) {
+function PurchasePanelUI({ purchaseType, setPurchaseType, monthlyEth, yearlyEth, onPurchase, isPurchasing, error, pendingTx }) {
   const { isConnected } = useAccount()
   return (
     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center text-center py-6">
@@ -516,11 +533,32 @@ function PurchasePanelUI({ purchaseType, setPurchaseType, monthlyEth, lifetimeEt
       <p className="text-[var(--color-text-muted)] text-sm max-w-sm mb-4">
         Purchase a license to unlock. 80% goes to creator, 20% to platform.
       </p>
+
+      {/* Pending escrow badge */}
+      {pendingTx && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full mb-4 flex items-center gap-2 px-4 py-3 rounded-xl bg-[rgba(251,191,36,0.1)] border border-[rgba(251,191,36,0.3)]"
+        >
+          <Loader2 size={14} className="animate-spin text-[var(--color-warning)] shrink-0" />
+          <div className="text-left">
+            <div className="text-xs font-bold text-[var(--color-warning)]">ESCROW PENDING</div>
+            <div className="text-xs text-[var(--color-text-dim)] font-mono">
+              Payment submitted — resolver confirming... Timeout refund available in {pendingTx.hoursUntilRefund}h
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       <div className="grid grid-cols-2 gap-4 w-full mb-6">
-        {[{ id: 'monthly', label: '30 DAYS', price: monthlyEth, color: 'purple' }, { id: 'lifetime', label: `LIFETIME ×${multiplier}`, price: lifetimeEth, color: 'success' }].map(opt => (
+        {[
+          { id: 'monthly', label: '30 DAYS', price: monthlyEth, period: 0, color: 'purple' },
+          { id: 'yearly', label: '365 DAYS', price: yearlyEth, period: 1, color: 'success' },
+        ].map(opt => (
           <motion.button key={opt.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setPurchaseType(opt.id)}
             className={`p-4 rounded-xl border text-center transition-all cursor-pointer ${purchaseType === opt.id ? opt.color === 'purple' ? 'bg-[rgba(124,58,237,0.15)] border-[var(--color-primary)]' : 'bg-[rgba(52,211,153,0.15)] border-[var(--color-success)]' : 'border-[var(--color-border)] bg-black/20'}`}>
-            <div className="text-sm font-mono  text-[var(--color-text-dim)] mb-2">{opt.label}</div>
+            <div className="text-sm font-mono text-[var(--color-text-dim)] mb-2">{opt.label}</div>
             <div className={`text-xl font-bold font-display ${opt.color === 'purple' ? 'text-[var(--color-primary)]' : 'text-[var(--color-success)]'}`}>
               {opt.price} <span className="text-xs">0G</span>
             </div>
@@ -529,7 +567,7 @@ function PurchasePanelUI({ purchaseType, setPurchaseType, monthlyEth, lifetimeEt
       </div>
       {error && <div className="flex items-center gap-2 text-[var(--color-danger)] text-xs p-3 rounded-lg bg-[rgba(248,113,113,0.08)] border border-[rgba(248,113,113,0.2)] mb-4 w-full text-left"><AlertCircle size={13} className="shrink-0" /> {error}</div>}
       <NeonButton icon={ShoppingCart} onClick={onPurchase} loading={isPurchasing} disabled={!isConnected} className="w-full justify-center">
-        {!isConnected ? 'CONNECT WALLET' : isPurchasing ? 'AWAITING WALLET...' : `PURCHASE ${purchaseType.toUpperCase()} ACCESS`}
+        {!isConnected ? 'CONNECT WALLET' : isPurchasing ? 'AWAITING WALLET...' : `PURCHASE ${purchaseType === 'monthly' ? 'MONTHLY' : 'YEARLY'} ACCESS`}
       </NeonButton>
     </motion.div>
   )
@@ -634,6 +672,8 @@ export default function AgentDetail() {
   const [toastMessage, setToastMessage] = useState(null)
   const [hasValidAccess, setHasValidAccess] = useState(false)
   const [accessLoading, setAccessLoading] = useState(false)
+  const [pendingTx, setPendingTx] = useState(null)
+  const pollIntervalRef = useRef(null)
 
   const accessGrantedForWallet = useRef(null)
 
@@ -689,6 +729,40 @@ export default function AgentDetail() {
     }
   }, [address])
 
+  const checkPendingTx = useCallback(async (agentData) => {
+  if (!address || !agentData) return
+  try {
+    const res = await agentsAPI.getPendingTransactions()
+    const agentExId = getAgentExternalId(agentData)
+
+    const match = res.data?.pending?.find(tx =>
+      tx.agentId === agentExId || tx.agentId === agentData.agentId
+    )
+
+    setPendingTx(match || null)
+  } catch {
+    setPendingTx(null)
+  }
+}, [address])
+
+const startAccessPolling = useCallback((agentData) => {
+  if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+
+  pollIntervalRef.current = setInterval(async () => {
+    const res = await agentsAPI.checkAccess(getAgentExternalId(agentData)).catch(() => null)
+
+    if (res?.data?.hasAccess) {
+      setHasValidAccess(true)
+      accessGrantedForWallet.current = address?.toLowerCase()
+      setPendingTx(null)
+      clearInterval(pollIntervalRef.current)
+    }
+
+    // also refresh pending tx
+    await checkPendingTx(agentData)
+  }, 5000)
+}, [address, checkPendingTx])
+
   useEffect(() => {
     clearLogs()
     setResult(null)
@@ -700,25 +774,42 @@ export default function AgentDetail() {
     fetchAgentDetails()
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (agent) checkAccess(agent, address || null)
-  }, [agent]) // eslint-disable-line react-hooks/exhaustive-deps
+useEffect(() => {
+  if (agent) {
+    checkAccess(agent, address || null)
+    if (address) checkPendingTx(agent)
+  }
+}, [agent])
 
   useEffect(() => {
+  if (!agent) return
+
+  // Only reset if NO pending transaction
+  if (!pendingTx) {
     setHasValidAccess(false)
     accessGrantedForWallet.current = null
-
-    if (agent) {
-      if (address) {
-        checkAccess(agent, address)
-      }
-    }
-  }, [address]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handlePurchaseSuccess = async () => {
-    showToast('Access Unlocked Successfully!', 'success')
-    if (agent && address) await checkAccess(agent, address)
   }
+
+  if (address) {
+    checkAccess(agent, address)
+    checkPendingTx(agent)
+  }
+}, [address]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+  return () => {
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+  }
+}, [])
+
+const handlePurchaseSuccess = async () => {
+  showToast('Purchase submitted! Awaiting resolver confirmation...', 'success')
+
+  if (agent && address) {
+    await checkPendingTx(agent)
+    startAccessPolling(agent)
+  }
+}
 
   const handleExecute = async () => {
     if (!task.trim() || !isConnected) return
@@ -800,7 +891,7 @@ export default function AgentDetail() {
                 <div className="flex flex-wrap items-center gap-4 text-sm font-mono text-[var(--color-text-dim)]">
                   <span>OWNER: <span className="text-[var(--color-primary)]">{agent.ownerWallet?.slice(0, 12) || '0xUNKNOWN'}...</span></span>
                   <span>CATEGORY: <span className="text-[var(--color-text-muted)]">{agent.category || 'N/A'}</span></span>
-                  <span>MONTHLY: <span className="text-[var(--color-primary)]">{monthlyEth} AGT</span></span>
+                  <span>MONTHLY: <span className="text-[var(--color-primary)]">{monthlyEth} 0G</span></span>
                 </div>
               </div>
             </div>
@@ -891,8 +982,8 @@ export default function AgentDetail() {
                       ) : (
                         <motion.div key="paywall" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
                           {isBlockchainAgent
-                            ? <BlockchainPurchasePanel agent={agent} onSuccess={handlePurchaseSuccess} />
-                            : <DbPurchasePanel agent={agent} onSuccess={handlePurchaseSuccess} />
+                            ? <BlockchainPurchasePanel agent={agent} onSuccess={handlePurchaseSuccess} pendingTx={pendingTx} />
+                            : <DbPurchasePanel agent={agent} onSuccess={handlePurchaseSuccess} pendingTx={pendingTx} />
                           }
                         </motion.div>
                       )}

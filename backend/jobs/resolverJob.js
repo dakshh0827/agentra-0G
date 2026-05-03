@@ -338,35 +338,41 @@ async function runResolverCycle() {
 // EVENT LISTENER (real-time, complements polling)
 // ─────────────────────────────────────────────
 
+// function startTxPendingListener() {
+//   if (contractManager.isMock) return
+
+//   try {
+//     contractManager.agentra.on('TxPending', async (txId, user, agentId, txType, weiAmount, event) => {
+//       const id = BigInt(txId)
+//       console.log(`[RESOLVER] 🔔 TxPending event: txId=${id}, type=${Number(txType)}, agent=${agentId}, user=${user}`)
+
+//       // Small delay to let the transaction settle
+//       await new Promise(r => setTimeout(r, 3000))
+
+//       try {
+//         const pTx = await contractManager.getPendingTransaction(id)
+//         if (!pTx || Number(pTx.status) !== 0) return
+
+//         if (Number(txType) === 0) {
+//           await resolveAccessTx(id, pTx)
+//         } else if (Number(txType) === 1) {
+//           await resolveCommsTx(id, pTx)
+//         }
+//       } catch (err) {
+//         console.error(`[RESOLVER] Event handler error for txId=${id}:`, err.message)
+//       }
+//     })
+
+//     console.log('[RESOLVER] ✅ TxPending event listener active')
+//   } catch (err) {
+//     console.warn('[RESOLVER] Could not start event listener:', err.message)
+//   }
+// }
+
 function startTxPendingListener() {
-  if (contractManager.isMock) return
-
-  try {
-    contractManager.agentra.on('TxPending', async (txId, user, agentId, txType, weiAmount, event) => {
-      const id = BigInt(txId)
-      console.log(`[RESOLVER] 🔔 TxPending event: txId=${id}, type=${Number(txType)}, agent=${agentId}, user=${user}`)
-
-      // Small delay to let the transaction settle
-      await new Promise(r => setTimeout(r, 3000))
-
-      try {
-        const pTx = await contractManager.getPendingTransaction(id)
-        if (!pTx || Number(pTx.status) !== 0) return
-
-        if (Number(txType) === 0) {
-          await resolveAccessTx(id, pTx)
-        } else if (Number(txType) === 1) {
-          await resolveCommsTx(id, pTx)
-        }
-      } catch (err) {
-        console.error(`[RESOLVER] Event handler error for txId=${id}:`, err.message)
-      }
-    })
-
-    console.log('[RESOLVER] ✅ TxPending event listener active')
-  } catch (err) {
-    console.warn('[RESOLVER] Could not start event listener:', err.message)
-  }
+  // 0G RPC does not support eth_getFilterChanges (event filters).
+  // Cron polling in runResolverCycle() handles all missed/pending transactions.
+  console.log('[RESOLVER] ⚠️ Event listener skipped — 0G RPC lacks filter support. Cron polling active.')
 }
 
 // ─────────────────────────────────────────────

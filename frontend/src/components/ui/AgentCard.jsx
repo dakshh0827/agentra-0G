@@ -101,7 +101,7 @@ export default function AgentCard({ agent, index = 0 }) {
           </div>
 
           <div className="mt-3 text-sm font-semibold text-primary">
-            {formatPricing(agent.pricing)} AGT <span className="text-[11px] text-text-dim font-medium">/ month</span>
+            {formatPricing(agent.pricing)} 0G <span className="text-[11px] text-text-dim font-medium">/ month</span>
           </div>
 
           <AnimatePresence mode="wait">

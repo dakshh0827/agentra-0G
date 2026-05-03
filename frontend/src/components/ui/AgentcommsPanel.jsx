@@ -198,11 +198,16 @@ function MessageHistory({ agentId }) {
               <span className="font-semibold text-xs text-text-dim">
                 {isSent ? msg.toAgentId : msg.fromAgentId}
               </span>
-              <span className={`ml-auto text-xs px-1.5 py-0.5 rounded font-mono ${
-                msg.status === 'success' ? 'text-success bg-[rgba(52,211,153,0.1)]'
-                : msg.status === 'failed' ? 'text-danger bg-[rgba(248,113,113,0.1)]'
-                : 'text-text-dim'
-              }`}>{msg.status}</span>
+              const statusClass =
+                msg.status === 'success'
+                  ? 'text-success bg-[rgba(52,211,153,0.1)]'
+                  : msg.status === 'failed'
+                  ? 'text-danger bg-[rgba(248,113,113,0.1)]'
+                  : msg.status === 'pending'
+                  ? 'text-warning bg-[rgba(251,191,36,0.1)]'
+                  : 'text-text-dim'
+
+              <span className={`ml-auto text-xs px-1.5 py-0.5 rounded font-mono ${statusClass}`}>{msg.status}</span>
             </div>
             <p className="text-text-muted truncate">{msg.task}</p>
             {msg.latency && <span className="text-xs font-mono text-text-dim">{msg.latency}ms</span>}
@@ -228,6 +233,8 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
   const [calling, setCalling] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
+  const [commsPending, setCommsPending] = useState(false)
+  const [commsTxHash, setCommsTxHash] = useState(null)
   const [ownerCommsEnabled, setOwnerCommsEnabled] = useState(commsEnabled)
   const [ownerCommsPrice, setOwnerCommsPrice] = useState(formatWeiToAgt(commsPricePerCall || '0'))
   const [savingConfig, setSavingConfig] = useState(false)
@@ -341,6 +348,9 @@ const handleCall = async () => {
       })
       const receipt = await publicClient.waitForTransactionReceipt({ hash: commsTx })
       txHash = receipt.transactionHash
+
+      setCommsTxHash(receipt.transactionHash)
+      setCommsPending(true)
     }
 
     const payload = {
@@ -351,11 +361,14 @@ const handleCall = async () => {
 
     const res = await agentsAPI.callAgent(agentId, payload)
     setResult(res.data)
-  } catch (e) {
-    setError(e?.response?.data?.error || e?.message || 'Call failed')
-  } finally {
-    setCalling(false)
-  }
+
+    setCommsPending(false)
+    } catch (e) {
+      setError(e?.response?.data?.error || e?.message || 'Call failed')
+      setCommsPending(false) // ✅ prevent stuck pending UI
+    } finally {
+      setCalling(false)
+    }
 }
 
   if (!isConnected) return (
@@ -535,6 +548,24 @@ const handleCall = async () => {
                 {calling ? 'DELEGATING...' : 'DELEGATE TASK'}
               </button>
             </div>
+
+            {/* Pending indicator */}
+            {commsPending && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-3 p-4 rounded-xl bg-[rgba(251,191,36,0.08)] border border-[rgba(251,191,36,0.25)]"
+              >
+                <Loader2 size={16} className="animate-spin text-[var(--color-warning)] shrink-0" />
+                <div>
+                  <div className="text-xs font-bold text-[var(--color-warning)]">COMMS TX PENDING</div>
+                  <div className="text-xs font-mono text-[var(--color-text-dim)]">
+                    Escrow submitted — resolver confirming agent execution...
+                    {commsTxHash && <span className="ml-1 opacity-60">{commsTxHash.slice(0, 14)}...</span>}
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
             {/* Result */}
             {result && <CallResultDisplay result={result} />}

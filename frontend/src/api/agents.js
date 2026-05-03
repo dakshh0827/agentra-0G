@@ -120,4 +120,7 @@ export const agentsAPI = {
 
   validateEndpoint: (endpoint) =>
     api.post('/agents/validate-endpoint', { endpoint }),
+
+  getPendingTransactions: () =>
+    api.get('/transactions/pending'),
 }

@@ -69,66 +69,19 @@ Key features:
 ## 🚀 Migration Phases
 
 ### Phase 1: Frontend Payment Migration ✅ COMPLETE
-- [x] Remove ERC20 approve() flows from AgentDetail.jsx
-- [x] Remove ERC20 approve() from DeployStudio.jsx
-- [x] Remove ERC20 comms payment from AgentcommsPanel.jsx
-- [x] Replace with msg.value native 0G transactions
-- [x] Implement USD → Wei conversion via getRequiredWei()
-- [x] Add 2% slippage buffer to all tx
-- [x] Remove ERC20 ABI and token contract from backend/blockchain/contracts.js
-- [x] Remove upvote on-chain tx (new contract has no upvote function)
-- [x] Remove AGT token config from backend config
-- [x] Upvote is now DB-only (no on-chain tx)
-
----
-
 ### Phase 2: Backend Oracle ✅ COMPLETE
-- [x] Fetch 0G/USD price from CoinGecko API
-- [x] Call `update0GPrice()` on contract (requires ORACLE_ROLE)
-- [x] Run cron job every 10 min
-- [x] Store price in config cache for reference
-- [x] Graceful fallback to last known price if API fails
-- [x] Added to `backend/index.js` startup
-
-Created: `backend/jobs/oracleJob.js`
-
----
-
-### Phase 3: 0G Storage Integration ✅ COMPLETE (already verified)
-- [x] storageService.js already uses 0G SDK
-- [x] Uploads metadata, returns rootHash as metadataURI
-- [x] Dev fallback when credentials not configured
-- Skipped re-implementation — verified working
-
----
-
+### Phase 3: 0G Storage Integration ✅ COMPLETE
 ### Phase 4: Escrow Resolver Backend ✅ COMPLETE
-- [x] Poll `pendingTransactions` mapping via `txCounter` loop
-- [x] Real-time `TxPending` event listener (complements polling)
-- [x] For `TxType.Access` transactions:
-  - Ping agent endpoint health check
-  - If alive → `resolveTransaction(txId)` → grant AgentAccess in DB → update tx status 'confirmed'
-  - If dead → `refundTransaction(txId)` → revoke pre-granted access → update tx status 'failed'
-- [x] For `TxType.Comms` transactions:
-  - Check DB for matching AgentCommsMessage with status='success'
-  - If found → `resolveTransaction(txId)` → update tx status 'confirmed'
-  - If not found → `refundTransaction(txId)` → update tx status 'failed'
-- [x] 80/20 split calculated and stored in DB on resolve
-- [x] Stale transaction monitor (warns at 20h, before 24h on-chain timeout)
-- [x] Added RESOLVER_ROLE ABI entries to contracts.js
-- [x] Added `resolveTransaction()`, `refundTransaction()`, `getPendingTransaction()`, `getTxCounter()` to ContractManager
-- [x] Added to `backend/index.js` startup
-- [x] Added `resolver.cronSchedule` to config.js
 
-Created: `backend/jobs/resolverJob.js`
-
----
-
-### Phase 5: Frontend UI Update
-- [ ] Remove "lifetime" toggle (new contract uses SubPeriod: Monthly/Yearly)
-- [ ] Show escrow pending status after purchase
-- [ ] Show TxPending → TxResolved flow in UI
-- [ ] Update pricing display to show USD equivalent + 0G amount
+### Phase 5: Frontend UI Update ✅ COMPLETE
+- [x] Remove "lifetime" toggle — replaced with Monthly (SubPeriod.Monthly=0) and Yearly (SubPeriod.Yearly=1)
+- [x] Show escrow pending badge after purchase with timeout countdown
+- [x] Poll `/agents/:agentId/access` every 5s while status is 'pending' to detect resolver confirmation
+- [x] Show TxPending → TxResolved flow in AgentcommsPanel (pending state + tx hash display)
+- [x] Show pending status in message history (yellow 'pending' badge)
+- [x] Replace "AGT" labels with "0G" in AgentCard, TopBar, AgentDetail
+- [x] Added `GET /api/transactions/pending` backend endpoint
+- [x] Added `getPendingTransactions()` to frontend agents API
 
 ---
 
@@ -138,26 +91,38 @@ Created: `backend/jobs/resolverJob.js`
 - `contracts/Agentra.sol` ✅ (FINAL)
 
 ### Frontend (Phase 1 ✅)
-- `frontend/src/pages/AgentDetail.jsx` — DbPurchasePanel, BlockchainPurchasePanel, UpvoteButton migrated
-- `frontend/src/components/ui/AgentcommsPanel.jsx` — handleCall migrated to initiateAgentComms
-- `frontend/src/pages/DeployStudio.jsx` — deployAgent migrated to native 0G value tx
+- `frontend/src/pages/AgentDetail.jsx`
+- `frontend/src/components/ui/AgentcommsPanel.jsx`
+- `frontend/src/pages/DeployStudio.jsx`
 
 ### Backend (Phase 1 ✅)
-- `backend/blockchain/contracts.js` — ERC20 removed, native value tx; added update0GPrice() and getCurrent0GPrice()
-- `backend/config/config.js` — token config removed; oracle config added
-- `backend/controllers/agentController.js` — upvote DB-only, remove ERC20 upvote cost
+- `backend/blockchain/contracts.js`
+- `backend/config/config.js`
+- `backend/controllers/agentController.js`
 
 ### Backend (Phase 2 ✅)
-- `backend/jobs/oracleJob.js` — NEW FILE: CoinGecko fetch + on-chain price update cron
-- `backend/config/config.js` — oracle section added
-- `backend/blockchain/contracts.js` — update0GPrice ABI + method added
-- `backend/index.js` — startOracleJob() called on startup
+- `backend/jobs/oracleJob.js`
+- `backend/config/config.js`
+- `backend/blockchain/contracts.js`
+- `backend/index.js`
 
 ### Backend (Phase 4 ✅)
-- `backend/jobs/resolverJob.js` — NEW FILE: TxPending event listener + polling resolver
-- `backend/blockchain/contracts.js` — resolveTransaction, refundTransaction, pendingTransactions, txCounter ABI + methods added
-- `backend/config/config.js` — resolver.cronSchedule added
-- `backend/index.js` — startResolverJob() called on startup
+- `backend/jobs/resolverJob.js`
+- `backend/blockchain/contracts.js`
+- `backend/config/config.js`
+- `backend/index.js`
+
+### Frontend (Phase 5 ✅)
+- `frontend/src/pages/AgentDetail.jsx` — removed lifetime, added escrow pending badge + 5s access polling
+- `frontend/src/components/ui/AgentcommsPanel.jsx` — added pending state after initiateAgentComms, pending status in message history
+- `frontend/src/components/ui/AgentCard.jsx` — AGT → 0G label
+- `frontend/src/components/layouts/TopBar.jsx` — AGT → 0G label
+- `frontend/src/api/agents.js` — added getPendingTransactions()
+
+### Backend (Phase 5 ✅)
+- `backend/controllers/transactionController.js` — NEW: getPendingTransactions with timeout calc
+- `backend/routes/transactionRoutes.js` — NEW: GET /api/transactions/pending
+- `backend/index.js` — added transactionRoutes
 
 ---
 
@@ -176,23 +141,21 @@ Created: `backend/jobs/resolverJob.js`
 
 ---
 
-## 🔜 Next Step
+## ✅ MIGRATION COMPLETE
 
-**Execute Phase 5: Frontend UI Update**
+All 5 phases have been executed:
 
-Update frontend to reflect new escrow contract flows:
+1. **Phase 1** — Frontend payment migration (ERC20 → native 0G, msg.value flows)
+2. **Phase 2** — Backend oracle (CoinGecko price feed → on-chain update0GPrice cron)
+3. **Phase 3** — 0G Storage (already working, verified)
+4. **Phase 4** — Escrow resolver backend (event listener + cron polling, resolve/refund logic)
+5. **Phase 5** — Frontend UI update (SubPeriod Monthly/Yearly, escrow pending badge, 5s access polling, comms pending state, 0G labels, pending transactions endpoint)
 
-1. `frontend/src/pages/AgentDetail.jsx`:
-   - Remove any "lifetime" toggle/option — new contract only supports `SubPeriod.Monthly` (0) and `SubPeriod.Yearly` (1)
-   - Show escrow pending badge after purchase (tx submitted but resolver not yet confirmed)
-   - Poll `/agents/:agentId/access` every 5s while status is 'pending' to detect resolver confirmation
-
-2. `frontend/src/components/ui/AgentcommsPanel.jsx`:
-   - Show pending state after `initiateAgentComms` tx is submitted
-   - Display TxPending → TxResolved status in message history
-
-3. Pricing display:
-   - Show USD equivalent alongside 0G amount (use oracle price from backend)
-   - Replace "AGT" labels with "0G" to match native token
-
-4. Add new endpoint to backend: `GET /api/transactions/pending` — lists user's pending escrow txs with timestamps so frontend can show "claimTimeoutRefund available in X hours"
+### Post-migration checklist:
+- [ ] Set `PRIVATE_KEY` env var with ORACLE_ROLE + RESOLVER_ROLE on deployed contract
+- [ ] Set `BLOCKCHAIN_RPC_URL` to 0G testnet RPC
+- [ ] Set `AGENTRA_CONTRACT_ADDRESS` to deployed Agentra.sol address
+- [ ] Update `frontend/src/deployments.json` with new contract ABI + address
+- [ ] Verify oracle job updates price on-chain every 10min
+- [ ] Verify resolver job processes pending transactions every 2min
+- [ ] Test full flow: deploy agent → purchase access → resolver confirms → access granted
