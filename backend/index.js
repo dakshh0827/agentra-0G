@@ -17,6 +17,8 @@ import executionRoutes from './routes/executionRoutes.js'
 import analyticsRoutes from './routes/analyticsRoutes.js'
 import reviewRoutes from './routes/reviewRoutes.js'
 
+import { startOracleJob } from './jobs/oracleJob.js'
+
 const app = express()
 
 // ── Disable ETags globally ─────────────────────────────────────
@@ -110,6 +112,8 @@ const start = async () => {
     if (!contractManager.isMock) {
       contractManager.startAllListeners(prisma)
     }
+
+    startOracleJob()
 
     app.listen(config.port, () => {
       console.log(`\n🚀 Agentra API running on port ${config.port}`)

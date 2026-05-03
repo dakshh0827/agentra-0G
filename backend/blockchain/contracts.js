@@ -16,7 +16,10 @@ const AGENTRA_ABI = [
   'function getRequiredWei(uint256 usdAmount) view returns (uint256)',
 
   'event AgentDeployed(uint256 indexed agentId, address indexed creator, uint8 tier)',
-  'event AccessPurchased(uint256 indexed agentId, address indexed buyer, bool isLifetime)'
+  'event AccessPurchased(uint256 indexed agentId, address indexed buyer, bool isLifetime)',
+
+  'function update0GPrice(uint256 _newPriceUSD) external',
+  'function current0GPriceUSD() view returns (uint256)',
 ]
 
 // ─────────────────────────────────────────────
@@ -311,6 +314,29 @@ class ContractManager {
     })
 
     console.log('[CONTRACTS] ✅ Event listeners running')
+  }
+
+  async update0GPrice(priceWei) {
+    if (this._mockMode) {
+      console.log('[CONTRACTS] Mock mode — skipping update0GPrice')
+      return { hash: `0xmock_oracle_${Date.now()}` }
+    }
+
+    if (!this.signer) {
+      throw new Error('Signer required for update0GPrice — set PRIVATE_KEY with ORACLE_ROLE')
+    }
+
+    return await this.agentra.update0GPrice(priceWei)
+  }
+
+  async getCurrent0GPrice() {
+    if (this._mockMode) return null
+    try {
+      return await this.agentra.current0GPriceUSD()
+    } catch (err) {
+      console.error('[CONTRACTS] getCurrent0GPrice error:', err.message)
+      return null
+    }
   }
 }
 

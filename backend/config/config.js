@@ -45,6 +45,14 @@ const config = {
     privateKey: process.env.OG_STORAGE_PRIVATE_KEY || process.env.PRIVATE_KEY || '',
   },
 
+  // Add after the storage block:
+  oracle: {
+    cronSchedule: process.env.ORACLE_CRON_SCHEDULE || '*/10 * * * *',
+    priceApiUrl: process.env.ORACLE_PRICE_API_URL || 'https://api.coingecko.com/api/v3/simple/price?ids=zero-gravity&vs_currencies=usd',
+    lastPrice: null,
+    lastUpdated: null,
+  },
+
   platform: {
     maxCallDepth: parseInt(process.env.MAX_CALL_DEPTH) || 5,
     callTimeoutMs: parseInt(process.env.CALL_TIMEOUT_MS) || 30000,

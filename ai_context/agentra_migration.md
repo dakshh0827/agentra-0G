@@ -82,13 +82,15 @@ Key features:
 
 ---
 
-### Phase 2: Backend Oracle
-- [ ] Fetch 0G/USD price from external source
-- [ ] Call `update0GPrice()` on contract
-- [ ] Run cron job every 10 min
-- [ ] Store price in config/cache for reference
+### Phase 2: Backend Oracle ✅ COMPLETE
+- [x] Fetch 0G/USD price from CoinGecko API
+- [x] Call `update0GPrice()` on contract (requires ORACLE_ROLE)
+- [x] Run cron job every 10 min
+- [x] Store price in config cache for reference
+- [x] Graceful fallback to last known price if API fails
+- [x] Added to `backend/index.js` startup
 
-Create: `backend/jobs/oracleJob.js`
+Created: `backend/jobs/oracleJob.js`
 
 ---
 
@@ -129,12 +131,15 @@ Create: `backend/jobs/resolverJob.js`
 - `frontend/src/pages/DeployStudio.jsx` — deployAgent migrated to native 0G value tx
 
 ### Backend (Phase 1 ✅)
-- `backend/blockchain/contracts.js` — ERC20 removed, native value tx
-- `backend/config/config.js` — token config removed
+- `backend/blockchain/contracts.js` — ERC20 removed, native value tx; added update0GPrice() and getCurrent0GPrice()
+- `backend/config/config.js` — token config removed; oracle config added
 - `backend/controllers/agentController.js` — upvote DB-only, remove ERC20 upvote cost
 
-### Backend (Phase 2 — TODO)
-- `backend/jobs/oracleJob.js` — NEW FILE
+### Backend (Phase 2 ✅)
+- `backend/jobs/oracleJob.js` — NEW FILE: CoinGecko fetch + on-chain price update cron
+- `backend/config/config.js` — oracle section added
+- `backend/blockchain/contracts.js` — update0GPrice ABI + method added
+- `backend/index.js` — startOracleJob() called on startup
 
 ### Backend (Phase 4 — TODO)
 - `backend/jobs/resolverJob.js` — NEW FILE
@@ -143,20 +148,39 @@ Create: `backend/jobs/resolverJob.js`
 
 ## ⚠️ Known Issues
 - Price volatility → 2% buffer added ✅
-- Oracle failure → breaks payments (Phase 2 mitigates)
+- Oracle failure → falls back to last known price, then $1.00 fallback ✅
 - Resolver downtime → claimTimeoutRefund() user fallback exists in contract ✅
 - Upvote no longer on-chain — leaderboard score for upvotes still works via DB count
+
+## 🔧 Environment Variables Needed
+- `ORACLE_CRON_SCHEDULE` — default `*/10 * * * *`
+- `ORACLE_PRICE_API_URL` — default CoinGecko endpoint
+- `PRIVATE_KEY` must hold ORACLE_ROLE on the contract
 
 ---
 
 ## 🔜 Next Step
 
-**Execute Phase 2: Backend Oracle Job**
+**Execute Phase 4: Escrow Resolver Backend**
 
-Create `backend/jobs/oracleJob.js`:
-- Fetch current 0G token price in USD from CoinGecko or similar API
-- Call `update0GPrice(newPriceUSD)` on Agentra contract (requires ORACLE_ROLE)
-- Schedule as cron job every 10 minutes
+Create `backend/jobs/resolverJob.js`:
+- Listen to `TxPending` events from Agentra contract (or poll pendingTransactions mapping)
+- For `TxType.Access` transactions:
+  - Ping the agent's endpoint to verify it's live
+  - If alive → call `resolveTransaction(txId)` → update DB transaction status to 'confirmed', grant AgentAccess
+  - If dead → call `refundTransaction(txId)` → update DB transaction status to 'refunded'
+- For `TxType.Comms` transactions:
+  - Execute the agent task via orchestrator
+  - If success → call `resolveTransaction(txId)`
+  - If fail → call `refundTransaction(txId)`
+- Handle 24hr timeout: monitor for stale pending txs, let users know to call `claimTimeoutRefund()`
+- Add RESOLVER_ROLE ABI entries to contracts.js
 - Add to `backend/index.js` startup
 
-Also update `backend/config/config.js` to add oracle config (API URL, cron schedule).
+Also update `backend/blockchain/contracts.js`:
+- Add `resolveTransaction(uint256 txId)` to ABI
+- Add `refundTransaction(uint256 txId)` to ABI  
+- Add `pendingTransactions(uint256)` view to ABI
+- Add `resolveTransaction()` and `refundTransaction()` methods to ContractManager
+
+Skip Phase 3 (0G Storage already integrated in storageService.js — verified working).
