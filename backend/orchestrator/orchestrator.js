@@ -1,8 +1,6 @@
 import axios from 'axios'
 import prisma from '../lib/prisma.js'
 import agentService from '../services/agentService.js'
-import zeroGRouterService from '../services/compute/0gRouterService.js'
-import zeroGComputeService from '../services/compute/zeroGComputeService.js'
 import config from '../config/config.js'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -48,44 +46,11 @@ class Orchestrator {
       )
     }
 
-    // Validate compute configuration based on compute mode
-    const computeMode = agent.computeMode || 'endpoint'
-
-    if (computeMode === 'endpoint' && !agent.endpoint) {
+    if (!agent.endpoint) {
       chain.delete(agentId)
       if (chain.size === 0) this.activeChains.delete(callChainId)
       throw Object.assign(
         new Error(`Agent "${agent.name}" has no endpoint configured`),
-        { status: 400 }
-      )
-    }
-
-    if (computeMode === '0g_router') {
-      if (!agent.computeConfig) {
-        chain.delete(agentId)
-        if (chain.size === 0) this.activeChains.delete(callChainId)
-        throw Object.assign(
-          new Error(`Agent "${agent.name}" is missing 0G Router configuration`),
-          { status: 400 }
-        )
-      }
-
-      const validation = zeroGRouterService.validateConfig(agent.computeConfig)
-      if (!validation.isValid) {
-        chain.delete(agentId)
-        if (chain.size === 0) this.activeChains.delete(callChainId)
-        throw Object.assign(
-          new Error(`Agent 0G configuration invalid: ${validation.errors.join(', ')}`),
-          { status: 400 }
-        )
-      }
-    }
-
-    if (computeMode === '0g_direct' && !agent.endpoint) {
-      chain.delete(agentId)
-      if (chain.size === 0) this.activeChains.delete(callChainId)
-      throw Object.assign(
-        new Error(`Agent "${agent.name}" has no hosted 0G endpoint configured`),
         { status: 400 }
       )
     }
@@ -115,36 +80,14 @@ class Orchestrator {
     try {
       let result
 
-      // Route execution based on compute mode
-      if (computeMode === '0g_router') {
-        result = await zeroGRouterService.executeAgent(task, agent, {
-          callDepth,
-          callChainId,
-          interactionId: interactionRecord?.id,
-          callerWallet,
-          agentId: agent.agentId,
-          contractAgentId: agent.contractAgentId ?? null,
-        })
-      } else if (computeMode === '0g_direct') {
-        result = await zeroGComputeService.invokeHostedAgent(task, agent, {
-          callDepth,
-          callChainId,
-          interactionId: interactionRecord?.id,
-          callerWallet,
-          agentId: agent.agentId,
-          contractAgentId: agent.contractAgentId ?? null,
-        })
-      } else {
-        // Default to endpoint mode (backward compatible)
-        result = await this._callAgentEndpoint(agent.endpoint, task, {
-          callDepth,
-          callChainId,
-          interactionId: interactionRecord?.id,
-          callerWallet,
-          agentId: agent.agentId,
-          contractAgentId: agent.contractAgentId ?? null,
-        })
-      }
+      result = await this._callAgentEndpoint(agent.endpoint, task, {
+        callDepth,
+        callChainId,
+        interactionId: interactionRecord?.id,
+        callerWallet,
+        agentId: agent.agentId,
+        contractAgentId: agent.contractAgentId ?? null,
+      })
 
       response = result.data
       success = true

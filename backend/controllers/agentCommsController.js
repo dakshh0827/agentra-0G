@@ -176,6 +176,7 @@ const getCommsTarget = asyncHandler(async (req, res) => {
 
   res.json({
     agentId: targetAgent.agentId,
+    contractAgentId: targetAgent.contractAgentId,
     name: targetAgent.name,
     ownerWallet: targetAgent.ownerWallet,
     commsEnabled: !!targetAgent.commsEnabled,

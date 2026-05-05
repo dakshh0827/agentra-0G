@@ -4,28 +4,28 @@ import config from '../config/config.js'
 
 // ─────────────────────────────────────────────
 // ABIs
-// ─────────────────────────────────────────────
-
+// Use the new native-payment Agentra ABI (matches contracts/src/Agentra.sol)
 const AGENTRA_ABI = [
-  'function deployAgent(uint8 tier, uint256 monthlyPrice, string metadataURI, bool commsEnabled, uint256 commsPricePerCall)',
-  'function purchaseAccess(uint256 agentId, bool isLifetime)',
-  'function upvote(uint256 agentId)',
-  'function agents(uint256) view returns (uint256 id, address creator, uint8 tier, uint256 monthlyPrice, string metadataURI, uint256 upvotes)',
-  'function hasAccess(uint256 agentId, address user) view returns (bool)',
+  'function deployStandardAgent(uint256 _monthlyPriceUSD,string _metadataURI,bool _commsEnabled,uint256 _commsPricePerCallUSD,uint256 _listingFeeUSD) payable returns (uint256)',
+  'function deployProfessionalAgent(uint256 _monthlyPriceUSD,string _metadataURI,bool _commsEnabled,uint256 _commsPricePerCallUSD,uint256 _listingFeeUSD) payable returns (uint256)',
+  'function deployEnterpriseAgent(uint256 _monthlyPriceUSD,string _metadataURI,bool _commsEnabled,uint256 _commsPricePerCallUSD,uint256 _listingFeeUSD) payable returns (uint256)',
+  'function purchaseAccess(uint256 _agentId,uint8 _period) payable',
+  'function initiateAgentComms(uint256 _callerAgentId,uint256 _targetAgentId) payable',
+  'function agents(uint256) view returns (uint8 tier,uint256 monthlyPriceUSD,bool commsEnabled,uint256 commsPricePerCallUSD)',
+  'function accessRegistry(uint256,address) view returns (uint256)',
+  'function getRequiredWei(uint256 _usdAmount) view returns (uint256)',
+  'function txCounter() view returns (uint256)',
+  'function pendingTransactions(uint256) view returns (uint256 id,address user,uint256 agentId,uint256 weiAmount,uint8 txType,uint8 period,uint8 status,uint256 timestamp)',
 
-  'event AgentDeployed(uint256 indexed agentId, address indexed creator, uint8 tier)',
-  'event AccessPurchased(uint256 indexed agentId, address indexed buyer, bool isLifetime)',
-  'event AgentUpvoted(uint256 indexed agentId, address indexed voter)'
+  'event AgentDeployed(uint256 indexed agentId,address indexed creator,uint8 tier,uint256 listingFeePaidUSD)',
+  'event TxPending(uint256 indexed txId,address indexed user,uint256 indexed agentId,uint8 txType,uint256 weiAmount)',
+  'event TxResolved(uint256 indexed txId,address indexed user,uint256 indexed agentId)',
+  'event TxRefunded(uint256 indexed txId,address indexed user,uint256 indexed agentId)',
+  'event AgentCommsToggled(uint256 indexed agentId,bool enabled)',
+  'event AgentCommsPriceUpdated(uint256 indexed agentId,uint256 newPrice)'
 ]
 
-const ERC20_ABI = [
-  'function approve(address spender, uint256 amount) external returns (bool)',
-  'function allowance(address owner, address spender) view returns (uint256)',
-  'function balanceOf(address account) view returns (uint256)'
-]
-
-// ─────────────────────────────────────────────
-// SERVICE
+// ERC20 is no longer used for payments in the new contract (native payments)
 // ─────────────────────────────────────────────
 
 class BlockchainService {
@@ -57,10 +57,9 @@ class BlockchainService {
 
       const runner = this.wallet || this.provider
 
-      const { agentra, token } = config.blockchain.contracts
+      const { agentra } = config.blockchain.contracts
 
       this.agentra = new ethers.Contract(agentra, AGENTRA_ABI, runner)
-      this.token = new ethers.Contract(token, ERC20_ABI, runner)
 
       this._initialized = true
       console.log('[BLOCKCHAIN] ✅ Initialized')
@@ -75,19 +74,7 @@ class BlockchainService {
   // APPROVAL
   // ─────────────────────────────────────────────
 
-  async _ensureApproval(amountWei) {
-    if (this._mock) return
-
-    const owner = this.wallet.address
-    const spender = this.agentra.target
-
-    const allowance = await this.token.allowance(owner, spender)
-
-    if (allowance < amountWei) {
-      const tx = await this.token.approve(spender, amountWei)
-      await tx.wait(1)
-    }
-  }
+  // No ERC20 approvals are required for the new native-payment contract
 
   // ─────────────────────────────────────────────
   // DEPLOY AGENT
@@ -97,14 +84,28 @@ class BlockchainService {
     if (this._mock) return { success: true, txHash: `0xmock_${Date.now()}` }
 
     try {
-      const fee = this._getListingFee(tier)
+      // Determine listing fee (USD) from config or caller
+      // The caller should supply listing fee via frontend; here we read configured listing fees if present
+      const listingFeesUSD = config.token?.listingFeesUSD || { standard: 0, professional: 0, enterprise: 0 }
+      const tierIndex = Number(tier)
+      const listingFeeUSD = tierIndex === 0 ? BigInt(listingFeesUSD.standard || 0) : tierIndex === 1 ? BigInt(listingFeesUSD.professional || 0) : BigInt(listingFeesUSD.enterprise || 0)
 
-      await this._ensureApproval(fee)
+      // Compute required wei via contract helper
+      const requiredWei = listingFeeUSD > 0n ? await this.agentra.getRequiredWei(listingFeeUSD) : 0n
+      const buffered = requiredWei ? (requiredWei + (requiredWei * 2n) / 100n) : 0n
 
-      const tx = await this.agentra.deployAgent(tier, monthlyPriceWei, metadataURI, commsEnabled, commsPricePerCall)
+      // Call the appropriate deploy function based on tier
+      let tx
+      if (tierIndex === 0) {
+        tx = await this.agentra.deployStandardAgent(monthlyPriceWei, metadataURI, commsEnabled, commsPricePerCall, listingFeeUSD, { value: buffered })
+      } else if (tierIndex === 1) {
+        tx = await this.agentra.deployProfessionalAgent(monthlyPriceWei, metadataURI, commsEnabled, commsPricePerCall, listingFeeUSD, { value: buffered })
+      } else {
+        tx = await this.agentra.deployEnterpriseAgent(monthlyPriceWei, metadataURI, commsEnabled, commsPricePerCall, listingFeeUSD, { value: buffered })
+      }
+
       const receipt = await tx.wait(1)
-
-      return { success: true, txHash: receipt.hash }
+      return { success: true, txHash: receipt.transactionHash, blockNumber: receipt.blockNumber }
     } catch (err) {
       return { success: false, error: err.message }
     }
@@ -114,20 +115,20 @@ class BlockchainService {
   // PURCHASE ACCESS
   // ─────────────────────────────────────────────
 
-  async purchaseAccess(agentId, isLifetime, monthlyPriceWei) {
+  async purchaseAccess(agentId, period, monthlyPriceUSD) {
     if (this._mock) return { success: true, txHash: `0xmock_${Date.now()}` }
 
     try {
-      const totalCost = isLifetime
-        ? BigInt(monthlyPriceWei) * 12n
-        : BigInt(monthlyPriceWei)
+      const multiplier = period === 1 ? 12n : 1n
+      const totalUSD = BigInt(monthlyPriceUSD) * multiplier
 
-      await this._ensureApproval(totalCost)
+      const requiredWei = totalUSD > 0n ? await this.agentra.getRequiredWei(totalUSD) : 0n
+      const buffered = requiredWei ? (requiredWei + (requiredWei * 2n) / 100n) : 0n
 
-      const tx = await this.agentra.purchaseAccess(agentId, isLifetime)
+      const tx = await this.agentra.purchaseAccess(agentId, period, { value: buffered })
       const receipt = await tx.wait(1)
 
-      return { success: true, txHash: receipt.hash }
+      return { success: true, txHash: receipt.transactionHash }
     } catch (err) {
       return { success: false, error: err.message }
     }
@@ -137,22 +138,7 @@ class BlockchainService {
   // UPVOTE
   // ─────────────────────────────────────────────
 
-  async upvote(agentId) {
-    if (this._mock) return { success: true, txHash: `0xmock_${Date.now()}` }
-
-    try {
-      const cost = BigInt(config.token.upvoteCostWei)
-
-      await this._ensureApproval(cost)
-
-      const tx = await this.agentra.upvote(agentId)
-      const receipt = await tx.wait(1)
-
-      return { success: true, txHash: receipt.hash }
-    } catch (err) {
-      return { success: false, error: err.message }
-    }
-  }
+  // Upvotes are handled off-chain in the application DB (no on-chain upvote in new contract)
 
   // ─────────────────────────────────────────────
   // READ
@@ -165,12 +151,11 @@ class BlockchainService {
       const a = await this.agentra.agents(agentId)
 
       return {
-        id: Number(a.id),
-        creator: a.creator,
+        id: Number(agentId),
         tier: Number(a.tier),
-        monthlyPrice: a.monthlyPrice.toString(),
-        metadataURI: a.metadataURI,
-        upvotes: Number(a.upvotes),
+        monthlyPriceUSD: a.monthlyPriceUSD.toString(),
+        commsEnabled: Boolean(a.commsEnabled),
+        commsPricePerCallUSD: a.commsPricePerCallUSD.toString(),
       }
     } catch {
       return null
@@ -181,20 +166,14 @@ class BlockchainService {
     if (this._mock) return true
 
     try {
-      return await this.agentra.hasAccess(agentId, user)
+      // accessRegistry returns an expiration timestamp (uint256)
+      const exp = await this.agentra.accessRegistry(agentId, user)
+      if (!exp) return false
+      const expNum = Number(exp)
+      if (expNum === Number.MAX_SAFE_INTEGER) return true
+      return expNum > Math.floor(Date.now() / 1000)
     } catch {
       return false
-    }
-  }
-
-  async getTokenBalance(walletAddress) {
-    if (this._mock) return '0'
-
-    try {
-      const bal = await this.token.balanceOf(walletAddress)
-      return bal.toString()
-    } catch {
-      return '0'
     }
   }
 
@@ -205,8 +184,8 @@ class BlockchainService {
   startEventListeners() {
     if (this._mock) return
 
-    // Agent deployed
-    this.agentra.on('AgentDeployed', async (agentId, creator, tier, event) => {
+    // Agent deployed: mark draft as active (match by contractAgentId if exists)
+    this.agentra.on('AgentDeployed', async (agentId, creator, tier, listingFeePaidUSD, event) => {
       try {
         await prisma.agent.updateMany({
           where: { contractAgentId: Number(agentId) },
@@ -217,78 +196,106 @@ class BlockchainService {
       }
     })
 
-    // Access purchased
-    this.agentra.on('AccessPurchased', async (agentId, buyer, isLifetime, event) => {
+    // TxPending: create a pending transaction record for escrow
+    this.agentra.on('TxPending', async (txId, user, agentId, txType, weiAmount, event) => {
       try {
-        const expiresAt = isLifetime
-          ? new Date('9999-12-31')
-          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-
-        await prisma.agentAccess.upsert({
-          where: {
-            agentId_userWallet: {
-              agentId: String(agentId),
-              userWallet: buyer,
-            },
-          },
-          update: { expiresAt, isLifetime },
+        const agent = await prisma.agent.findFirst({ where: { contractAgentId: Number(agentId) } })
+        await prisma.transaction.upsert({
+          where: { txHash: `${event.log.transactionHash}:${txId.toString()}` },
+          update: {},
           create: {
-            agentId: String(agentId),
-            userWallet: buyer,
-            expiresAt,
-            isLifetime,
+            txHash: `${event.log.transactionHash}:${txId.toString()}`,
+            type: txType === 0 ? 'purchase_access' : 'comms',
+            status: 'pending',
+            agentId: agent ? agent.agentId : null,
+            callerWallet: user,
+            ownerWallet: agent ? agent.ownerWallet : null,
+            totalAmount: weiAmount.toString(),
           },
         })
-
-        const agent = await prisma.agent.findFirst({
-          where: { contractAgentId: Number(agentId) },
-        })
-
-        if (agent) {
-          await prisma.transaction.create({
-            data: {
-              txHash: event.log.transactionHash,
-              type: 'purchase_access',
-              status: 'confirmed',
-              agentId: agent.agentId,
-              callerWallet: buyer,
-              ownerWallet: agent.ownerWallet,
-              totalAmount: agent.pricing,
-            },
-          })
-        }
       } catch (err) {
-        console.error('[EVENT] AccessPurchased error:', err.message)
+        console.error('[EVENT] TxPending error:', err.message)
       }
     })
 
-    // Upvote
-    this.agentra.on('AgentUpvoted', async (agentId, voter, event) => {
+    // TxResolved: finalize escrow, grant access and record confirmed transaction
+    this.agentra.on('TxResolved', async (txId, user, agentId, event) => {
       try {
-        const agent = await prisma.agent.findFirst({
-          where: { contractAgentId: Number(agentId) },
+        const agent = await prisma.agent.findFirst({ where: { contractAgentId: Number(agentId) } })
+
+        // mark transaction confirmed
+        await prisma.transaction.upsert({
+          where: { txHash: `${event.log.transactionHash}:${txId.toString()}` },
+          update: { status: 'confirmed' },
+          create: {
+            txHash: `${event.log.transactionHash}:${txId.toString()}`,
+            type: 'purchase_access',
+            status: 'confirmed',
+            agentId: agent ? agent.agentId : null,
+            callerWallet: user,
+            ownerWallet: agent ? agent.ownerWallet : null,
+            totalAmount: '0',
+          },
         })
 
+        // grant access by reading accessRegistry expiration
         if (agent) {
-          await prisma.agent.update({
-            where: { id: agent.id },
-            data: { upvotes: { increment: 1 } },
-          })
+          const agentContractId = Number(agent.contractAgentId)
+          const exp = await this.agentra.accessRegistry(agentContractId, user)
+          const expiresAt = exp && Number(exp) > 0 ? new Date(Number(exp) * 1000) : new Date('9999-12-31')
 
-          await prisma.transaction.create({
-            data: {
-              txHash: event.log.transactionHash,
-              type: 'upvote',
-              status: 'confirmed',
-              agentId: agent.agentId,
-              callerWallet: voter,
-              ownerWallet: agent.ownerWallet,
-              totalAmount: config.token.upvoteCostWei,
-            },
+          await prisma.agentAccess.upsert({
+            where: { agentId_userWallet: { agentId: agent.agentId, userWallet: user } },
+            update: { expiresAt, isLifetime: false, txHash: `${event.log.transactionHash}:${txId.toString()}` },
+            create: { agentId: agent.agentId, userWallet: user, expiresAt, isLifetime: false, txHash: `${event.log.transactionHash}:${txId.toString()}` },
           })
         }
       } catch (err) {
-        console.error('[EVENT] Upvote error:', err.message)
+        console.error('[EVENT] TxResolved error:', err.message)
+      }
+    })
+
+    // TxRefunded: mark tx refunded
+    this.agentra.on('TxRefunded', async (txId, user, agentId, event) => {
+      try {
+        await prisma.transaction.upsert({
+          where: { txHash: `${event.log.transactionHash}:${txId.toString()}` },
+          update: { status: 'refunded' },
+          create: {
+            txHash: `${event.log.transactionHash}:${txId.toString()}`,
+            type: 'refund',
+            status: 'refunded',
+            agentId: null,
+            callerWallet: user,
+            ownerWallet: null,
+            totalAmount: '0',
+          },
+        })
+      } catch (err) {
+        console.error('[EVENT] TxRefunded error:', err.message)
+      }
+    })
+
+    // Agent comms toggles/pricing updates
+    this.agentra.on('AgentCommsToggled', async (agentId, enabled, event) => {
+      try {
+        const agent = await prisma.agent.findFirst({ where: { contractAgentId: Number(agentId) } })
+        if (agent) {
+          await prisma.agent.update({ where: { id: agent.id }, data: { commsEnabled: enabled } })
+        }
+      } catch (err) {
+        console.error('[EVENT] AgentCommsToggled error:', err.message)
+      }
+    })
+
+    this.agentra.on('AgentCommsPriceUpdated', async (agentId, newPrice, event) => {
+      try {
+        const agent = await prisma.agent.findFirst({ where: { contractAgentId: Number(agentId) } })
+        if (agent) {
+          await prisma.agent.update({ where: { id: agent.id }, data: { commsPricePerCall: newPrice.toString() } })
+        }
+      } catch (err) {
+        console.error('[EVENT] AgentCommsPriceUpdated error:', err.message)
       }
     })
 

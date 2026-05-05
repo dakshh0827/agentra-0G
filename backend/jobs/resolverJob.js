@@ -153,7 +153,14 @@ async function resolveAccessTx(txId, pTx) {
 
   if (alive) {
     console.log(`[RESOLVER] Agent alive, resolving access txId=${txId}`)
-    await contractManager.resolveTransaction(txId)
+    try {
+      await contractManager.resolveTransaction(txId)
+    } catch (err) {
+      console.error(`[RESOLVER] Error resolving on-chain txId=${txId}:`, err.message)
+      // attempt to mark DB as failed so it doesn't remain stuck
+      await updateDbTransactionStatus(txId, 'failed', null, null)
+      return
+    }
 
     // Calculate 80/20 split from weiAmount
     const weiAmount = BigInt(pTx.weiAmount || 0)
@@ -162,9 +169,15 @@ async function resolveAccessTx(txId, pTx) {
 
     await grantAgentAccess(txId)
     await updateDbTransactionStatus(txId, 'confirmed', platformFee, creatorAmount)
-  } else {
+    } else {
     console.warn(`[RESOLVER] Agent unreachable, refunding access txId=${txId}`)
-    await contractManager.refundTransaction(txId)
+    try {
+      await contractManager.refundTransaction(txId)
+    } catch (err) {
+      console.error(`[RESOLVER] Error refunding on-chain txId=${txId}:`, err.message)
+      await updateDbTransactionStatus(txId, 'failed', null, null)
+      return
+    }
     await updateDbTransactionStatus(txId, 'failed', null, null)
 
     // Revoke pre-granted access if any
@@ -214,7 +227,13 @@ async function resolveCommsTx(txId, pTx) {
 
     if (commsMsg) {
       console.log(`[RESOLVER] Comms task confirmed, resolving txId=${txId}`)
-      await contractManager.resolveTransaction(txId)
+      try {
+        await contractManager.resolveTransaction(txId)
+      } catch (err) {
+        console.error(`[RESOLVER] Error resolving comms on-chain txId=${txId}:`, err.message)
+        await updateDbTransactionStatus(txId, 'failed', null, null)
+        return
+      }
 
       const weiAmount = BigInt(pTx.weiAmount || 0)
       const platformFee = (weiAmount * 20n) / 100n

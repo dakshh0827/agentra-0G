@@ -6,15 +6,16 @@ import config from '../config/config.js'
 // ─────────────────────────────────────────────
 
 const AGENTRA_ABI = [
-  'function deployAgent(uint8 tier, uint256 monthlyPriceUSD, string metadataURI, bool commsEnabled, uint256 commsPricePerCallUSD) payable returns (uint256)',
-  'function purchaseAccess(uint256 agentId, uint8 period) payable',
-  'function initiateAgentComms(uint256 callerAgentId, uint256 targetAgentId) payable',
-  'function agents(uint256) view returns (uint8 tier, uint256 monthlyPriceUSD, bool commsEnabled, uint256 commsPricePerCallUSD)',
-  'function hasAccess(uint256 agentId, address user) view returns (bool)',
+  'function deployStandardAgent(uint256 _monthlyPriceUSD,string _metadataURI,bool _commsEnabled,uint256 _commsPricePerCallUSD,uint256 _listingFeeUSD) payable returns (uint256)',
+  'function deployProfessionalAgent(uint256 _monthlyPriceUSD,string _metadataURI,bool _commsEnabled,uint256 _commsPricePerCallUSD,uint256 _listingFeeUSD) payable returns (uint256)',
+  'function deployEnterpriseAgent(uint256 _monthlyPriceUSD,string _metadataURI,bool _commsEnabled,uint256 _commsPricePerCallUSD,uint256 _listingFeeUSD) payable returns (uint256)',
+  'function purchaseAccess(uint256 _agentId,uint8 _period) payable',
+  'function initiateAgentComms(uint256 _callerAgentId,uint256 _targetAgentId) payable',
+  'function agents(uint256) view returns (uint8 tier,uint256 monthlyPriceUSD,bool commsEnabled,uint256 commsPricePerCallUSD)',
+  'function accessRegistry(uint256,address) view returns (uint256)',
   'function ownerOf(uint256 tokenId) view returns (address)',
   'function tokenURI(uint256 tokenId) view returns (string)',
- 
-  'function listingFeesUSD(uint8 tier) view returns (uint256)',
+
   'function getRequiredWei(uint256 usdAmount) view returns (uint256)',
  
   'function update0GPrice(uint256 newPriceUSD) external',
@@ -29,7 +30,7 @@ const AGENTRA_ABI = [
   'function pendingTransactions(uint256) view returns (uint256 id, address user, uint256 agentId, uint256 weiAmount, uint8 txType, uint8 period, uint8 status, uint256 timestamp)',
   'function txCounter() view returns (uint256)',
  
-  'event AgentDeployed(uint256 indexed agentId, address indexed creator, uint8 tier)',
+  'event AgentDeployed(uint256 indexed agentId, address indexed creator, uint8 tier, uint256 listingFeePaidUSD)',
   'event TxPending(uint256 indexed txId, address indexed user, uint256 indexed agentId, uint8 txType, uint256 weiAmount)',
   'event TxResolved(uint256 indexed txId, address indexed user, uint256 indexed agentId)',
   'event TxRefunded(uint256 indexed txId, address indexed user, uint256 indexed agentId)',
@@ -124,27 +125,29 @@ class ContractManager {
     monthlyPriceUSD,
     metadataURI,
     commsEnabled = false,
-    commsPricePerCallUSD = 0n
+    commsPricePerCallUSD = 0n,
+    listingFeeUSD = 0n
   ) {
     if (this._mockMode) {
       return { success: true, txHash: `0xmock_deploy_${Date.now()}` }
     }
 
     try {
-      const listingFeeUSD = await this.agentra.listingFeesUSD(tier)
-      const requiredWei = await this.agentra.getRequiredWei(listingFeeUSD)
+      // compute required wei for listingFeeUSD supplied by caller
+      const requiredWei = listingFeeUSD > 0n ? await this.agentra.getRequiredWei(listingFeeUSD) : 0n
 
       // 2% buffer for slippage
-      const buffered = requiredWei + (requiredWei * 2n) / 100n
+      const buffered = requiredWei ? (requiredWei + (requiredWei * 2n) / 100n) : 0n
 
-      const tx = await this.agentra.deployAgent(
-        tier,
-        monthlyPriceUSD,
-        metadataURI,
-        commsEnabled,
-        commsPricePerCallUSD,
-        { value: buffered }
-      )
+      const tierIndex = Number(tier)
+      let tx
+      if (tierIndex === 0) {
+        tx = await this.agentra.deployStandardAgent(monthlyPriceUSD, metadataURI, commsEnabled, commsPricePerCallUSD, listingFeeUSD, { value: buffered })
+      } else if (tierIndex === 1) {
+        tx = await this.agentra.deployProfessionalAgent(monthlyPriceUSD, metadataURI, commsEnabled, commsPricePerCallUSD, listingFeeUSD, { value: buffered })
+      } else {
+        tx = await this.agentra.deployEnterpriseAgent(monthlyPriceUSD, metadataURI, commsEnabled, commsPricePerCallUSD, listingFeeUSD, { value: buffered })
+      }
 
       const receipt = await tx.wait(1)
 
@@ -171,14 +174,12 @@ class ContractManager {
       const multiplier = period === 1 ? 12n : 1n
       const totalUSD = BigInt(monthlyPriceUSD) * multiplier
 
-      const requiredWei = await this.agentra.getRequiredWei(totalUSD)
+      const requiredWei = totalUSD > 0n ? await this.agentra.getRequiredWei(totalUSD) : 0n
 
       // 2% buffer
-      const buffered = requiredWei + (requiredWei * 2n) / 100n
+      const buffered = requiredWei ? (requiredWei + (requiredWei * 2n) / 100n) : 0n
 
-      const tx = await this.agentra.purchaseAccess(agentId, period, {
-        value: buffered
-      })
+      const tx = await this.agentra.purchaseAccess(agentId, period, { value: buffered })
 
       const receipt = await tx.wait(1)
 
@@ -200,16 +201,12 @@ class ContractManager {
 
     try {
       const a = await this.agentra.agents(agentId)
-
       return {
-        id: Number(a.id),
-        creator: a.creator,
+        id: Number(agentId),
         tier: Number(a.tier),
-        monthlyPrice: a.monthlyPrice.toString(),
-        metadataURI: a.metadataURI,
-        upvotes: Number(a.upvotes),
-        commsEnabled: a.commsEnabled,
-        commsPricePerCall: a.commsPricePerCall.toString()
+        monthlyPriceUSD: a.monthlyPriceUSD.toString(),
+        commsEnabled: Boolean(a.commsEnabled),
+        commsPricePerCallUSD: a.commsPricePerCallUSD.toString(),
       }
     } catch (err) {
       console.error('[CONTRACTS] getAgent error:', err.message)
@@ -221,7 +218,11 @@ class ContractManager {
     if (this._mockMode) return true
 
     try {
-      return await this.agentra.hasAccess(agentId, user)
+      const exp = await this.agentra.accessRegistry(agentId, user)
+      if (!exp) return false
+      const expNum = Number(exp)
+      if (expNum === Number.MAX_SAFE_INTEGER) return true
+      return expNum > Math.floor(Date.now() / 1000)
     } catch {
       return false
     }

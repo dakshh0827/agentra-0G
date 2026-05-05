@@ -2,6 +2,12 @@ import prisma from '../lib/prisma.js'
 import { v4 as uuidv4 } from 'uuid'
 import axios from 'axios'
 
+function prismaSupportsAgentField(fieldName) {
+  const model = prisma?._runtimeDataModel?.models?.Agent
+  if (!model || !Array.isArray(model.fields)) return true
+  return model.fields.some((field) => field?.name === fieldName)
+}
+
 function buildAgentLookup(id) {
   const value = String(id || '').trim()
   const isObjectId = /^[a-f\d]{24}$/i.test(value)
@@ -209,14 +215,13 @@ class AgentService {
       'endpoint',
       'tags',
       'mcpSchema',
-      'computeMode',
-      'computeConfig',
       'category',
       'pricing',
       'lifetimeMultiplier',
       'commsEnabled',
       'commsPricePerCall',
     ]
+
     const safeUpdates = Object.fromEntries(
       Object.entries(updates).filter(([k]) => allowed.includes(k))
     )

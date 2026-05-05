@@ -45,16 +45,6 @@ const config = {
     privateKey: process.env.OG_STORAGE_PRIVATE_KEY || process.env.PRIVATE_KEY || '',
   },
 
-  compute: {
-    apiKey: process.env.OG_COMPUTE_API_KEY || '',
-    deployApiUrl: process.env.OG_COMPUTE_DEPLOY_API_URL || 'https://router-api.0g.ai/v1/compute/deploy',
-    statusApiUrl: process.env.OG_COMPUTE_STATUS_API_URL || 'https://router-api.0g.ai/v1/compute/status',
-    routerInvokeUrl: process.env.OG_COMPUTE_ROUTER_INVOKE_URL || 'https://router-api.0g.ai/v1/compute/invoke',
-    timeoutMs: parseInt(process.env.OG_COMPUTE_TIMEOUT_MS) || 45000,
-    deployStatusPollMs: parseInt(process.env.OG_COMPUTE_DEPLOY_POLL_MS) || 4000,
-    deployStatusMaxAttempts: parseInt(process.env.OG_COMPUTE_DEPLOY_MAX_ATTEMPTS) || 25,
-  },
-
   // Add after the storage block:
   oracle: {
     cronSchedule: process.env.ORACLE_CRON_SCHEDULE || '*/10 * * * *',

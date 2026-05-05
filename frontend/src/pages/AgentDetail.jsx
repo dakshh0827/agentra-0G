@@ -1075,7 +1075,7 @@ const handlePurchaseSuccess = async () => {
               { label: 'RATING', value: `${agent.rating || 0}/5.0`, color: 'yellow', icon: Star },
               { label: 'TOTAL CALLS', value: (agent.calls || 0).toLocaleString(), color: 'blue', icon: Activity },
               { label: 'SUCCESS RATE', value: `${agent.successRate || 0}%`, color: 'green', icon: TrendingUp },
-              { label: 'MONTHLY PRICE', value: `${monthlyEth} AGT`, color: 'purple', icon: Shield },
+              { label: 'MONTHLY PRICE', value: `${monthlyEth} 0G`, color: 'purple', icon: Shield },
             ].map((m, i) => (
               <motion.div key={m.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}>
                 <div className="glass-card-landing rounded-xl p-4 sm:p-5"><MetricBadge {...m} /></div>

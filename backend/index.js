@@ -7,6 +7,8 @@ import morgan from 'morgan'
 import config from './config/config.js'
 import { errorHandler } from './middlewares/errorHandler.js'
 import { apiLimiter } from './middlewares/rateLimiter.js'
+import { authMiddleware } from './middlewares/auth.js'
+import { deployLimiter } from './middlewares/rateLimiter.js'
 import prisma from './lib/prisma.js'
 import contractManager from './lib/contractManager.js'
 
@@ -17,6 +19,7 @@ import executionRoutes from './routes/executionRoutes.js'
 import analyticsRoutes from './routes/analyticsRoutes.js'
 import reviewRoutes from './routes/reviewRoutes.js'
 import transactionRoutes from './routes/transactionRoutes.js'
+import { deployAgent } from './controllers/agentController.js'
 
 import { startOracleJob } from './jobs/oracleJob.js'
 import { startResolverJob } from './jobs/resolverJob.js'
@@ -92,6 +95,7 @@ app.get('/health', async (req, res) => {
 // ── API routes ─────────────────────────────────────────────────
 app.use('/api/auth', authRoutes)
 app.use('/api/agents', agentRoutes)
+app.post('/api/agents/deploy', authMiddleware, deployLimiter, deployAgent)
 app.use('/api', executionRoutes)
 app.use('/api', analyticsRoutes)
 app.use('/api', reviewRoutes)

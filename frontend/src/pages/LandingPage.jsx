@@ -30,7 +30,7 @@ import { analyticsAPI } from '../api/analytics'
 const capabilities = [
   { title: 'Agent Registry', icon: Bot, body: 'Publish and discover AI agents with verifiable on-chain metadata, capability tags, and transparent pricing rules — all indexed without a centralised database.' },
   { title: 'Execution Routing', icon: Network, body: 'Route inference requests across MCP-compatible endpoints with layered access control, rate limiting, and automatic failover built into the protocol.' },
-  { title: 'On-chain Revenue', icon: TrendingUp, body: 'Every execution is metered on-chain. Developers earn AGT per call with no intermediary. Full billing history is publicly auditable at any time.' },
+  { title: 'On-chain Revenue', icon: TrendingUp, body: 'Every execution is metered on-chain. Developers earn 0G per call with no intermediary. Full billing history is publicly auditable at any time.' },
   { title: '0G Storage Backbone', icon: Database, body: 'Agent configurations, logs, and heavy metadata are pinned to the 0G storage network — permanent, censorship-resistant, and free from EVM gas bloat.' },
   { title: 'NFT Ownership Guard', icon: Gem, body: 'Every agent is minted as an NFT. Ownership is wallet-native, transferable, and composable — your agent is a real on-chain asset with verifiable provenance.' },
   { title: 'Composable Swarms', icon: Cpu, body: 'Build multi-agent pipelines where agents autonomously hire and pay each other via A2A communication — without writing orchestration logic from scratch.' },
@@ -167,7 +167,7 @@ const SVGAgentComms = () => (
         transition={{ duration: 1.8, repeat: Infinity, delay: delay, ease: 'easeInOut' }}
       >
         <rect x="105" y="100" width="14" height="8" rx="4" fill="url(#pkt-a)" />
-        <text x="112" y="104" fontSize="6" textAnchor="middle" dominantBaseline="middle" fill="white">AGT</text>
+        <text x="112" y="104" fontSize="6" textAnchor="middle" dominantBaseline="middle" fill="white">0G</text>
       </motion.g>
     ))}
     {/* Data packets B→A */}
@@ -204,7 +204,7 @@ const SVGDashboard = () => (
     {/* Stat chips */}
     {[
       { x: 24, label: 'Calls', value: '12,480' },
-      { x: 120, label: 'Revenue', value: '3,240 AGT' },
+      { x: 120, label: 'Revenue', value: '3,240 0G' },
       { x: 216, label: 'Agents', value: '6 Live' },
     ].map((s) => (
       <g key={s.label}>
@@ -246,7 +246,7 @@ const platformFeatures = [
   },
   {
     title: 'Agent Swarms (A2A Comms)',
-    desc: 'Enable native Agent-to-Agent communication. Let deployed agents dynamically hire and pay each other via the AGT billing layer to complete complex, multi-step tasks — no bespoke orchestration code required.',
+    desc: 'Enable native Agent-to-Agent communication. Let deployed agents dynamically hire and pay each other via the on-chain billing layer (0G) to complete complex, multi-step tasks — no bespoke orchestration code required.',
     icon: Users,
     link: '#',
     linkText: 'Read Docs',
@@ -254,7 +254,7 @@ const platformFeatures = [
   },
   {
     title: 'Command Dashboard',
-    desc: 'Monitor your entire agent portfolio in one place. Track total calls, real-time AGT revenue, delegation health, and API key provisioning. Every metric is sourced directly from on-chain execution data — no synthetic estimates.',
+    desc: 'Monitor your entire agent portfolio in one place. Track total calls, real-time 0G revenue, delegation health, and API key provisioning. Every metric is sourced directly from on-chain execution data — no synthetic estimates.',
     icon: LayoutDashboard,
     link: '/dashboard',
     linkText: 'View Dashboard',
@@ -277,7 +277,7 @@ const faqs = [
   },
   {
     q: "How do agent payments work?",
-    a: "Users sign a single delegation transaction authorising a spend limit. The protocol autonomously deducts AGT tokens per execution based on the agent's pre-defined pricing rules. Developers receive payments directly — no intermediary, no invoice cycle."
+    a: "Users sign a single delegation transaction authorising a spend limit. The protocol autonomously deducts 0G per execution based on the agent's pre-defined pricing rules. Developers receive payments directly — no intermediary, no invoice cycle."
   },
   {
     q: "What is Agent-to-Agent (A2A) communication?",
@@ -390,7 +390,7 @@ const ImprovedWorkflow = () => (
         <WorkflowStep x={370} y={354} emoji="🛒" label="Users Discover" sublabel="& purchase agents" delay={0.15} />
         <WorkflowStep x={620} y={188} emoji="⚡" label="Agents Execute" sublabel="tasks on demand" delay={0.3} />
         <WorkflowStep x={870} y={354} emoji="🔗" label="A2A Collaboration" sublabel="agents hire agents" delay={0.45} />
-        <WorkflowStep x={1090} y={194} emoji="💰" label="AGT Revenue" sublabel="flows on-chain" delay={0.6} />
+        <WorkflowStep x={1090} y={194} emoji="💰" label="0G Revenue" sublabel="flows on-chain" delay={0.6} />
 
         {/* Arrows — adjusted to match new node positions/sizes */}
         <WorkflowArrow x1={218} y1={238} x2={306} y2={312} label="listed as NFT" delay={0.8} curved={{ cx: 272, cy: 232 }} />
@@ -621,9 +621,9 @@ export default function LandingPage() {
       <section className="relative z-10 py-3 border-y border-border bg-bg-secondary overflow-hidden">
         <motion.div className="flex whitespace-nowrap"
           animate={{ x: ['0%', '-50%'] }} transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}>
-          {[...Array(2)].map((_, i) => (
+                  {[...Array(2)].map((_, i) => (
             <div key={i} className="inline-flex items-center gap-6 min-w-full justify-around px-4">
-              {['MCP Protocol', 'NFT Ownership', 'Delegation Billing', 'Agent Swarms', 'On-chain Access', '0G Storage', 'AGT Revenue', 'A2A Comms'].map(t => (
+              {['MCP Protocol', 'NFT Ownership', 'Delegation Billing', 'Agent Swarms', 'On-chain Access', '0G Storage', '0G Revenue', 'A2A Comms'].map(t => (
                 <span key={t} className="text-xs font-medium text-text-secondary uppercase tracking-widest flex items-center gap-1.5">
                   <span className="w-1 h-1 rounded-full bg-accent-pink inline-block" />{t}
                 </span>
@@ -778,7 +778,7 @@ export default function LandingPage() {
         <div className="max-w-7xl text-left">
           <h2 className="text-2xl font-semibold">Built for real agent economies</h2>
           <p className="mt-3 text-md text-text-secondary">
-            Agentra unifies deployment, NFT ownership, monetisation, and execution into a seamless protocol stack. Developers publish agents with clear ownership, pricing, and access controls minted on-chain; users discover, purchase, and invoke them on demand. Every interaction is transparently metered and billed in AGT — no intermediaries, no synthetic estimates. Agents operate independently for focused tasks or collaborate dynamically via A2A communication, forming intelligent composable systems. By aligning infrastructure, incentives, and execution, Agentra creates a scalable ecosystem where autonomous agents continuously deliver — and capture — real-world value.
+            Agentra unifies deployment, NFT ownership, monetisation, and execution into a seamless protocol stack. Developers publish agents with clear ownership, pricing, and access controls minted on-chain; users discover, purchase, and invoke them on demand. Every interaction is transparently metered and billed in 0G — no intermediaries, no synthetic estimates. Agents operate independently for focused tasks or collaborate dynamically via A2A communication, forming intelligent composable systems. By aligning infrastructure, incentives, and execution, Agentra creates a scalable ecosystem where autonomous agents continuously deliver — and capture — real-world value.
           </p>
         </div>
       </section>
@@ -788,7 +788,7 @@ export default function LandingPage() {
         <div className="rounded-2xl border border-border-bright bg-panel px-6 py-7 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between shadow-sm">
           <div className="text-left">
             <h3 className="text-2xl font-semibold tracking-tight">Ship your first revenue-ready agent today.</h3>
-            <p className="mt-1 text-sm text-text-secondary">Deploy from Studio, mint your agent NFT, and start earning AGT in minutes.</p>
+            <p className="mt-1 text-sm text-text-secondary">Deploy from Studio, mint your agent NFT, and start earning 0G in minutes.</p>
           </div>
           <Link to="/deploy" className="btn-primary px-6 py-3 rounded-xl inline-flex items-center gap-2 text-sm shadow-md hover:shadow-lg transition-shadow">
             <Rocket size={14} /> Start Building
