@@ -18,7 +18,6 @@ contract Agentra is ERC721URIStorage, AccessControl, Pausable, ReentrancyGuard {
     uint256 private _nextTokenId = 1;
     uint256 public txCounter;
 
-    bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
     bytes32 public constant ORACLE_ROLE = keccak256("ORACLE_ROLE");
     bytes32 public constant RESOLVER_ROLE = keccak256("RESOLVER_ROLE");
 
@@ -27,7 +26,6 @@ contract Agentra is ERC721URIStorage, AccessControl, Pausable, ReentrancyGuard {
     enum TxStatus { Pending, Resolved, Refunded }
     enum TxType { Access, Comms }
 
-    // Removed 'creator' address because ERC721 ownerOf(tokenId) handles ownership natively
     struct AgentInfo {
         AgentTier tier;
         uint256 monthlyPriceUSD; // Stored in USD (18 decimals)
@@ -48,14 +46,13 @@ contract Agentra is ERC721URIStorage, AccessControl, Pausable, ReentrancyGuard {
 
     mapping(uint256 => AgentInfo) public agents;
     mapping(uint256 => mapping(address => uint256)) public accessRegistry;
-    mapping(AgentTier => uint256) public listingFeesUSD;
     mapping(uint256 => PendingTx) public pendingTransactions;
 
     // -------------------------------------------------------
     // Events
     // -------------------------------------------------------
     event PriceUpdated(uint256 new0GPriceUSD);
-    event AgentDeployed(uint256 indexed agentId, address indexed creator, AgentTier tier);
+    event AgentDeployed(uint256 indexed agentId, address indexed creator, AgentTier tier, uint256 listingFeePaidUSD);
     
     event TxPending(uint256 indexed txId, address indexed user, uint256 indexed agentId, TxType txType, uint256 weiAmount);
     event TxResolved(uint256 indexed txId, address indexed user, uint256 indexed agentId);
@@ -71,13 +68,8 @@ contract Agentra is ERC721URIStorage, AccessControl, Pausable, ReentrancyGuard {
         feeCollector = _feeCollector;
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(FEE_MANAGER_ROLE, msg.sender);
         _grantRole(ORACLE_ROLE, msg.sender);
         _grantRole(RESOLVER_ROLE, msg.sender);
-
-        listingFeesUSD[AgentTier.Standard] = 10 ether; 
-        listingFeesUSD[AgentTier.Professional] = 50 ether;
-        listingFeesUSD[AgentTier.Enterprise] = 200 ether;
 
         current0GPriceUSD = 1 ether; // Fallback safety price
     }
@@ -97,20 +89,54 @@ contract Agentra is ERC721URIStorage, AccessControl, Pausable, ReentrancyGuard {
 
     function getRequiredWei(uint256 _usdAmount) public view returns (uint256) {
         require(current0GPriceUSD > 0, "Oracle price not set");
+        // If USD amount is 0 (e.g. Web2 sets a free tier), require 0 Wei
+        if (_usdAmount == 0) return 0; 
         return (_usdAmount * 1e18) / current0GPriceUSD;
     }
 
     // -------------------------------------------------------
-    // Core: Deploy Agent (Mints the INFT)
+    // Core: 3 Distinct Deployment Functions (Web2 Provides Fee)
     // -------------------------------------------------------
-    function deployAgent(
+    function deployStandardAgent(
+        uint256 _monthlyPriceUSD,
+        string memory _metadataURI,
+        bool _commsEnabled,
+        uint256 _commsPricePerCallUSD,
+        uint256 _listingFeeUSD
+    ) external payable nonReentrant whenNotPaused returns (uint256) {
+        return _deployAgent(AgentTier.Standard, _monthlyPriceUSD, _metadataURI, _commsEnabled, _commsPricePerCallUSD, _listingFeeUSD);
+    }
+
+    function deployProfessionalAgent(
+        uint256 _monthlyPriceUSD,
+        string memory _metadataURI,
+        bool _commsEnabled,
+        uint256 _commsPricePerCallUSD,
+        uint256 _listingFeeUSD
+    ) external payable nonReentrant whenNotPaused returns (uint256) {
+        return _deployAgent(AgentTier.Professional, _monthlyPriceUSD, _metadataURI, _commsEnabled, _commsPricePerCallUSD, _listingFeeUSD);
+    }
+
+    function deployEnterpriseAgent(
+        uint256 _monthlyPriceUSD,
+        string memory _metadataURI,
+        bool _commsEnabled,
+        uint256 _commsPricePerCallUSD,
+        uint256 _listingFeeUSD
+    ) external payable nonReentrant whenNotPaused returns (uint256) {
+        return _deployAgent(AgentTier.Enterprise, _monthlyPriceUSD, _metadataURI, _commsEnabled, _commsPricePerCallUSD, _listingFeeUSD);
+    }
+
+    // Private helper to handle the actual deployment logic
+    function _deployAgent(
         AgentTier _tier,
         uint256 _monthlyPriceUSD,
-        string memory _metadataURI, // 0G Storage Hash
+        string memory _metadataURI, 
         bool _commsEnabled,
-        uint256 _commsPricePerCallUSD
-    ) external payable nonReentrant whenNotPaused returns (uint256) {
-        uint256 requiredWei = getRequiredWei(listingFeesUSD[_tier]);
+        uint256 _commsPricePerCallUSD,
+        uint256 _listingFeeUSD
+    ) private returns (uint256) {
+        uint256 requiredWei = getRequiredWei(_listingFeeUSD);
         require(msg.value >= requiredWei, "Insufficient Native 0G sent");
 
         // Refund any excess 0G sent by the user
@@ -119,13 +145,14 @@ contract Agentra is ERC721URIStorage, AccessControl, Pausable, ReentrancyGuard {
             require(success, "Refund failed");
         }
 
-        // Platform fee
-        (bool feeSuccess, ) = payable(feeCollector).call{value: requiredWei}("");
-        require(feeSuccess, "Fee transfer failed");
+        // Send platform fee to collector (if fee is > 0)
+        if (requiredWei > 0) {
+            (bool feeSuccess, ) = payable(feeCollector).call{value: requiredWei}("");
+            require(feeSuccess, "Fee transfer failed");
+        }
 
         uint256 tokenId = _nextTokenId++;
         
-        // Mint the ERC721 NFT to the creator & bind 0G Storage Hash
         _mint(msg.sender, tokenId);
         _setTokenURI(tokenId, _metadataURI);
 
@@ -138,7 +165,7 @@ contract Agentra is ERC721URIStorage, AccessControl, Pausable, ReentrancyGuard {
 
         accessRegistry[tokenId][msg.sender] = type(uint256).max;
 
-        emit AgentDeployed(tokenId, msg.sender, _tier);
+        emit AgentDeployed(tokenId, msg.sender, _tier, _listingFeeUSD);
         return tokenId;
     }
 
@@ -154,7 +181,6 @@ contract Agentra is ERC721URIStorage, AccessControl, Pausable, ReentrancyGuard {
         
         require(msg.value >= requiredWei, "Insufficient Native 0G sent");
 
-        // Refund excess
         if (msg.value > requiredWei) {
             (bool success, ) = payable(msg.sender).call{value: msg.value - requiredWei}("");
             require(success, "Refund failed");
@@ -189,7 +215,6 @@ contract Agentra is ERC721URIStorage, AccessControl, Pausable, ReentrancyGuard {
         uint256 requiredWei = getRequiredWei(targetAgent.commsPricePerCallUSD);
         require(msg.value >= requiredWei, "Insufficient Native 0G sent");
 
-        // Refund excess
         if (msg.value > requiredWei) {
             (bool success, ) = payable(msg.sender).call{value: msg.value - requiredWei}("");
             require(success, "Refund failed");
@@ -233,14 +258,17 @@ contract Agentra is ERC721URIStorage, AccessControl, Pausable, ReentrancyGuard {
         uint256 platformFee = (pTx.weiAmount * PLATFORM_FEE_PERCENTAGE) / 100;
         uint256 creatorCut = pTx.weiAmount - platformFee;
 
-        // Route revenue to the CURRENT owner of the INFT
         address currentOwner = ownerOf(pTx.agentId);
 
-        (bool feeSuccess, ) = payable(feeCollector).call{value: platformFee}("");
-        require(feeSuccess, "Fee transfer failed");
+        if (platformFee > 0) {
+            (bool feeSuccess, ) = payable(feeCollector).call{value: platformFee}("");
+            require(feeSuccess, "Fee transfer failed");
+        }
 
-        (bool creatorSuccess, ) = payable(currentOwner).call{value: creatorCut}("");
-        require(creatorSuccess, "Creator transfer failed");
+        if (creatorCut > 0) {
+            (bool creatorSuccess, ) = payable(currentOwner).call{value: creatorCut}("");
+            require(creatorSuccess, "Creator transfer failed");
+        }
 
         emit TxResolved(_txId, pTx.user, pTx.agentId);
     }
@@ -257,7 +285,6 @@ contract Agentra is ERC721URIStorage, AccessControl, Pausable, ReentrancyGuard {
         emit TxRefunded(_txId, pTx.user, pTx.agentId);
     }
 
-    // NEW: User can claim refund if backend resolver fails after 24 hours
     function claimTimeoutRefund(uint256 _txId) external nonReentrant {
         PendingTx storage pTx = pendingTransactions[_txId];
         require(pTx.status == TxStatus.Pending, "Tx not pending");
