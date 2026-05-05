@@ -55,6 +55,12 @@ enum InteractionStatus {
   timeout
 }
 
+enum ComputeMode {
+  endpoint
+  0g_router
+  0g_direct
+}
+
 //////////////////////////////////////////////////
 // USER
 //////////////////////////////////////////////////
@@ -96,7 +102,10 @@ model Agent {
   ownerWallet     String
   owner           User          @relation(fields: [ownerWallet], references: [walletAddress])
 
-  endpoint        String
+  endpoint        String?
+
+  computeMode     ComputeMode   @default(endpoint)
+  computeConfig   Json?
 
   tier            AgentTier
   pricing         String        // monthly price in wei

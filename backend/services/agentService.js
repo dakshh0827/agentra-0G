@@ -209,6 +209,8 @@ class AgentService {
       'endpoint',
       'tags',
       'mcpSchema',
+      'computeMode',
+      'computeConfig',
       'category',
       'pricing',
       'lifetimeMultiplier',

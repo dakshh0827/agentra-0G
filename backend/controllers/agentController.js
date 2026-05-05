@@ -3,6 +3,7 @@ import prisma from '../lib/prisma.js'
 import contractManager from '../lib/contractManager.js'
 import config from '../config/config.js'
 import { uploadAgentMetadata } from '../services/storageService.js'
+import zeroGComputeService from '../services/compute/zeroGComputeService.js'
 import { asyncHandler } from '../middlewares/errorHandler.js'
 import { ethers } from 'ethers'
 import { z } from 'zod'
@@ -25,6 +26,27 @@ function buildAgentLookup(id) {
 
 // ── Validation schemas ────────────────────────────────────────
 
+const routerComputeConfigSchema = z.object({
+  provider: z.string().optional(),
+  baseURL: z.string().url().optional(),
+  apiKey: z.string(),
+  model: z.string().optional(),
+  systemPrompt: z.string().optional(),
+  temperature: z.number().min(0).max(2).optional().default(0.7),
+  maxTokens: z.number().min(1).max(4096).optional().default(512),
+}).strict()
+
+const directComputeConfigSchema = z.object({
+  provider: z.string().optional(),
+  runtime: z.enum(['nodejs20', 'python311']).optional().default('nodejs20'),
+  entryFile: z.string().min(1).max(128).optional().default('index.js'),
+  installCommand: z.string().max(256).optional(),
+  startCommand: z.string().max(256).optional(),
+  systemPrompt: z.string().max(4000).optional(),
+  env: z.record(z.string(), z.string()).optional().default({}),
+  agentCode: z.string().min(1).max(200000),
+}).strict()
+
 const deploySchema = z.object({
   name: z.string().min(2).max(64), 
   description: z.string().min(10).max(1000).optional(),
@@ -35,16 +57,62 @@ const deploySchema = z.object({
   commsEnabled: z.boolean().optional().default(false),
   commsPricePerCall: z.string().optional().default('0'),
   tier: z.enum(['Standard', 'Professional', 'Enterprise']),
-  endpoint: z.string().url(),
+  endpoint: z.string().url().optional(),
   mcpSchema: z.record(z.string(), z.unknown()).optional(),
+  computeMode: z.enum(['endpoint', '0g_router', '0g_direct']).optional().default('endpoint'),
+  computeConfig: z.record(z.string(), z.unknown()).optional(),
   deployMode: z.enum(['database', 'blockchain']).optional(),
   status: z.string().optional(),
+}).refine(
+  (data) => {
+    // If computeMode is endpoint, endpoint is required
+    if (data.computeMode === 'endpoint' && !data.endpoint) {
+      return false
+    }
+    // If computeMode is 0g_router, computeConfig is required
+    if (data.computeMode === '0g_router' && !data.computeConfig) {
+      return false
+    }
+    // If computeMode is 0g_direct, computeConfig is required
+    if (data.computeMode === '0g_direct' && !data.computeConfig) {
+      return false
+    }
+    return true
+  },
+  {
+    message: 'endpoint is required for computeMode "endpoint", computeConfig is required for "0g_router" and "0g_direct"',
+    path: ['endpoint'],
+  }
+).superRefine((data, ctx) => {
+  if (data.computeMode === '0g_router' && data.computeConfig) {
+    const parsed = routerComputeConfigSchema.safeParse(data.computeConfig)
+    if (!parsed.success) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Invalid 0g_router computeConfig: ${parsed.error.issues.map((i) => i.message).join(', ')}`,
+        path: ['computeConfig'],
+      })
+    }
+  }
+
+  if (data.computeMode === '0g_direct' && data.computeConfig) {
+    const parsed = directComputeConfigSchema.safeParse(data.computeConfig)
+    if (!parsed.success) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Invalid 0g_direct computeConfig: ${parsed.error.issues.map((i) => i.message).join(', ')}`,
+        path: ['computeConfig'],
+      })
+    }
+  }
 })
 
 const updateSchema = z.object({
   name: z.string().min(2).max(64).optional(),
   description: z.string().min(10).max(1000).optional(),
   endpoint: z.string().url().optional(),
+  computeMode: z.enum(['endpoint', '0g_router', '0g_direct']).optional(),
+  computeConfig: z.record(z.string(), z.unknown()).optional(),
   pricing: z.string().optional(),
   lifetimeMultiplier: z.number().int().min(1).max(36).optional(),
   commsEnabled: z.boolean().optional(),
@@ -52,6 +120,41 @@ const updateSchema = z.object({
   tags: z.array(z.string()).optional(),
   category: z.enum(['Analysis', 'Development', 'Security', 'Data', 'NLP', 'Web3', 'Other']).optional(),
 })
+
+function sanitizeComputeConfigForMetadata(computeMode, computeConfig) {
+  if (!computeConfig || typeof computeConfig !== 'object') return null
+
+  if (computeMode === '0g_direct') {
+    const envKeys = Object.keys(computeConfig.env || {})
+    return {
+      provider: computeConfig.provider || '0g',
+      runtime: computeConfig.runtime || 'nodejs20',
+      entryFile: computeConfig.entryFile || 'index.js',
+      installCommand: computeConfig.installCommand || 'npm install',
+      startCommand: computeConfig.startCommand || 'node index.js',
+      systemPrompt: computeConfig.systemPrompt || '',
+      deploymentId: computeConfig.deploymentId || null,
+      endpoint: computeConfig.endpoint || null,
+      deploymentStatus: computeConfig.deploymentStatus || null,
+      envKeys,
+      sourceCodeBytes: Buffer.byteLength(String(computeConfig.agentCode || ''), 'utf8'),
+    }
+  }
+
+  if (computeMode === '0g_router') {
+    return {
+      provider: computeConfig.provider || '0g',
+      baseURL: computeConfig.baseURL || null,
+      model: computeConfig.model || null,
+      systemPrompt: computeConfig.systemPrompt || '',
+      temperature: computeConfig.temperature,
+      maxTokens: computeConfig.maxTokens,
+      hasApiKey: Boolean(computeConfig.apiKey),
+    }
+  }
+
+  return computeConfig
+}
 
 async function ensureUniqueAgentName(name, excludeAgentId = null) {
   const existing = await prisma.agent.findFirst({
@@ -97,18 +200,44 @@ const deployAgent = asyncHandler(async (req, res) => {
   const data = deploySchema.parse(req.body)
   await ensureUniqueAgentName(data.name)
 
+  let resolvedEndpoint = data.endpoint || null
+  let resolvedComputeConfig = data.computeConfig || null
+
+  if (data.computeMode === '0g_direct') {
+    const deployment = await zeroGComputeService.deployHostedAgent({
+      agentName: data.name,
+      ownerWallet: req.walletAddress,
+      computeConfig: data.computeConfig,
+      metadata: {
+        category: data.category,
+        tier: data.tier,
+      },
+    })
+
+    resolvedEndpoint = deployment.endpoint
+    resolvedComputeConfig = {
+      ...(data.computeConfig || {}),
+      deploymentId: deployment.deploymentId,
+      endpoint: deployment.endpoint,
+      deploymentStatus: deployment.status,
+      deployedAt: new Date().toISOString(),
+    }
+  }
+
   const metadataPayload = {
     name: data.name,
     description: data.description || '',
     category: data.category,
     tags: data.tags || [],
-    endpoint: data.endpoint,
+    endpoint: resolvedEndpoint,
     tier: data.tier,
     pricing: data.pricing,
     lifetimeMultiplier: data.lifetimeMultiplier ?? 12,
     commsEnabled: data.commsEnabled ?? false,
     commsPricePerCall: data.commsPricePerCall || '0',
     mcpSchema: data.mcpSchema || null,
+    computeMode: data.computeMode || 'endpoint',
+    computeConfig: sanitizeComputeConfigForMetadata(data.computeMode, resolvedComputeConfig),
     deployMode: data.deployMode || 'database',
   }
 
@@ -123,7 +252,9 @@ const deployAgent = asyncHandler(async (req, res) => {
         description: data.description,
         metadataUri: metadataURI,
         ownerWallet: req.walletAddress,
-        endpoint: data.endpoint,
+        endpoint: resolvedEndpoint,
+        computeMode: data.computeMode || 'endpoint',
+        computeConfig: resolvedComputeConfig,
         tier: data.tier,
         pricing: data.pricing,
         lifetimeMultiplier: data.lifetimeMultiplier ?? 12,
@@ -156,7 +287,9 @@ const deployAgent = asyncHandler(async (req, res) => {
       description: data.description,
       metadataUri: metadataURI,
       ownerWallet: req.walletAddress,
-      endpoint: data.endpoint,
+      endpoint: resolvedEndpoint,
+      computeMode: data.computeMode || 'endpoint',
+      computeConfig: resolvedComputeConfig,
       tier: data.tier,
       pricing: data.pricing,
       lifetimeMultiplier: data.lifetimeMultiplier ?? 12,

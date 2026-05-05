@@ -1,7 +1,7 @@
 {
   "16602": {
     "Agentra": {
-      "address": "0xcd04001daE47548e3e28E847cF2669752acDC57A",
+      "address": "0x00d63981B2cE4D643130782bC691ACE691Fa7853",
       "abi": [
         {"type":"constructor","inputs":[{"name":"_feeCollector","type":"address","internalType":"address"}],"stateMutability":"nonpayable"},
         {"type":"function","name":"DEFAULT_ADMIN_ROLE","inputs":[],"outputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"stateMutability":"view"},

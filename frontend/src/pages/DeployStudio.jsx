@@ -30,10 +30,11 @@ function FadeInSection({ children, className = '', delay = 0 }) {
   const STEPS = [
   { id: 1, label: 'Mode', icon: Database, description: 'Deploy target' },
   { id: 2, label: 'Identity', icon: Zap, description: 'Name & category' },
-  { id: 3, label: 'Endpoint', icon: Globe, description: 'MCP schema' },
-  { id: 4, label: 'Metadata', icon: Tag, description: 'Tags & description' },
-  { id: 5, label: 'Pricing', icon: DollarSign, description: 'Monthly & lifetime' },
-  { id: 6, label: 'Deploy', icon: Upload, description: 'Publish agent' },
+  { id: 3, label: 'Compute', icon: Sparkles, description: 'Execution engine' },
+  { id: 4, label: 'Endpoint', icon: Globe, description: 'MCP schema' },
+  { id: 5, label: 'Metadata', icon: Tag, description: 'Tags & description' },
+  { id: 6, label: 'Pricing', icon: DollarSign, description: 'Monthly pricing' },
+  { id: 7, label: 'Deploy', icon: Upload, description: 'Publish agent' },
 ]
 
 const CATEGORIES = ['Analysis', 'Development', 'Security', 'Data', 'NLP', 'Web3', 'Other']
@@ -46,11 +47,11 @@ const TIER_OPTIONS = [
 ]
 
 // Lifetime multiplier options
-const LIFETIME_MULTIPLIERS = [
-  { value: 6, label: '6 months (×6)' },
-  { value: 12, label: '12 months (×12) — recommended' },
-  { value: 24, label: '24 months (×24)' },
-]
+// const LIFETIME_MULTIPLIERS = [
+//   { value: 6, label: '6 months (×6)' },
+//   { value: 12, label: '12 months (×12) — recommended' },
+//   { value: 24, label: '24 months (×24)' },
+// ]
 
 const InputField = ({ label, field, type = 'text', placeholder, rows, form, update }) => (
   <div>
@@ -89,20 +90,66 @@ export default function DeployStudio() {
     deployMode: '',
     name: '',
     category: '',
+    computeMode: 'endpoint',
+    computeConfig: {
+      provider: '0g',
+      runtime: 'nodejs20',
+      entryFile: 'index.js',
+      installCommand: 'npm install',
+      startCommand: 'node index.js',
+      agentCode: '',
+      systemPrompt: '',
+      envText: '',
+    },
     endpoint: '',
     mcpSchema: '',
     description: '',
     tags: '',
     tier: '',
     tierIndex: 0,
-    monthlyPrice: '',      // AGT — monthly access price set by creator
-    lifetimeMultiplier: 12, // How many monthly periods = 1 lifetime
+    monthlyPrice: '',
     commsEnabled: false,
     commsPricePerCall: '',
     testPassed: false,
   })
 
+  // Dynamic steps: remove Compute step when using endpoint, remove Endpoint step when using 0G
+  const getDisplayedSteps = () => {
+    if (form.computeMode === '0g_direct') {
+      return [
+        { id: 1, label: 'Mode', icon: Database, description: 'Deploy target' },
+        { id: 2, label: 'Identity', icon: Zap, description: 'Name & category' },
+        { id: 3, label: 'Compute', icon: Sparkles, description: 'Execution engine' },
+        { id: 4, label: 'Metadata', icon: Tag, description: 'Tags & description' },
+        { id: 5, label: 'Pricing', icon: DollarSign, description: 'Monthly pricing' },
+        { id: 6, label: 'Deploy', icon: Upload, description: 'Publish agent' },
+      ]
+    }
+    // default: endpoint flow
+    return [
+      { id: 1, label: 'Mode', icon: Database, description: 'Deploy target' },
+      { id: 2, label: 'Identity', icon: Zap, description: 'Name & category' },
+      { id: 3, label: 'Endpoint', icon: Globe, description: 'MCP schema' },
+      { id: 4, label: 'Metadata', icon: Tag, description: 'Tags & description' },
+      { id: 5, label: 'Pricing', icon: DollarSign, description: 'Monthly pricing' },
+      { id: 6, label: 'Deploy', icon: Upload, description: 'Publish agent' },
+    ]
+  }
+
+  const displayedSteps = getDisplayedSteps()
+  const currentStepLabel = displayedSteps[step - 1]?.label
+  const isCurrent = (label) => currentStepLabel === label
+
+  // Ensure step is within bounds when mode changes
+  React.useEffect(() => {
+    if (step > displayedSteps.length) setStep(displayedSteps.length)
+  }, [displayedSteps.length])
+
   const update = (key, val) => setForm(f => ({ ...f, [key]: val }))
+  const updateConfig = (key, val) => setForm(f => ({
+    ...f,
+    computeConfig: { ...f.computeConfig, [key]: val }
+  }))
   const isBlockchain = form.deployMode === 'blockchain'
   const isDatabase = form.deployMode === 'database'
 
@@ -110,12 +157,38 @@ export default function DeployStudio() {
 
   // Derived pricing display
   const monthlyNum = parseFloat(form.monthlyPrice) || 0
-  const lifetimeNum = monthlyNum * form.lifetimeMultiplier
+  // const lifetimeNum = monthlyNum * form.lifetimeMultiplier
   const creatorMonthly = (monthlyNum * 0.8).toFixed(4)
   const platformMonthly = (monthlyNum * 0.2).toFixed(4)
-  const creatorLifetime = (lifetimeNum * 0.8).toFixed(4)
+  // const creatorLifetime = (lifetimeNum * 0.8).toFixed(4)
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+  const parseEnvText = (envText) => {
+    const env = {}
+    const lines = String(envText || '').split('\n')
+
+    for (const rawLine of lines) {
+      const line = rawLine.trim()
+      if (!line || line.startsWith('#')) continue
+
+      const eqIndex = line.indexOf('=')
+      if (eqIndex <= 0) {
+        throw new Error(`Invalid env line: "${line}". Use KEY=value format.`)
+      }
+
+      const key = line.slice(0, eqIndex).trim()
+      const value = line.slice(eqIndex + 1).trim()
+
+      if (!/^[A-Z_][A-Z0-9_]*$/i.test(key)) {
+        throw new Error(`Invalid env key: "${key}". Use alphanumeric + underscore.`)
+      }
+
+      env[key] = value
+    }
+
+    return env
+  }
 
   const normalizeTxHash = (txResult, label) => {
     const hash = typeof txResult === 'string'
@@ -165,17 +238,31 @@ export default function DeployStudio() {
 
     try {
       let parsedSchema = null
-      if (form.mcpSchema.trim()) {
+      if (form.computeMode === 'endpoint' && form.mcpSchema.trim()) {
         try { parsedSchema = JSON.parse(form.mcpSchema) }
         catch { throw new Error('Invalid MCP Schema JSON — please fix it before deploying.') }
       }
+
+      if (form.computeMode === 'endpoint' && !form.endpoint.trim()) {
+        throw new Error('Endpoint is required for MCP schema + endpoint deployment.')
+      }
+
+      if (form.computeMode === '0g_direct' && !form.computeConfig.agentCode.trim()) {
+        throw new Error('Agent source code is required for 0G hosted deployment.')
+      }
+
+      const parsedEnv = form.computeMode === '0g_direct'
+        ? parseEnvText(form.computeConfig.envText)
+        : {}
+
+      const { envText, ...computeConfigWithoutEnvText } = form.computeConfig
 
       if (!form.monthlyPrice || parseFloat(form.monthlyPrice) < 0) {
         throw new Error('Please set a monthly access price (can be 0 for free).')
       }
 
       if (form.commsEnabled && (!form.commsPricePerCall || parseFloat(form.commsPricePerCall) <= 0)) {
-        throw new Error('Set a comms price per call greater than 0 AGT when agent communication is enabled.')
+        throw new Error('Set a comms price per call greater than 0 USD when agent communication is enabled.')
       }
 
       // Monthly price in wei
@@ -184,17 +271,21 @@ export default function DeployStudio() {
       const payload = {
         name: form.name,
         category: form.category,
-        endpoint: form.endpoint,
-        mcpSchema: parsedSchema,
+        endpoint: form.computeMode === 'endpoint' ? form.endpoint : null,
+        mcpSchema: form.computeMode === 'endpoint' ? parsedSchema : null,
         description: form.description,
         tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
         tier: form.tier,
         pricing: pricingWei,
-        lifetimeMultiplier: form.lifetimeMultiplier,
+        // lifetimeMultiplier: form.lifetimeMultiplier,
         commsEnabled: !!form.commsEnabled,
         commsPricePerCall: form.commsEnabled
           ? parseUnits(form.commsPricePerCall || '0', 18).toString()
           : '0',
+        computeMode: form.computeMode,
+        computeConfig: form.computeMode === '0g_direct'
+          ? { ...computeConfigWithoutEnvText, env: parsedEnv }
+          : null,
         deployMode: form.deployMode,
       }
 
@@ -296,7 +387,10 @@ export default function DeployStudio() {
   }
 
   const canProceedFromStep1 = !!form.deployMode && isConnected
-  const canDeploy = isConnected && form.name && form.category && form.tier && form.monthlyPrice !== ''
+  const hasEndpointComputeRequirements = form.computeMode === 'endpoint' && !!form.endpoint
+  const hasZeroGComputeRequirements = form.computeMode === '0g_direct' && !!form.computeConfig.agentCode?.trim()
+  const hasComputeRequirements = hasEndpointComputeRequirements || hasZeroGComputeRequirements
+  const canDeploy = isConnected && form.name && form.category && form.tier && form.monthlyPrice !== '' && hasComputeRequirements
 
   return (
     <div className="relative min-h-screen bg-bg">
@@ -315,15 +409,16 @@ export default function DeployStudio() {
         <FadeInSection className="mb-8">
           <div className="glass-card-landing rounded-2xl p-4 sm:p-5">
             <div className="flex items-center gap-0 overflow-x-auto pb-1">
-              {STEPS.map((s, i) => {
+              {displayedSteps.map((s, i) => {
                 const Icon = s.icon
-                const isActive = step === s.id
-                const isDone = step > s.id
+                const stepIndex = i + 1
+                const isActive = step === stepIndex
+                const isDone = step > stepIndex
                 return (
-                  <React.Fragment key={s.id}>
+                  <React.Fragment key={`${s.label}-${i}`}>
                     <motion.div
                       whileHover={isDone ? { y: -2, scale: 1.02 } : {}}
-                      onClick={() => isDone && setStep(s.id)}
+                      onClick={() => isDone && setStep(stepIndex)}
                       className={`relative flex items-center gap-2.5 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all shrink-0 ${isDone ? 'cursor-pointer' : ''} ${
                         isActive
                           ? 'bg-[rgba(124,58,237,0.12)] border border-[rgba(124,58,237,0.4)] text-primary'
@@ -345,8 +440,8 @@ export default function DeployStudio() {
                         <motion.div layoutId="step-indicator" className="absolute inset-0 rounded-xl border-2 border-primary pointer-events-none" transition={{ type: 'spring', stiffness: 300, damping: 30 }} />
                       )}
                     </motion.div>
-                    {i < STEPS.length - 1 && (
-                      <div className={`h-px w-4 sm:w-6 shrink-0 mx-0.5 transition-colors duration-300 ${step > s.id ? 'bg-[rgba(52,211,153,0.4)]' : 'bg-border'}`} />
+                    {i < displayedSteps.length - 1 && (
+                      <div className={`h-px w-4 sm:w-6 shrink-0 mx-0.5 transition-colors duration-300 ${step > stepIndex ? 'bg-[rgba(52,211,153,0.4)]' : 'bg-border'}`} />
                     )}
                   </React.Fragment>
                 )
@@ -355,9 +450,9 @@ export default function DeployStudio() {
             <div className="mt-4 h-1 bg-bg-secondary rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${((step - 1) / (STEPS.length - 1)) * 100}%` }}
+                animate={{ width: `${((step - 1) / (displayedSteps.length - 1)) * 100}%` }}
                 transition={{ duration: 0.4, ease: 'easeOut' }}
-                className="h-full bg-[var(--color-primary)] rounded-full"
+                className="h-full bg-primary rounded-full"
               />
             </div>
           </div>
@@ -369,7 +464,7 @@ export default function DeployStudio() {
             <div className="glass-card-landing rounded-2xl p-6 sm:p-8">
 
               {/* ── STEP 1: DEPLOY MODE ── */}
-              {step === 1 && (
+              {isCurrent('Mode') && (
                 <div className="space-y-6">
                   <div>
                     <h2 className="font-display font-bold text-xl sm:text-2xl text-text-primary mb-2 flex items-center gap-3">
@@ -430,7 +525,7 @@ export default function DeployStudio() {
                         </div>
                         <div>
                           <div className={`font-bold text-xs ${isBlockchain ? 'text-primary' : 'text-text-secondary'}`}>BLOCKCHAIN + DB</div>
-                          <div className="text-xs font-mono mt-0.5 text-text-dim">ON-CHAIN · AGT FEE</div>
+                          <div className="text-xs font-mono mt-0.5 text-text-dim">ON-CHAIN · USD FEE</div>
                         </div>
                         {isBlockchain && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="ml-auto w-6 h-6 rounded-full bg-primary flex items-center justify-center"><Check size={14} className="text-white" /></motion.div>}
                       </div>
@@ -439,11 +534,50 @@ export default function DeployStudio() {
                       </p>
                     </motion.button>
                   </div>
+
+                  {/* ── EXECUTION METHOD (select here so subsequent steps follow) ── */}
+                  <div className="mt-6">
+                    <h3 className="font-bold text-sm text-text-primary mb-2">Execution Method</h3>
+                    <p className="text-text-muted text-xs mb-3">Choose how your agent will execute across the platform.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <motion.button
+                        whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.99 }}
+                        onClick={() => update('computeMode', 'endpoint')}
+                        className={`relative p-4 rounded-xl border text-left transition-all cursor-pointer overflow-hidden ${
+                          form.computeMode === 'endpoint' ? 'bg-[rgba(124,58,237,0.08)] border-[rgba(124,58,237,0.25)]' : 'border-border bg-bg-secondary hover:border-[rgba(124,58,237,0.18)]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Globe size={18} className={form.computeMode === 'endpoint' ? 'text-primary' : 'text-text-dim'} />
+                          <div>
+                            <div className={`font-semibold text-sm ${form.computeMode === 'endpoint' ? 'text-primary' : 'text-text-secondary'}`}>MCP + Endpoint</div>
+                            <div className="text-xs text-text-dim">Provide MCP schema and external API endpoint</div>
+                          </div>
+                        </div>
+                      </motion.button>
+
+                      <motion.button
+                        whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.99 }}
+                        onClick={() => update('computeMode', '0g_direct')}
+                        className={`relative p-4 rounded-xl border text-left transition-all cursor-pointer overflow-hidden ${
+                          form.computeMode === '0g_direct' ? 'bg-[rgba(16,185,129,0.08)] border-[rgba(16,185,129,0.25)]' : 'border-border bg-bg-secondary hover:border-[rgba(16,185,129,0.18)]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Rocket size={18} className={form.computeMode === '0g_direct' ? 'text-[#10b981]' : 'text-text-dim'} />
+                          <div>
+                            <div className={`font-semibold text-sm ${form.computeMode === '0g_direct' ? 'text-[#10b981]' : 'text-text-secondary'}`}>0G Compute</div>
+                            <div className="text-xs text-text-dim">Code-first hosting on decentralized GPUs</div>
+                          </div>
+                        </div>
+                      </motion.button>
+                    </div>
+                  </div>
                 </div>
               )}
 
               {/* ── STEP 2: IDENTITY ── */}
-              {step === 2 && (
+              {isCurrent('Identity') && (
                 <div className="space-y-6">
                   <h2 className="font-display font-bold text-xl sm:text-2xl text-text-primary mb-6 flex items-center gap-3">
                     <Zap size={20} className="text-primary" /> Agent Identity
@@ -468,19 +602,162 @@ export default function DeployStudio() {
                 </div>
               )}
 
-              {/* ── STEP 3: ENDPOINT ── */}
-              {step === 3 && (
+              {/* ── STEP 3: COMPUTE MODE ── */}
+              {isCurrent('Compute') && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="font-display font-bold text-xl sm:text-2xl text-text-primary mb-2 flex items-center gap-3">
+                      <Sparkles size={20} className="text-primary" />
+                      Compute Engine
+                    </h2>
+                    <p className="text-text-muted text-sm leading-relaxed">
+                      Choose how your agent executes: via traditional API endpoints or on decentralized 0G Compute GPUs.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-bg-secondary border border-border">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-semibold">Selected Execution</div>
+                        <div className="text-xs text-text-dim">
+                          {form.computeMode === 'endpoint'
+                            ? 'MCP + Endpoint — configure endpoint and MCP schema in Step 4.'
+                            : '0G Compute — configure runtime, code and env below.'}
+                        </div>
+                      </div>
+                      <button onClick={() => setStep(1)} className="text-sm text-primary underline">Change</button>
+                    </div>
+                  </div>
+
+                  {/* 0G Hosted Configuration Section */}
+                  {form.computeMode === '0g_direct' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="mt-8 pt-8 border-t border-border"
+                    >
+                      <h3 className="font-display font-bold text-lg text-text-primary mb-6 flex items-center gap-2">
+                        <Sparkles size={18} className="text-[#10b981]" />
+                        0G Hosted Deployment Config
+                      </h3>
+
+                      <div className="space-y-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-xs font-semibold text-text-primary block mb-2.5">RUNTIME</label>
+                            <select
+                              value={form.computeConfig.runtime}
+                              onChange={e => updateConfig('runtime', e.target.value)}
+                              className="input-field w-full px-4 py-3 rounded-lg text-base focus:ring-2 focus:ring-[rgba(16,185,129,0.3)] transition-all"
+                            >
+                              <option value="nodejs20">Node.js 20</option>
+                              <option value="python311">Python 3.11</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-text-primary block mb-2.5">ENTRY FILE</label>
+                            <input
+                              type="text"
+                              value={form.computeConfig.entryFile}
+                              onChange={e => updateConfig('entryFile', e.target.value)}
+                              placeholder="index.js"
+                              className="input-field w-full px-4 py-3 rounded-lg text-base focus:ring-2 focus:ring-[rgba(16,185,129,0.3)] transition-all"
+                            />
+                          </div>
+                        </div>
+
+                        {/* System Prompt */}
+                        <div>
+                          <label className="text-xs font-semibold text-text-primary block mb-2.5">SYSTEM PROMPT</label>
+                          <textarea
+                            value={form.computeConfig.systemPrompt}
+                            onChange={e => updateConfig('systemPrompt', e.target.value)}
+                            placeholder="You are a helpful AI assistant..."
+                            rows={4}
+                            className="input-field w-full px-4 py-3 rounded-lg text-base resize-none focus:ring-2 focus:ring-[rgba(16,185,129,0.3)] transition-all"
+                          />
+                          <p className="text-xs text-text-dim mt-2">Instructions that define your agent's behavior</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-xs font-semibold text-text-primary block mb-2.5">INSTALL COMMAND</label>
+                            <input
+                              type="text"
+                              value={form.computeConfig.installCommand}
+                              onChange={e => updateConfig('installCommand', e.target.value)}
+                              placeholder="npm install"
+                              className="input-field w-full px-4 py-3 rounded-lg text-base focus:ring-2 focus:ring-[rgba(16,185,129,0.3)] transition-all"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-text-primary block mb-2.5">START COMMAND</label>
+                            <input
+                              type="text"
+                              value={form.computeConfig.startCommand}
+                              onChange={e => updateConfig('startCommand', e.target.value)}
+                              placeholder="node index.js"
+                              className="input-field w-full px-4 py-3 rounded-lg text-base focus:ring-2 focus:ring-[rgba(16,185,129,0.3)] transition-all"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-text-primary block mb-2.5">AGENT SOURCE CODE</label>
+                          <textarea
+                            value={form.computeConfig.agentCode}
+                            onChange={e => updateConfig('agentCode', e.target.value)}
+                            placeholder={form.computeConfig.runtime === 'python311'
+                              ? '# app.py\n\ndef run(task):\n    return f"Processed: {task}"'
+                              : 'export async function run(task) {\n  return `Processed: ${task}`\n}'}
+                            rows={14}
+                            className="input-field w-full px-4 py-3 rounded-lg text-sm font-mono resize-y focus:ring-2 focus:ring-[rgba(16,185,129,0.3)] transition-all"
+                          />
+                          <p className="text-xs text-text-dim mt-2">Paste complete executable agent code. Hosting and runtime provisioning are handled by 0G compute.</p>
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-text-primary block mb-2.5">ENV VARIABLES (KEY=value)</label>
+                          <textarea
+                            value={form.computeConfig.envText}
+                            onChange={e => updateConfig('envText', e.target.value)}
+                            placeholder={'API_KEY=your-secret\nMODEL_NAME=my-model\n# comments are allowed'}
+                            rows={6}
+                            className="input-field w-full px-4 py-3 rounded-lg text-sm font-mono resize-y focus:ring-2 focus:ring-[rgba(16,185,129,0.3)] transition-all"
+                          />
+                          <p className="text-xs text-text-dim mt-2">These variables are injected into your hosted runtime environment.</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              )}
+
+              {/* ── STEP 4: ENDPOINT ── */}
+              {isCurrent('Endpoint') && (
                 <div className="space-y-6">
                   <h2 className="font-display font-bold text-xl sm:text-2xl text-text-primary mb-6 flex items-center gap-3">
                     <Globe size={20} className="text-primary" /> MCP Endpoint
                   </h2>
-                  <InputField label="ENDPOINT URL" field="endpoint" placeholder="https://your-agent.example.com" form={form} update={update} />
-                  <InputField label="MCP SCHEMA (JSON — optional)" field="mcpSchema" rows={8} placeholder={'{\n  "name": "my-agent",\n  "version": "1.0.0",\n  "tools": []\n}'} form={form} update={update} />
+                  {form.computeMode === 'endpoint' && (
+                    <InputField label="ENDPOINT URL" field="endpoint" placeholder="https://your-agent.example.com" form={form} update={update} />
+                  )}
+                  {form.computeMode === 'endpoint' && (
+                    <InputField label="MCP SCHEMA (JSON — optional)" field="mcpSchema" rows={8} placeholder={'{\n  "name": "my-agent",\n  "version": "1.0.0",\n  "tools": []\n}'} form={form} update={update} />
+                  )}
+                  {form.computeMode === '0g_direct' && (
+                    <div className="p-5 rounded-xl bg-[rgba(16,185,129,0.05)] border border-[rgba(16,185,129,0.2)]">
+                      <p className="text-sm text-text-muted">
+                        Using 0G hosted compute. Endpoint and MCP schema are not required for this mode.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* ── STEP 4: METADATA ── */}
-              {step === 4 && (
+              {/* ── STEP 5: METADATA ── */}
+              {isCurrent('Metadata') && (
                 <div className="space-y-6">
                   <h2 className="font-display font-bold text-xl sm:text-2xl text-text-primary mb-6 flex items-center gap-3">
                     <Tag size={20} className="text-primary" /> Metadata
@@ -490,8 +767,8 @@ export default function DeployStudio() {
                 </div>
               )}
 
-              {/* ── STEP 5: PRICING ── */}
-              {step === 5 && (
+              {/* ── STEP 6: PRICING ── */}
+              {isCurrent('Pricing') && (
                 <div className="space-y-6">
                   <div>
                     <h2 className="font-display font-bold text-xl sm:text-2xl text-text-primary mb-2 flex items-center gap-3">
@@ -520,7 +797,7 @@ export default function DeployStudio() {
                             <div className={`text-sm font-bold ${form.tier === tier.tier ? 'text-primary' : 'text-text-secondary'}`}>{tier.label}</div>
                             {isBlockchain && (
                               <div className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-primary/15 text-primary">
-                                {tier.listingFee} AGT fee
+                                {tier.listingFee} USD fee
                               </div>
                             )}
                           </div>
@@ -533,7 +810,7 @@ export default function DeployStudio() {
                   {/* Monthly price */}
                   <div>
                     <label className="text-xs font-mono text-text-dim uppercase block mb-2.5">
-                      MONTHLY ACCESS PRICE (AGT) — You receive 80%
+                      MONTHLY ACCESS PRICE (USD) — You receive 80%
                     </label>
                     <div className="relative">
                       <input
@@ -545,18 +822,18 @@ export default function DeployStudio() {
                         placeholder="e.g. 5"
                         className="input-field w-full px-4 py-3 rounded-xl text-sm pr-20"
                       />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-dim text-xs font-mono">AGT/mo</span>
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-dim text-xs font-mono">USD/mo</span>
                     </div>
                     {form.monthlyPrice && parseFloat(form.monthlyPrice) > 0 && (
                       <div className="mt-2 flex gap-4 text-sm font-mono">
-                        <span className="text-success">You: {creatorMonthly} AGT/mo</span>
-                        <span className="text-primary">Platform: {platformMonthly} AGT/mo</span>
+                        <span className="text-success">You: {creatorMonthly} USD/mo</span>
+                        <span className="text-primary">Platform: {platformMonthly} USD/mo</span>
                       </div>
                     )}
                   </div>
 
                   {/* Lifetime multiplier */}
-                  <div>
+                  {/* <div>
                     <label className="text-xs font-mono text-text-dim uppercase block mb-2.5">
                       LIFETIME ACCESS = MONTHLY × MULTIPLIER
                     </label>
@@ -580,31 +857,31 @@ export default function DeployStudio() {
                     </div>
 
                     {/* Lifetime pricing preview */}
-                    {form.monthlyPrice && parseFloat(form.monthlyPrice) > 0 && (
+                    {/* {form.monthlyPrice && parseFloat(form.monthlyPrice) > 0 && (
                       <motion.div
                         initial={{ opacity: 0, y: 4 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="mt-4 p-4 rounded-xl bg-[rgba(52,211,153,0.05)] border border-[rgba(52,211,153,0.2)]"
                       >
                         <div className="flex items-center gap-2 mb-3">
-                          <Info size={12} className="text-[var(--color-success)]" />
+                          <Info size={12} className="text-success" />
                           <span className="text-sm font-mono text-success">PRICING SUMMARY</span>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="text-center p-3 rounded-lg bg-[rgba(124,58,237,0.08)] border border-[rgba(124,58,237,0.15)]">
                             <div className="text-xs font-mono text-text-dim mb-1">30-DAY ACCESS</div>
-                            <div className="text-lg font-bold font-display text-primary">{parseFloat(form.monthlyPrice).toFixed(4)} AGT</div>
-                            <div className="text-xs font-mono text-success mt-1">→ {creatorMonthly} AGT to you</div>
+                            <div className="text-lg font-bold font-display text-primary">{parseFloat(form.monthlyPrice).toFixed(4)} USD</div>
+                            <div className="text-xs font-mono text-success mt-1">→ {creatorMonthly} USD to you</div>
                           </div>
                           <div className="text-center p-3 rounded-lg bg-[rgba(52,211,153,0.08)] border border-[rgba(52,211,153,0.15)]">
                             <div className="text-xs font-mono text-text-dim mb-1">LIFETIME (×{form.lifetimeMultiplier})</div>
-                            <div className="text-lg font-bold font-display text-success">{lifetimeNum.toFixed(4)} AGT</div>
-                            <div className="text-xs font-mono text-success mt-1">→ {creatorLifetime} AGT to you</div>
+                            <div className="text-lg font-bold font-display text-success">{lifetimeNum.toFixed(4)} USD</div>
+                            <div className="text-xs font-mono text-success mt-1">→ {creatorLifetime} USD to you</div>
                           </div>
                         </div>
                       </motion.div>
                     )}
-                  </div>
+                  </div> */}
 
                   {/* Agent-to-agent comms pricing */}
                   <div className="rounded-xl border border-border bg-bg-secondary p-4 sm:p-5 space-y-4">
@@ -631,7 +908,7 @@ export default function DeployStudio() {
                     {form.commsEnabled && (
                       <div>
                         <label className="text-xs font-mono text-text-dim uppercase block mb-2.5">
-                          COMMS PRICE PER CALL (AGT)
+                          COMMS PRICE PER CALL (USD)
                         </label>
                         <div className="relative">
                           <input
@@ -643,7 +920,7 @@ export default function DeployStudio() {
                             placeholder="e.g. 0.5"
                             className="input-field w-full px-4 py-3 rounded-xl text-sm pr-20"
                           />
-                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-dim text-xs font-mono">AGT/call</span>
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-dim text-xs font-mono">USD/call</span>
                         </div>
                         <p className="text-sm font-mono text-text-dim mt-2">
                           Recommended: keep this lower than full monthly purchase price for better marketplace conversion.
@@ -654,8 +931,8 @@ export default function DeployStudio() {
                 </div>
               )}
 
-              {/* ── STEP 6: REVIEW & DEPLOY ── */}
-              {step === 6 && (
+              {/* ── STEP 7: REVIEW & DEPLOY ── */}
+              {isCurrent('Deploy') && (
                 <div className="space-y-6">
                   <h2 className="font-display font-bold text-xl sm:text-2xl text-text-primary mb-6 flex items-center gap-3">
                     <Upload size={20} className="text-primary" /> Review & Deploy
@@ -667,13 +944,19 @@ export default function DeployStudio() {
                       { label: 'OWNER WALLET', value: walletAddress ? `${walletAddress.slice(0, 18)}...` : '—', highlight: 'purple' },
                       { label: 'NAME', value: form.name || '—' },
                       { label: 'CATEGORY', value: form.category || '—' },
+                      { label: 'COMPUTE MODE', value: form.computeMode === '0g_direct' ? '0G HOSTED COMPUTE' : 'MCP + ENDPOINT', highlight: form.computeMode === '0g_direct' ? 'emerald' : undefined },
+                      ...(form.computeMode === '0g_direct' ? [
+                        { label: 'RUNTIME', value: form.computeConfig.runtime || '—' },
+                        { label: 'ENTRY FILE', value: form.computeConfig.entryFile || '—' },
+                        { label: 'SOURCE CODE', value: form.computeConfig.agentCode ? `${form.computeConfig.agentCode.length} chars` : '—' },
+                        { label: 'ENV VARS', value: form.computeConfig.envText ? `${form.computeConfig.envText.split('\n').filter((l) => l.trim() && !l.trim().startsWith('#')).length} entries` : '0 entries' },
+                      ] : []),
                       { label: 'TIER', value: form.tier || '—' },
-                      { label: 'ENDPOINT', value: form.endpoint || '—' },
-                      { label: 'MONTHLY PRICE', value: form.monthlyPrice ? `${form.monthlyPrice} AGT/mo` : '—' },
+                      { label: 'ENDPOINT', value: form.computeMode === 'endpoint' ? (form.endpoint || '—') : '(0G configured)' },
+                      { label: 'MONTHLY PRICE', value: form.monthlyPrice ? `${form.monthlyPrice} USD/mo` : '—' },
                       { label: 'AGENT COMMS', value: form.commsEnabled ? 'ENABLED' : 'DISABLED', highlight: form.commsEnabled ? 'success' : undefined },
-                      { label: 'COMMS PRICE PER CALL', value: form.commsEnabled && form.commsPricePerCall ? `${form.commsPricePerCall} AGT/call` : '—' },
-                      { label: 'LIFETIME PRICE', value: form.monthlyPrice ? `${lifetimeNum.toFixed(4)} AGT (×${form.lifetimeMultiplier})` : '—', highlight: 'success' },
-                      { label: 'YOUR MONTHLY CUT (80%)', value: form.monthlyPrice ? `${creatorMonthly} AGT` : '—', highlight: 'success' },
+                      { label: 'COMMS PRICE PER CALL', value: form.commsEnabled && form.commsPricePerCall ? `${form.commsPricePerCall} USD/call` : '—' },
+                      { label: 'YOUR MONTHLY CUT (80%)', value: form.monthlyPrice ? `${creatorMonthly} USD` : '—', highlight: 'success' },
                       ...(isBlockchain && selectedTier ? [{ label: 'LISTING FEE (ONE-TIME)', value: `${selectedTier.listingFee} USD → Platform (paid in 0G)`, highlight: 'warning' }] : []),
                     ].map((row, i) => (
                       <motion.div key={row.label} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
@@ -683,6 +966,7 @@ export default function DeployStudio() {
                           row.highlight === 'success' ? 'text-success'
                           : row.highlight === 'purple' ? 'text-primary'
                           : row.highlight === 'warning' ? 'text-warning'
+                          : row.highlight === 'emerald' ? 'text-[#10b981]'
                           : 'text-text-primary'
                         }`}>{row.value}</span>
                       </motion.div>
@@ -692,7 +976,7 @@ export default function DeployStudio() {
                   {!isConnected && (
                     <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                       className="flex items-start gap-3.5 p-4 sm:p-5 rounded-xl bg-[rgba(248,113,113,0.06)] border border-[rgba(248,113,113,0.3)]">
-                      <AlertTriangle size={16} className="text-[var(--color-danger)] shrink-0 mt-0.5" />
+                      <AlertTriangle size={16} className="text-danger shrink-0 mt-0.5" />
                       <div>
                         <div className="text-danger text-[11px] font-bold mb-1">WALLET NOT CONNECTED</div>
                         <div className="text-text-muted text-xs">Connect your wallet to deploy.</div>
@@ -703,7 +987,7 @@ export default function DeployStudio() {
                   {deployError && (
                     <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                       className="flex items-start gap-3.5 p-4 rounded-xl bg-[rgba(248,113,113,0.06)] border border-[rgba(248,113,113,0.3)]">
-                      <AlertTriangle size={16} className="text-[var(--color-danger)] shrink-0 mt-0.5" />
+                      <AlertTriangle size={16} className="text-danger shrink-0 mt-0.5" />
                       <div>
                         <div className="text-danger text-[11px] font-bold mb-1">DEPLOY FAILED</div>
                         <div className="text-text-muted text-xs font-mono">{deployError}</div>
@@ -725,7 +1009,7 @@ export default function DeployStudio() {
                           {deploying
                             ? 'AWAITING WALLET TX...'
                             : isConnected
-                            ? `⚡ DEPLOY ON-CHAIN (2 TXs — ${selectedTier?.listingFee || '?'} AGT fee)`
+                            ? `⚡ DEPLOY ON-CHAIN (2 TXs — ${selectedTier?.listingFee || '?'} USD fee)`
                             : 'CONNECT WALLET TO DEPLOY'}
                         </NeonButton>
                       )}
@@ -749,7 +1033,7 @@ export default function DeployStudio() {
                           {isDatabase ? 'Your agent is now live on the marketplace.' : 'Your agent is now registered on-chain and live.'}
                         </p>
                         <p className="text-text-dim text-xs font-mono mb-4">
-                          Monthly: {form.monthlyPrice} AGT · Lifetime: {lifetimeNum.toFixed(4)} AGT
+                          Monthly: {form.monthlyPrice} USD
                         </p>
                         <div className="text-text-dim text-[11px] font-mono px-3 py-2 rounded-lg bg-bg-secondary border border-border inline-block">
                           OWNER: {walletAddress?.slice(0, 18)}...
@@ -773,12 +1057,12 @@ export default function DeployStudio() {
                   ← BACK
                 </NeonButton>
               </motion.div>
-              {step < 6 && (
+              {step < displayedSteps.length && (
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <NeonButton
                     icon={ChevronRight}
-                    onClick={() => setStep(s => Math.min(6, s + 1))}
-                    disabled={(step === 1 && !canProceedFromStep1) || deploying}
+                    onClick={() => setStep(s => Math.min(displayedSteps.length, s + 1))}
+                    disabled={(isCurrent('Mode') && !canProceedFromStep1) || deploying}
                   >
                     NEXT STEP
                   </NeonButton>
