@@ -23,7 +23,8 @@ import {
   MessageCircle,
   FileText,
   Gem,
-  Loader2
+  Loader2, 
+  Mail
 } from 'lucide-react'
 import { analyticsAPI } from '../api/analytics'
 
@@ -481,10 +482,10 @@ const Footer = () => (
         </p>
         <div className="flex gap-3 mt-5">
           {[
-            { icon: Twitter, href: '#', label: 'Twitter' },
-            { icon: Github, href: '#', label: 'GitHub' },
-            { icon: MessageCircle, href: '#', label: 'Discord' },
-            { icon: FileText, href: '#', label: 'Docs' },
+            { icon: Twitter, href: 'https://x.com/Agentra69', label: 'Twitter' },
+            { icon: Github, href: 'https://github.com/dakshh0827/agentra-0G', label: 'GitHub' },
+            { icon: Mail, href: 'mailto:agentra69@gmail.com', label: 'Mail' },
+            { icon: FileText, href: 'https://docs.0g.ai', label: 'Docs' },
           ].map(({ icon: Icon, href, label }) => (
             <a key={label} href={href} aria-label={label}
               className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-primary hover:border-border-bright hover:text-text-primary transition-colors">
