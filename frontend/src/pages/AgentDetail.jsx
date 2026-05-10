@@ -987,7 +987,26 @@ const handleExecute = async (opts = {}) => {
       addLog({ level: 'info', message: 'Routing to agent endpoint...' })
       // Stage 3: payload is prepared but execution engine still uses task text
       // Future stage will pass full runtimePayload to backend
-      const response = await agentsAPI.execute(externalAgentId, activeTask)
+      let response
+      if (opts.runtimePayload && Object.keys(opts.runtimePayload.files || {}).length > 0) {
+        // Multipart submission when files are present
+        const formData = new FormData()
+        formData.append('task', activeTask)
+        formData.append('runtimePayload', JSON.stringify({
+          headers: opts.runtimePayload.headers,
+          body: opts.runtimePayload.body,
+          contentType: opts.runtimePayload.contentType,
+          method: opts.runtimePayload.method,
+        }))
+        for (const [key, file] of Object.entries(opts.runtimePayload.files || {})) {
+          if (file) formData.append(key, file)
+        }
+        response = await agentsAPI.executeMultipart(externalAgentId, formData)
+      } else if (opts.runtimePayload) {
+        response = await agentsAPI.executeWithPayload(externalAgentId, activeTask, opts.runtimePayload)
+      } else {
+        response = await agentsAPI.execute(externalAgentId, activeTask)
+      }
       addLog({ level: 'success', message: 'Agent responded successfully' })
       const data = response.data
       setResult({ output: data.response || data.output || data.result || data || `Task completed.\n\n${new Date().toISOString()}`, latency: data.latency || Math.floor(Math.random() * 500) + 100, success: true })

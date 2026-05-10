@@ -9,12 +9,13 @@ class Orchestrator {
     this.activeChains = new Map()
   }
 
-  async executeAgent(agentId, task, callerWallet, options = {}) {
-    const {
-      callDepth = 0,
-      parentInteractionId = null,
-      callChainId = uuidv4(),
-    } = options
+async executeAgent(agentId, task, callerWallet, options = {}) {
+  const {
+    callDepth = 0,
+    parentInteractionId = null,
+    callChainId = uuidv4(),
+    runtimePayload = null,
+  } = options
  
     if (callDepth > config.platform.maxCallDepth) {
       throw Object.assign(
@@ -80,14 +81,14 @@ class Orchestrator {
     try {
       let result
 
-      result = await this._callAgentEndpoint(agent.endpoint, task, {
-        callDepth,
-        callChainId,
-        interactionId: interactionRecord?.id,
-        callerWallet,
-        agentId: agent.agentId,
-        contractAgentId: agent.contractAgentId ?? null,
-      })
+result = await this._callAgentEndpoint(agent.endpoint, task, {
+  callDepth,
+  callChainId,
+  interactionId: interactionRecord?.id,
+  callerWallet,
+  agentId: agent.agentId,
+  contractAgentId: agent.contractAgentId ?? null,
+}, agent.executionConfig, runtimePayload)
 
       response = result.data
       success = true
@@ -156,68 +157,110 @@ class Orchestrator {
     })
   }
 
-  async _callAgentEndpoint(endpoint, task, meta = {}) {
-    const timeout = config.platform.callTimeoutMs
+async _callAgentEndpoint(endpoint, task, meta = {}, executionConfig = null, runtimePayload = null) {
+  const timeout = config.platform.callTimeoutMs
 
-    const baseEndpoint = String(endpoint || '').trim().replace(/\/+$/, '')
-    if (!baseEndpoint) {
-      throw new Error('Agent endpoint is empty')
-    }
+  const baseEndpoint = String(endpoint || '').trim().replace(/\/+$/, '')
+  if (!baseEndpoint) {
+    throw new Error('Agent endpoint is empty')
+  }
 
-    const basePayload = {
-      task,
-      meta: {
-        platform: 'agentra',
-        version: '2.0',
-        ...meta,
-      },
-    }
+  // SSRF protection
+  const { assertSafeUrl } = await import('../utils/ssrfGuard.js')
+  await assertSafeUrl(baseEndpoint)
 
-    const compatibilityPayload = {
-      ...basePayload,
-      input: task,
-      prompt: task,
-      query: task,
-      message: task,
-    }
+  // Schema-driven execution when executionConfig exists
+  if (executionConfig && runtimePayload !== null) {
+    const { buildExecutionRequest } = await import('../utils/buildExecutionRequest.js')
+    const { redactHeaders } = await import('../utils/redactSecrets.js')
 
-    const attempts = [
-      { url: `${baseEndpoint}/execute`, payload: basePayload },
-      { url: baseEndpoint, payload: basePayload },
-      { url: `${baseEndpoint}/execute`, payload: compatibilityPayload },
-      { url: baseEndpoint, payload: compatibilityPayload },
-    ]
+    const reqConfig = buildExecutionRequest(baseEndpoint, executionConfig, runtimePayload, task)
 
-    let lastError = null
+    console.log(`[ORCHESTRATOR] Schema-driven execution: ${reqConfig.url}`)
+    console.log(`[ORCHESTRATOR] Content-Type: ${executionConfig.contentType}`)
+    console.log(`[ORCHESTRATOR] Headers (redacted):`, redactHeaders(reqConfig.headers))
 
-    for (const attempt of attempts) {
+    try {
+      return await axios({
+        method: reqConfig.method,
+        url: reqConfig.url,
+        headers: reqConfig.headers,
+        data: reqConfig.data,
+        timeout,
+        maxContentLength: 50 * 1024 * 1024,
+      })
+    } catch (primaryErr) {
+      // Fallback to base endpoint
       try {
-        return await axios.post(attempt.url, attempt.payload, {
+        return await axios({
+          method: reqConfig.method,
+          url: reqConfig.fallbackUrl,
+          headers: reqConfig.headers,
+          data: reqConfig.data,
           timeout,
-          headers: { 'Content-Type': 'application/json' },
+          maxContentLength: 50 * 1024 * 1024,
         })
-      } catch (err) {
-        lastError = err
+      } catch (fallbackErr) {
+        throw fallbackErr
       }
     }
-
-    if (!lastError) {
-      throw new Error('Agent endpoint call failed without an error response')
-    }
-
-    const status = lastError.response?.status
-    const responseMsg =
-      lastError.response?.data?.error ||
-      lastError.response?.data?.message ||
-      (typeof lastError.response?.data === 'string' ? lastError.response.data : '') ||
-      lastError.message
-
-    if (status) {
-      throw new Error(`Endpoint responded with status ${status}: ${responseMsg}`)
-    }
-
-    throw lastError
   }
+
+  // Legacy text-only execution — backward compatible
+  const basePayload = {
+    task,
+    meta: {
+      platform: 'agentra',
+      version: '2.0',
+      ...meta,
+    },
+  }
+
+  const compatibilityPayload = {
+    ...basePayload,
+    input: task,
+    prompt: task,
+    query: task,
+    message: task,
+  }
+
+  const attempts = [
+    { url: `${baseEndpoint}/execute`, payload: basePayload },
+    { url: baseEndpoint, payload: basePayload },
+    { url: `${baseEndpoint}/execute`, payload: compatibilityPayload },
+    { url: baseEndpoint, payload: compatibilityPayload },
+  ]
+
+  let lastError = null
+
+  for (const attempt of attempts) {
+    try {
+      return await axios.post(attempt.url, attempt.payload, {
+        timeout,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    } catch (err) {
+      lastError = err
+    }
+  }
+
+  if (!lastError) {
+    throw new Error('Agent endpoint call failed without an error response')
+  }
+
+  const status = lastError.response?.status
+  const responseMsg =
+    lastError.response?.data?.error ||
+    lastError.response?.data?.message ||
+    (typeof lastError.response?.data === 'string' ? lastError.response.data : '') ||
+    lastError.message
+
+  if (status) {
+    throw new Error(`Endpoint responded with status ${status}: ${responseMsg}`)
+  }
+
+  throw lastError
+}
 
   async getInteractionHistory(agentId, limit = 50) {
     // Support DB id, DB agentId string, and on-chain contractAgentId

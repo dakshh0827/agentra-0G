@@ -6,8 +6,17 @@ import { asyncHandler } from '../middlewares/errorHandler.js'
 import { z } from 'zod'
 import { v4 as uuidv4 } from 'uuid'
 
+import { buildExecutionRequest } from '../utils/buildExecutionRequest.js'
+import { assertSafeUrl } from '../utils/ssrfGuard.js'
+
 const executeSchema = z.object({
   task: z.string().min(1).max(10000),
+  runtimePayload: z.object({
+    headers: z.record(z.string()).optional().default({}),
+    body: z.record(z.unknown()).optional().default({}),
+    contentType: z.string().optional(),
+    method: z.string().optional(),
+  }).optional(),
 })
 
 const composeSchema = z.object({
@@ -29,7 +38,21 @@ function buildAgentLookup(id) {
 }
  
 const executeAgent = asyncHandler(async (req, res) => {
-  const { task } = executeSchema.parse(req.body)
+  // Normalize body — multer puts text fields in req.body, files in req.files
+  const rawBody = req.body || {}
+
+  // Parse runtimePayload if sent as JSON string in multipart form
+  let parsedRuntimePayload = rawBody.runtimePayload
+  if (typeof parsedRuntimePayload === 'string') {
+    try { parsedRuntimePayload = JSON.parse(parsedRuntimePayload) }
+    catch { parsedRuntimePayload = undefined }
+  }
+
+  const { task, runtimePayload } = executeSchema.parse({
+    task: rawBody.task,
+    runtimePayload: parsedRuntimePayload,
+  })
+
   const { id } = req.params
   const callerWallet = req.walletAddress
 
@@ -41,7 +64,6 @@ const executeAgent = asyncHandler(async (req, res) => {
 
   // Owner always has access
   if (agent.ownerWallet !== callerWallet) {
-    // Check DB access
     const dbAccess = await prisma.agentAccess.findUnique({
       where: {
         agentId_userWallet: {
@@ -54,7 +76,6 @@ const executeAgent = asyncHandler(async (req, res) => {
     const hasDbAccess = dbAccess && (dbAccess.isLifetime || dbAccess.expiresAt > new Date())
 
     if (!hasDbAccess) {
-      // For blockchain agents, check on-chain
       if (agent.contractAgentId) {
         const onChainAccess = await contractManager.hasAccess(agent.contractAgentId, callerWallet)
         if (!onChainAccess) {
@@ -66,7 +87,27 @@ const executeAgent = asyncHandler(async (req, res) => {
     }
   }
 
-  const result = await orchestrator.executeAgent(agent.agentId, task, callerWallet)
+  // Attach uploaded files to runtimePayload.files — keyed by field name
+  const uploadedFiles = {}
+  if (req.files && req.files.length > 0) {
+    const { validateUploads } = await import('../utils/uploadValidation.js')
+    const filesMap = {}
+    for (const file of req.files) {
+      filesMap[file.fieldname] = file
+    }
+    validateUploads(filesMap)
+    Object.assign(uploadedFiles, filesMap)
+  }
+
+  const enrichedPayload = runtimePayload
+    ? { ...runtimePayload, files: uploadedFiles }
+    : Object.keys(uploadedFiles).length > 0
+    ? { headers: {}, body: {}, files: uploadedFiles }
+    : null
+
+  const result = await orchestrator.executeAgent(agent.agentId, task, callerWallet, {
+    runtimePayload: enrichedPayload,
+  })
 
   res.json(result)
 })

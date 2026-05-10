@@ -83,6 +83,14 @@ deploy: (data) =>
   execute: (id, task) =>
     api.post(`/agents/${id}/execute`, { task }),
 
+  executeWithPayload: (id, task, runtimePayload) =>
+    api.post(`/agents/${id}/execute`, { task, runtimePayload }),
+
+  executeMultipart: (id, formData) =>
+    api.post(`/agents/${id}/execute`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+
   discoverForComms: (task, excludeId) =>
     api.get('/agents/discover', { params: { task, excludeId } }),
 
