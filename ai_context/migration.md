@@ -1,330 +1,505 @@
-# Agentra Dynamic Execution Payload Migration
+# Agentra Execution Config Migration
 
-## Goal
+# OVERVIEW
 
-Upgrade Agentra from simple text-only AI execution into a fully dynamic API execution platform supporting:
+Agentra is being upgraded from a simple text-only AI execution marketplace into a universal AI API execution platform supporting:
 
-- JSON body requests
-- multipart/form-data requests
-- x-www-form-urlencoded requests
+- multipart/form-data
+- dynamic request headers
+- runtime secrets
 - file uploads
-- dynamic headers
-- secure runtime secrets
 - configurable execution schemas
+- multimodal AI APIs
 
-This enables deployment of advanced FastAPI agents requiring:
-- file uploads
-- API keys
-- multipart forms
-- custom headers
-
-Examples:
-- Jobber AI
-- Video processing agents
-- Media AI pipelines
-- Resume analyzers
-- RAG systems
-- Voice cloning APIs
+The migration is being implemented incrementally in stages.
 
 ---
 
-# IMPORTANT ARCHITECTURAL RULES
+# IMPORTANT ARCHITECTURE RULES
 
-## DO NOT MODIFY SMART CONTRACTS
+## Solidity contracts remain unchanged
 
-Execution schemas remain:
+Execution schemas are execution-layer metadata and remain:
 - off-chain
 - stored in Prisma
 - included in metadataURI JSON
 
-The Solidity contract remains unchanged.
+Contracts continue handling:
+- ownership
+- pricing
+- access control
+- metadata URI
+- deployment lifecycle
 
 ---
 
-# STAGE 1 — DATABASE MIGRATION
+# STAGE 1 — BACKEND EXECUTION CONFIG SUPPORT
 
-## Modify Prisma Agent model
+## STATUS
 
-Add:
+✅ COMPLETE
+
+---
+
+# DATABASE CHANGES
+
+## File
+
+```txt
+backend/prisma/schema.prisma
+```
+
+## Added
 
 ```prisma
 executionConfig Json?
 ```
 
-Generate migration.
+inside Agent model.
 
----
+Final structure:
 
-# STAGE 2 — EXECUTION CONFIG TYPES
-
-Create shared types:
-
-```ts
-type ExecutionContentType =
-  | 'json'
-  | 'form-data'
-  | 'x-www-form-urlencoded'
-
-type ExecutionFieldType =
-  | 'text'
-  | 'textarea'
-  | 'number'
-  | 'file'
-  | 'password'
-  | 'boolean'
-
-interface ExecutionHeaderField {
-  key: string
-  value?: string
-  required: boolean
-  secret: boolean
-  userProvided: boolean
-  placeholder?: string
-  description?: string
-}
-
-interface ExecutionBodyField {
-  key: string
-  type: ExecutionFieldType
-  required: boolean
-  userProvided: boolean
-  placeholder?: string
-  description?: string
-}
-
-interface ExecutionConfig {
-  method: 'POST'
-  contentType: ExecutionContentType
-  headers: ExecutionHeaderField[]
-  bodyFields: ExecutionBodyField[]
-}
+```prisma
+mcpSchema       Json?
+executionConfig Json?
+isVerified      Boolean       @default(false)
 ```
 
 ---
 
-# STAGE 3 — DEPLOY BACKEND
+# WHY A SINGLE JSON FIELD IS USED
 
-Modify deploySchema:
+Instead of multiple columns:
 
-Add:
-```ts
-executionConfig: z.object(...)
+```prisma
+headers Json?
+bodyFields Json?
+contentType String?
+method String?
 ```
 
-Persist:
-- Prisma
-- metadata payload upload
-
-Ensure validation:
-- max field counts
-- safe key names
-- no duplicate fields
-- valid content types
-
----
-
-# STAGE 4 — DEPLOYSTUDIO FRONTEND
-
-Add new deploy step:
-"Execution Config"
-
-Creator can:
-- choose content type
-- add/remove headers
-- add/remove form fields
-- set field type
-- mark required
-- mark secret
-- mark userProvided
-
-Add dynamic builders.
-
-Add preview JSON panel.
-
----
-
-# STAGE 5 — AGENT DETAILS EXECUTION UI
-
-Replace current:
-single textarea task input
-
-With:
-dynamic execution renderer.
-
-Rules:
-
-## JSON agents
-Render:
-- task textarea
-- dynamic fields
-
-## multipart/form-data agents
-Render:
-- file uploads
-- text fields
-- password fields
-
-## Secret fields
-Use:
-```html
-<input type="password" />
-```
-
-Do NOT persist secrets locally.
-
----
-
-# STAGE 6 — EXECUTION API
-
-Current:
-```ts
-POST /agents/:id/execute
-{
-  task: string
-}
-```
-
-New:
-Support:
-
-```ts
-multipart/form-data
-```
-
-and:
+a single portable execution schema object is stored:
 
 ```json
 {
-  "task": "...",
-  "headers": {},
-  "body": {}
+  "method": "POST",
+  "contentType": "form-data",
+  "headers": [],
+  "bodyFields": []
 }
 ```
 
-Execution route must:
-- parse multipart uploads
-- validate required fields
-- validate file sizes
-- validate mime types
-- sanitize input
+Benefits:
+- extensible
+- schema-driven
+- frontend-renderable
+- orchestration-ready
+- metadata-portable
+- backward compatible
 
 ---
 
-# STAGE 7 — ORCHESTRATOR REWRITE
+# PRISMA COMMANDS
 
-Current orchestrator assumes text-only requests.
-
-Rewrite execution layer to dynamically construct requests based on executionConfig.
-
-Implementation rules:
-
-## JSON
-Use:
-```ts
-axios.post(url, jsonBody)
+```bash
+npx prisma generate
+npx prisma db push
 ```
 
-## multipart/form-data
-Use:
-```ts
-const formData = new FormData()
+IMPORTANT:
+
+Do NOT use:
+
+```bash
+npx prisma migrate dev
 ```
 
-Append:
-- files
-- text fields
-
-Inject headers dynamically.
+because MongoDB uses db push.
 
 ---
 
-# STAGE 8 — FILE HANDLING
+# BACKEND VALIDATION
 
-Requirements:
+## File
 
-- temp file storage only
-- automatic cleanup
-- configurable max upload size
-- mime validation
-- antivirus-ready abstraction
-
-Never:
-- permanently store uploads
-- expose temp paths
+```txt
+backend/controllers/agentController.js
+```
 
 ---
 
-# STAGE 9 — SECURITY
+# Added Validation Schemas
 
-Mandatory:
+## Supported Content Types
 
-## Redact secrets in logs
-
-Never log:
-- Authorization
-- API keys
-- tokens
-
-## Prevent SSRF
-
-Validate endpoints:
-- no localhost
-- no internal IPs
-- no metadata URLs
-
-## Restrict file uploads
-
-Whitelist:
-- pdf
-- docx
-- png
-- jpg
-- mp4
-- txt
+```ts
+json
+form-data
+x-www-form-urlencoded
+```
 
 ---
 
-# STAGE 10 — BACKWARD COMPATIBILITY
+# Supported Field Types
 
-Old agents without executionConfig:
-must continue working normally.
+```ts
+text
+textarea
+number
+file
+password
+boolean
+```
+
+---
+
+# Validation Rules
+
+Added:
+- duplicate key prevention
+- field count limits
+- regex-safe identifiers
+- optional execution config
+- strict enums
+
+---
+
+# executionConfig Added To
+
+## deploySchema
+
+```ts
+executionConfig: executionConfigSchema.optional()
+```
+
+---
+
+# executionConfig Stored In
+
+- metadata payload
+- database-only deploys
+- blockchain draft deploys
+
+---
+
+# Agent Service Updated
+
+## File
+
+```txt
+backend/services/agentService.js
+```
+
+Added:
+
+```ts
+'executionConfig'
+```
+
+to allowed update fields.
+
+---
+
+# BACKWARD COMPATIBILITY
+
+Old agents:
+- remain functional
+- remain text-only
+- require no migration
 
 Fallback behavior:
-```ts
+
+```json
 {
-  task: string
+  "task": "..."
 }
 ```
 
 ---
 
-# STAGE 11 — TESTING
+# STAGE 2 — DEPLOYSTUDIO EXECUTION SCHEMA BUILDER
 
-Test:
-- JSON requests
-- multipart requests
-- file uploads
-- secret headers
-- failed validation
-- huge files
-- missing fields
+## STATUS
 
-Use provided FastAPI examples as integration targets.
+✅ COMPLETE
 
 ---
 
-# STAGE 12 — FINAL POLISH
+# OBJECTIVE
 
-Add:
-- loading states
-- upload progress
-- better error messages
-- schema preview
-- execution request preview
-- request debugging panel
+Allow agent creators to visually define:
 
-Ensure:
-- TypeScript strict compatibility
-- no any types
-- no duplicated logic
-- reusable form renderer
+- request content type
+- headers
+- body fields
+- file uploads
+- runtime secrets
+- validation metadata
+
+without coding.
+
+---
+
+# FILES MODIFIED
+
+## Main UI
+
+```txt
+frontend/src/pages/DeployStudio.jsx
+```
+
+## API Layer
+
+```txt
+frontend/src/api/agents.js
+```
+
+---
+
+# DEPLOYSTUDIO FLOW UPDATED
+
+DeployStudio now contains:
+
+```txt
+1. Mode
+2. Identity
+3. Endpoint
+4. Metadata
+5. Pricing
+6. Exec Config
+7. Deploy
+```
+
+---
+
+# executionConfig FRONTEND STATE
+
+```js
+executionConfig: {
+  method: 'POST',
+  contentType: 'json',
+  headers: [],
+  bodyFields: [],
+}
+```
+
+---
+
+# CONTENT TYPES SUPPORTED
+
+```txt
+json
+form-data
+x-www-form-urlencoded
+```
+
+---
+
+# HEADER BUILDER SUPPORTS
+
+```js
+{
+  key,
+  value,
+  required,
+  secret,
+  userProvided,
+  placeholder,
+  description
+}
+```
+
+---
+
+# BODY FIELD BUILDER SUPPORTS
+
+```js
+{
+  key,
+  type,
+  required,
+  userProvided,
+  placeholder,
+  description
+}
+```
+
+---
+
+# FIELD TYPES SUPPORTED
+
+```txt
+text
+textarea
+number
+file
+password
+boolean
+```
+
+---
+
+# REUSABLE COMPONENTS CREATED
+
+## HeaderRow
+
+Dynamic header editor.
+
+---
+
+## BodyFieldRow
+
+Dynamic body field editor.
+
+---
+
+## ExecConfigPreview
+
+Live JSON preview panel.
+
+---
+
+# VALIDATION IMPLEMENTED
+
+Frontend validation includes:
+- duplicate keys
+- field count limits
+- invalid identifiers
+- required field checks
+
+---
+
+# LIVE PREVIEW
+
+Execution schema preview added using existing neon/code styling.
+
+---
+
+# DEPLOY PAYLOAD UPDATED
+
+executionConfig now included in deploy payload:
+
+```js
+executionConfig: data.executionConfig || undefined
+```
+
+---
+
+# OPTIONAL CONFIG BEHAVIOR
+
+executionConfig is only sent when:
+- headers exist
+OR
+- body fields exist
+
+Otherwise:
+- agent behaves as text-only
+
+---
+
+# IMPORTANT SECURITY NOTES
+
+## Current limitation
+
+Creators can still manually enter secret values.
+
+This must be improved in future stages.
+
+Secrets should NEVER be permanently stored.
+
+Future rule:
+
+```js
+if (secret === true) {
+  value = ''
+  userProvided = true
+}
+```
+
+---
+
+# IMPORTANT FUTURE IMPROVEMENTS
+
+## Add stable UUIDs to rows
+
+Current implementation uses:
+
+```js
+key={index}
+```
+
+Should later use:
+
+```js
+key={row.id}
+```
+
+to avoid React dynamic list issues.
+
+---
+
+# Add file restrictions
+
+Future schema additions:
+
+```js
+accept
+maxSizeMB
+```
+
+for uploaded files.
+
+---
+
+# Add request method selector
+
+Currently:
+```txt
+POST only
+```
+
+Future:
+```txt
+GET
+POST
+PUT
+PATCH
+DELETE
+```
+
+---
+
+# Add validation-gated navigation
+
+Currently:
+errors display visually but do not block progression.
+
+Future:
+disable NEXT STEP when invalid.
+
+---
+
+# CURRENT SYSTEM CAPABILITIES
+
+Agent creators can now define:
+- dynamic headers
+- file fields
+- text fields
+- runtime secrets
+- request content types
+
+Execution engine support is NOT implemented yet.
+
+---
+
+# NEXT STAGE
+
+Upcoming:
+- AgentDetails dynamic execution UI
+- multipart request execution
+- dynamic orchestrator
+- runtime file uploads
+- secret injection
+- SSRF protection
+- temp file cleanup
+- upload validation

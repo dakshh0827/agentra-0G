@@ -2,7 +2,8 @@ import React, { useState, useRef } from 'react'
 import { motion, AnimatePresence, useInView } from 'framer-motion'
 import {
   Upload, ChevronRight, Check, Globe, Tag, DollarSign,
-  Zap, Database, Link2, Sparkles, Rocket, AlertTriangle, Wallet, Info
+  Zap, Database, Link2, Sparkles, Rocket, AlertTriangle, Wallet, Info,
+  Settings, Plus, Trash2, Eye, EyeOff, Lock, Key, FileText, Code
 } from 'lucide-react'
 import { useAccount, useWriteContract, usePublicClient } from 'wagmi'
 import { parseUnits, decodeEventLog } from 'viem'
@@ -27,13 +28,14 @@ function FadeInSection({ children, className = '', delay = 0 }) {
   )
 }
 
-  const STEPS = [
+const STEPS = [
   { id: 1, label: 'Mode', icon: Database, description: 'Deploy target' },
   { id: 2, label: 'Identity', icon: Zap, description: 'Name & category' },
   { id: 3, label: 'Endpoint', icon: Globe, description: 'MCP schema' },
   { id: 4, label: 'Metadata', icon: Tag, description: 'Tags & description' },
   { id: 5, label: 'Pricing', icon: DollarSign, description: 'Access prices' },
-  { id: 6, label: 'Deploy', icon: Upload, description: 'Publish agent' },
+  { id: 6, label: 'Exec Config', icon: Settings, description: 'Request schema' },
+  { id: 7, label: 'Deploy', icon: Upload, description: 'Publish agent' },
 ]
 
   const displayedSteps = STEPS
@@ -75,6 +77,169 @@ const InputField = ({ label, field, type = 'text', placeholder, rows, form, upda
   </div>
 )
 
+// ── Execution Config Components ──────────────────────────────
+
+const CONTENT_TYPES = [
+  { value: 'json', label: 'JSON', desc: 'application/json' },
+  { value: 'form-data', label: 'Form Data', desc: 'multipart/form-data' },
+  { value: 'x-www-form-urlencoded', label: 'URL Encoded', desc: 'application/x-www-form-urlencoded' },
+]
+
+const FIELD_TYPES = ['text', 'textarea', 'number', 'file', 'password', 'boolean']
+
+const EMPTY_HEADER = { key: '', value: '', required: false, secret: false, userProvided: true, placeholder: '', description: '' }
+const EMPTY_BODY_FIELD = { key: '', type: 'text', required: false, userProvided: true, placeholder: '', description: '' }
+
+function validateExecConfig(config) {
+  const errors = []
+  const headerKeys = config.headers.map(h => h.key).filter(Boolean)
+  const bodyKeys = config.bodyFields.map(f => f.key).filter(Boolean)
+
+  if (new Set(headerKeys).size !== headerKeys.length) errors.push('Duplicate header keys detected')
+  if (new Set(bodyKeys).size !== bodyKeys.length) errors.push('Duplicate body field keys detected')
+  if (config.headers.length > 20) errors.push('Maximum 20 headers allowed')
+  if (config.bodyFields.length > 30) errors.push('Maximum 30 body fields allowed')
+
+  config.headers.forEach((h, i) => {
+    if (h.required && !h.key) errors.push(`Header #${i + 1}: key cannot be empty when marked required`)
+  })
+  config.bodyFields.forEach((f, i) => {
+    if (f.required && !f.key) errors.push(`Field #${i + 1}: key cannot be empty when marked required`)
+    if (f.key && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(f.key)) errors.push(`Field #${i + 1}: "${f.key}" is not a valid identifier`)
+  })
+
+  return errors
+}
+
+function HeaderRow({ header, index, onChange, onRemove }) {
+  const [showValue, setShowValue] = useState(false)
+  return (
+    <div className="rounded-xl border border-border bg-bg-secondary p-4 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-mono text-text-dim">HEADER #{index + 1}</span>
+        <button onClick={onRemove} className="text-danger hover:text-red-400 p-1 rounded transition-colors cursor-pointer">
+          <Trash2 size={13} />
+        </button>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className="text-xs text-text-dim block mb-1">KEY</label>
+          <input value={header.key} onChange={e => onChange('key', e.target.value)} placeholder="Authorization" className="input-field w-full px-3 py-2 rounded-lg text-sm" />
+        </div>
+        <div>
+          <label className="text-xs text-text-dim block mb-1">DEFAULT VALUE</label>
+          <div className="relative">
+            <input type={header.secret && !showValue ? 'password' : 'text'} value={header.value} onChange={e => onChange('value', e.target.value)} placeholder={header.secret ? '••••••••' : 'Bearer token...'} className="input-field w-full px-3 py-2 rounded-lg text-sm pr-8" />
+            {header.secret && (
+              <button onClick={() => setShowValue(v => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-dim hover:text-text-secondary cursor-pointer">
+                {showValue ? <EyeOff size={12} /> : <Eye size={12} />}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+      <div>
+        <label className="text-xs text-text-dim block mb-1">PLACEHOLDER (shown to user)</label>
+        <input value={header.placeholder} onChange={e => onChange('placeholder', e.target.value)} placeholder="e.g. Enter your API key" className="input-field w-full px-3 py-2 rounded-lg text-sm" />
+      </div>
+      <div>
+        <label className="text-xs text-text-dim block mb-1">DESCRIPTION</label>
+        <input value={header.description} onChange={e => onChange('description', e.target.value)} placeholder="What this header is used for" className="input-field w-full px-3 py-2 rounded-lg text-sm" />
+      </div>
+      <div className="flex flex-wrap gap-3">
+        {[
+          { field: 'required', label: 'Required', color: 'text-warning' },
+          { field: 'secret', label: 'Secret', color: 'text-danger', icon: Lock },
+          { field: 'userProvided', label: 'User Provided', color: 'text-primary' },
+        ].map(({ field, label, color, icon: Icon }) => (
+          <button key={field} onClick={() => onChange(field, !header[field])}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-mono cursor-pointer transition-all ${header[field] ? `border-current ${color} bg-current/10` : 'border-border text-text-dim'}`}>
+            {Icon && <Icon size={10} />}{label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function BodyFieldRow({ field, index, onChange, onRemove }) {
+  return (
+    <div className="rounded-xl border border-border bg-bg-secondary p-4 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-mono text-text-dim">FIELD #{index + 1}</span>
+        <button onClick={onRemove} className="text-danger hover:text-red-400 p-1 rounded transition-colors cursor-pointer">
+          <Trash2 size={13} />
+        </button>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className="text-xs text-text-dim block mb-1">KEY (identifier)</label>
+          <input value={field.key} onChange={e => onChange('key', e.target.value)} placeholder="e.g. resume_file" className="input-field w-full px-3 py-2 rounded-lg text-sm font-mono" />
+        </div>
+        <div>
+          <label className="text-xs text-text-dim block mb-1">TYPE</label>
+          <select value={field.type} onChange={e => onChange('type', e.target.value)} className="input-field w-full px-3 py-2 rounded-lg text-sm">
+            {FIELD_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label className="text-xs text-text-dim block mb-1">PLACEHOLDER</label>
+        <input value={field.placeholder} onChange={e => onChange('placeholder', e.target.value)} placeholder="e.g. Upload your resume PDF" className="input-field w-full px-3 py-2 rounded-lg text-sm" />
+      </div>
+      <div>
+        <label className="text-xs text-text-dim block mb-1">DESCRIPTION</label>
+        <input value={field.description} onChange={e => onChange('description', e.target.value)} placeholder="What this field is used for" className="input-field w-full px-3 py-2 rounded-lg text-sm" />
+      </div>
+      <div className="flex flex-wrap gap-3">
+        {[
+          { f: 'required', label: 'Required', color: 'text-warning' },
+          { f: 'userProvided', label: 'User Provided', color: 'text-primary' },
+        ].map(({ f, label, color }) => (
+          <button key={f} onClick={() => onChange(f, !field[f])}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-mono cursor-pointer transition-all ${field[f] ? `border-current ${color} bg-current/10` : 'border-border text-text-dim'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ExecConfigPreview({ config }) {
+  const preview = {
+    method: config.method,
+    contentType: config.contentType,
+    headers: config.headers.map(h => ({
+      key: h.key || '<key>',
+      required: h.required,
+      secret: h.secret,
+      userProvided: h.userProvided,
+      ...(h.placeholder ? { placeholder: h.placeholder } : {}),
+      ...(h.description ? { description: h.description } : {}),
+    })),
+    bodyFields: config.bodyFields.map(f => ({
+      key: f.key || '<key>',
+      type: f.type,
+      required: f.required,
+      userProvided: f.userProvided,
+      ...(f.placeholder ? { placeholder: f.placeholder } : {}),
+      ...(f.description ? { description: f.description } : {}),
+    })),
+  }
+  return (
+    <div className="rounded-xl border border-border bg-[#1a1a1a] overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-[#222] border-b border-[#333]">
+        <Code size={12} className="text-primary" />
+        <span className="text-xs font-mono text-text-dim">executionConfig PREVIEW</span>
+      </div>
+      <pre className="p-4 text-xs font-mono text-[#ce9178] overflow-x-auto max-h-64 leading-relaxed">
+        {JSON.stringify(preview, null, 2)}
+      </pre>
+    </div>
+  )
+}
+
 export default function DeployStudio() {
   const [step, setStep] = useState(1)
   const [deploying, setDeploying] = useState(false)
@@ -95,10 +260,16 @@ export default function DeployStudio() {
     tags: '',
     tier: '',
     tierIndex: 0,
-    monthlyPrice: '',      // 0G — monthly access price set by creator
+    monthlyPrice: '',
     commsEnabled: false,
     commsPricePerCall: '',
     testPassed: false,
+    executionConfig: {
+      method: 'POST',
+      contentType: 'json',
+      headers: [],
+      bodyFields: [],
+    },
   })
 
   const update = (key, val) => setForm(f => ({ ...f, [key]: val }))
@@ -179,6 +350,10 @@ export default function DeployStudio() {
       // Monthly price in 0G-denominated units (stored as 18-decimal integers)
       const pricingWei = parseUnits(form.monthlyPrice || '0', 18).toString()
 
+        const hasExecConfig =
+        form.executionConfig.headers.length > 0 ||
+        form.executionConfig.bodyFields.length > 0
+
       const payload = {
         name: form.name,
         category: form.category,
@@ -193,6 +368,7 @@ export default function DeployStudio() {
           ? parseUnits(form.commsPricePerCall || '0', 18).toString()
           : '0',
         deployMode: form.deployMode,
+        executionConfig: hasExecConfig ? form.executionConfig : undefined,
       }
 
       // ── DATABASE ONLY ──
@@ -671,8 +847,125 @@ export default function DeployStudio() {
                 </div>
               )}
 
+              {/* ── STEP 6: EXECUTION CONFIG ── */}
+              {step === 6 && (() => {
+                const ec = form.executionConfig
+                const updateEc = (key, val) => update('executionConfig', { ...ec, [key]: val })
+                const addHeader = () => updateEc('headers', [...ec.headers, { ...EMPTY_HEADER }])
+                const removeHeader = (i) => updateEc('headers', ec.headers.filter((_, idx) => idx !== i))
+                const updateHeader = (i, field, val) => {
+                  const next = ec.headers.map((h, idx) => idx === i ? { ...h, [field]: val } : h)
+                  updateEc('headers', next)
+                }
+                const addBodyField = () => updateEc('bodyFields', [...ec.bodyFields, { ...EMPTY_BODY_FIELD }])
+                const removeBodyField = (i) => updateEc('bodyFields', ec.bodyFields.filter((_, idx) => idx !== i))
+                const updateBodyField = (i, field, val) => {
+                  const next = ec.bodyFields.map((f, idx) => idx === i ? { ...f, [field]: val } : f)
+                  updateEc('bodyFields', next)
+                }
+                const ecErrors = validateExecConfig(ec)
+                return (
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="font-display font-bold text-xl sm:text-2xl text-text-primary mb-2 flex items-center gap-3">
+                        <Settings size={20} className="text-primary" /> Execution Config
+                      </h2>
+                      <p className="text-text-muted text-sm leading-relaxed">
+                        Define the HTTP schema your agent expects. This lets users provide headers, body fields, and API keys at runtime — no hardcoding required.
+                      </p>
+                    </div>
+
+                    {ecErrors.length > 0 && (
+                      <div className="rounded-xl border border-danger/30 bg-danger/5 p-4 space-y-1">
+                        {ecErrors.map((e, i) => (
+                          <div key={i} className="text-xs text-danger font-mono flex items-center gap-2">
+                            <AlertTriangle size={11} /> {e}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Content Type */}
+                    <div>
+                      <label className="text-xs font-mono text-text-dim uppercase block mb-3">REQUEST CONTENT TYPE</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {CONTENT_TYPES.map(ct => (
+                          <button key={ct.value} onClick={() => updateEc('contentType', ct.value)}
+                            className={`p-4 rounded-xl border text-left cursor-pointer transition-all ${ec.contentType === ct.value ? 'bg-primary/10 border-primary-dark text-primary' : 'border-border text-text-dim hover:border-border bg-bg-secondary'}`}>
+                            <div className="font-bold text-sm">{ct.label}</div>
+                            <div className="text-xs opacity-60 mt-0.5 font-mono">{ct.desc}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Headers */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="text-xs font-mono text-text-dim uppercase flex items-center gap-2">
+                          <Key size={11} /> HEADERS ({ec.headers.length}/20)
+                        </label>
+                        <button onClick={addHeader} disabled={ec.headers.length >= 20}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/30 text-primary text-xs font-mono hover:bg-primary/10 disabled:opacity-40 transition-all cursor-pointer">
+                          <Plus size={12} /> Add Header
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        {ec.headers.map((h, i) => (
+                          <HeaderRow key={i} header={h} index={i}
+                            onChange={(field, val) => updateHeader(i, field, val)}
+                            onRemove={() => removeHeader(i)} />
+                        ))}
+                        {ec.headers.length === 0 && (
+                          <div className="text-center py-6 text-text-dim text-xs font-mono border border-dashed border-border rounded-xl">
+                            No headers defined — click Add Header to start
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Body Fields */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="text-xs font-mono text-text-dim uppercase flex items-center gap-2">
+                          <FileText size={11} /> BODY FIELDS ({ec.bodyFields.length}/30)
+                        </label>
+                        <button onClick={addBodyField} disabled={ec.bodyFields.length >= 30}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/30 text-primary text-xs font-mono hover:bg-primary/10 disabled:opacity-40 transition-all cursor-pointer">
+                          <Plus size={12} /> Add Field
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        {ec.bodyFields.map((f, i) => (
+                          <BodyFieldRow key={i} field={f} index={i}
+                            onChange={(field, val) => updateBodyField(i, field, val)}
+                            onRemove={() => removeBodyField(i)} />
+                        ))}
+                        {ec.bodyFields.length === 0 && (
+                          <div className="text-center py-6 text-text-dim text-xs font-mono border border-dashed border-border rounded-xl">
+                            No body fields defined — click Add Field to start
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Live Preview */}
+                    {(ec.headers.length > 0 || ec.bodyFields.length > 0) && (
+                      <ExecConfigPreview config={ec} />
+                    )}
+
+                    <div className="rounded-xl border border-border bg-bg-secondary p-4 text-xs font-mono text-text-dim space-y-1">
+                      <div className="text-text-secondary font-bold mb-2">ℹ️ This step is optional</div>
+                      <div>• Skip this step if your agent only needs a simple task text input</div>
+                      <div>• Secret fields are never persisted in plaintext — only the schema is stored</div>
+                      <div>• Users will be prompted to fill required fields at execution time</div>
+                    </div>
+                  </div>
+                )
+              })()}
+
               {/* ── STEP 6: REVIEW & DEPLOY ── */}
-              {step === 6 && (
+              {step === 7 && (
                 <div className="space-y-6">
                   <h2 className="font-display font-bold text-xl sm:text-2xl text-text-primary mb-6 flex items-center gap-3">
                     <Upload size={20} className="text-primary" /> Review & Deploy
@@ -692,6 +985,9 @@ export default function DeployStudio() {
                       { label: 'COMMS PRICE PER CALL', value: form.commsEnabled && form.commsPricePerCall ? `${form.commsPricePerCall} 0G/call` : '—' },
                       { label: 'YOUR MONTHLY CUT (80%)', value: form.monthlyPrice ? `${creatorMonthly} 0G` : '—', highlight: 'success' },
                       ...(isBlockchain && selectedTier ? [{ label: 'LISTING FEE (ONE-TIME)', value: `${selectedTier.listingFee} USD → Platform (paid in 0G)`, highlight: 'warning' }] : []),
+                      { label: 'EXEC CONTENT TYPE', value: form.executionConfig.headers.length > 0 || form.executionConfig.bodyFields.length > 0 ? form.executionConfig.contentType : 'Not configured (text-only)' },
+                      { label: 'EXEC HEADERS', value: form.executionConfig.headers.length > 0 ? `${form.executionConfig.headers.length} defined` : '—' },
+                      { label: 'EXEC BODY FIELDS', value: form.executionConfig.bodyFields.length > 0 ? `${form.executionConfig.bodyFields.length} defined` : '—' },
                     ].map((row, i) => (
                       <motion.div key={row.label} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
                         className={`flex justify-between items-center px-5 py-3.5 ${i % 2 === 0 ? 'bg-bg' : ''}`}>
@@ -784,7 +1080,7 @@ export default function DeployStudio() {
                   ← BACK
                 </NeonButton>
               </motion.div>
-              {step < 6 && (
+              {step < 7 && (
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <NeonButton
                     icon={ChevronRight}

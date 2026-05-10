@@ -34,7 +34,7 @@ export const agentsAPI = {
   // DEPLOY AGENT FLOW
   // ─────────────────────────────────────────────
 
-  deploy: (data) =>
+deploy: (data) =>
     api.post('/agents/deploy', {
       name: data.name,
       description: data.description,
@@ -47,6 +47,7 @@ export const agentsAPI = {
       tags: data.tags || [],
       category: data.category,
       mcpSchema: data.mcpSchema || undefined,
+      executionConfig: data.executionConfig || undefined,
       deployMode: data.deployMode || 'database',
     }),
 
