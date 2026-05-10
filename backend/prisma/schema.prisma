@@ -120,6 +120,7 @@ model Agent {
   score           Float         @default(0)
 
   mcpSchema       Json?
+  executionConfig Json?
   isVerified      Boolean       @default(false)
 
   createdAt       DateTime      @default(now())

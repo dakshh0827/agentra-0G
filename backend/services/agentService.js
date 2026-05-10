@@ -215,6 +215,7 @@ class AgentService {
       'endpoint',
       'tags',
       'mcpSchema',
+      'executionConfig',
       'category',
       'pricing',
       'lifetimeMultiplier',

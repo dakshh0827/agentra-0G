@@ -25,6 +25,45 @@ function buildAgentLookup(id) {
 
 // ── Validation schemas ────────────────────────────────────────
 
+const executionContentTypeSchema = z.enum(['json', 'form-data', 'x-www-form-urlencoded'])
+
+const executionFieldTypeSchema = z.enum(['text', 'textarea', 'number', 'file', 'password', 'boolean'])
+
+const executionHeaderFieldSchema = z.object({
+  key: z.string().min(1).max(100),
+  value: z.string().optional(),
+  required: z.boolean(),
+  secret: z.boolean(),
+  userProvided: z.boolean(),
+  placeholder: z.string().optional(),
+  description: z.string().optional(),
+})
+
+const executionBodyFieldSchema = z.object({
+  key: z.string().min(1).max(100).regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/, 'Key must be a valid identifier'),
+  type: executionFieldTypeSchema,
+  required: z.boolean(),
+  userProvided: z.boolean(),
+  placeholder: z.string().optional(),
+  description: z.string().optional(),
+})
+
+const executionConfigSchema = z.object({
+  method: z.literal('POST'),
+  contentType: executionContentTypeSchema,
+  headers: z.array(executionHeaderFieldSchema).max(20),
+  bodyFields: z.array(executionBodyFieldSchema).max(30),
+}).superRefine((config, ctx) => {
+  const headerKeys = config.headers.map(h => h.key)
+  const bodyKeys = config.bodyFields.map(f => f.key)
+  if (new Set(headerKeys).size !== headerKeys.length) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Duplicate header keys are not allowed' })
+  }
+  if (new Set(bodyKeys).size !== bodyKeys.length) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Duplicate body field keys are not allowed' })
+  }
+})
+
 const deploySchema = z.object({
   name: z.string().min(2).max(64), 
   description: z.string().min(10).max(1000).optional(),
@@ -37,6 +76,7 @@ const deploySchema = z.object({
   tier: z.enum(['Standard', 'Professional', 'Enterprise']),
   endpoint: z.string().url(),
   mcpSchema: z.record(z.string(), z.unknown()).optional(),
+  executionConfig: executionConfigSchema.optional(),
   deployMode: z.enum(['database', 'blockchain']).optional(),
   status: z.string().optional(),
 })
@@ -109,6 +149,7 @@ const deployAgent = asyncHandler(async (req, res) => {
     commsEnabled: data.commsEnabled ?? false,
     commsPricePerCall: data.commsPricePerCall || '0',
     mcpSchema: data.mcpSchema || null,
+    executionConfig: data.executionConfig || null,
     deployMode: data.deployMode || 'database',
   }
 
@@ -132,6 +173,7 @@ const deployAgent = asyncHandler(async (req, res) => {
       category: data.category,
       tags: data.tags || [],
       mcpSchema: data.mcpSchema || null,
+      executionConfig: data.executionConfig || null,
       status: 'active',
       txHash: null,
       },
@@ -165,6 +207,7 @@ const deployAgent = asyncHandler(async (req, res) => {
     category: data.category,
     tags: data.tags || [],
     mcpSchema: data.mcpSchema || null,
+    executionConfig: data.executionConfig || null,
     status: 'draft',
     txHash: null,
     },
