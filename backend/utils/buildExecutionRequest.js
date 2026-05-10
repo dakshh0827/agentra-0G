@@ -94,7 +94,7 @@ export function buildExecutionRequest(endpoint, executionConfig, runtimePayload,
   const baseEndpoint = String(endpoint || '').trim().replace(/\/+$/, '')
 
   return {
-    url: `${baseEndpoint}/execute`,
+    url: `${baseEndpoint}`,
     fallbackUrl: baseEndpoint,
     method,
     headers: requestHeaders,

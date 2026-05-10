@@ -6,36 +6,136 @@ import config from '../config/config.js'
 // ─────────────────────────────────────────────
 
 const AGENTRA_ABI = [
+  // ─────────────────────────────────────────────
+  // DEPLOYMENT
+  // ─────────────────────────────────────────────
+
   'function deployStandardAgent(uint256 _monthlyPriceUSD,string _metadataURI,bool _commsEnabled,uint256 _commsPricePerCallUSD,uint256 _listingFeeUSD) payable returns (uint256)',
   'function deployProfessionalAgent(uint256 _monthlyPriceUSD,string _metadataURI,bool _commsEnabled,uint256 _commsPricePerCallUSD,uint256 _listingFeeUSD) payable returns (uint256)',
   'function deployEnterpriseAgent(uint256 _monthlyPriceUSD,string _metadataURI,bool _commsEnabled,uint256 _commsPricePerCallUSD,uint256 _listingFeeUSD) payable returns (uint256)',
+
+  // ─────────────────────────────────────────────
+  // ACCESS / PAYMENTS
+  // ─────────────────────────────────────────────
+
   'function purchaseAccess(uint256 _agentId,uint8 _period) payable',
   'function initiateAgentComms(uint256 _callerAgentId,uint256 _targetAgentId) payable',
-  'function agents(uint256) view returns (uint8 tier,uint256 monthlyPriceUSD,bool commsEnabled,uint256 commsPricePerCallUSD)',
-  'function accessRegistry(uint256,address) view returns (uint256)',
-  'function ownerOf(uint256 tokenId) view returns (address)',
-  'function tokenURI(uint256 tokenId) view returns (string)',
+  'function getRequiredWei(uint256 _usdAmount) view returns (uint256)',
 
-  'function getRequiredWei(uint256 usdAmount) view returns (uint256)',
- 
-  'function update0GPrice(uint256 newPriceUSD) external',
-  'function current0GPriceUSD() view returns (uint256)',
- 
-  'function resolveTransaction(uint256 txId) external',
-  'function refundTransaction(uint256 txId) external',
-  'function claimTimeoutRefund(uint256 txId) external',
-  'function updateAgentPricing(uint256 agentId, uint256 newMonthlyUSD, uint256 newCommsUSD) external',
-  'function toggleAgentComms(uint256 agentId, bool enabled) external',
- 
-  'function pendingTransactions(uint256) view returns (uint256 id, address user, uint256 agentId, uint256 weiAmount, uint8 txType, uint8 period, uint8 status, uint256 timestamp)',
+  // ─────────────────────────────────────────────
+  // AGENTS
+  // ─────────────────────────────────────────────
+
+  'function agents(uint256) view returns (uint8 tier,uint256 monthlyPriceUSD,bool commsEnabled,uint256 commsPricePerCallUSD)',
+  'function updateAgentPricing(uint256 _agentId,uint256 _newMonthlyUSD,uint256 _newCommsUSD)',
+  'function toggleAgentComms(uint256 _agentId,bool _enabled)',
+
+  // ─────────────────────────────────────────────
+  // ACCESS REGISTRY
+  // ─────────────────────────────────────────────
+
+  'function accessRegistry(uint256,address) view returns (uint256)',
+  'function localToGlobalId(uint256) view returns (uint256)',
+
+  // ─────────────────────────────────────────────
+  // TRANSACTIONS
+  // ─────────────────────────────────────────────
+
+  'function pendingTransactions(uint256) view returns (uint256 id,address user,uint256 agentId,uint256 weiAmount,uint8 txType,uint8 period,uint8 status,uint256 timestamp)',
   'function txCounter() view returns (uint256)',
- 
-  'event AgentDeployed(uint256 indexed agentId, address indexed creator, uint8 tier, uint256 listingFeePaidUSD)',
-  'event TxPending(uint256 indexed txId, address indexed user, uint256 indexed agentId, uint8 txType, uint256 weiAmount)',
-  'event TxResolved(uint256 indexed txId, address indexed user, uint256 indexed agentId)',
-  'event TxRefunded(uint256 indexed txId, address indexed user, uint256 indexed agentId)',
-  'event AgentCommsToggled(uint256 indexed agentId, bool enabled)',
-  'event AgentCommsPriceUpdated(uint256 indexed agentId, uint256 newPrice)',
+  'function resolveTransaction(uint256 _txId)',
+  'function refundTransaction(uint256 _txId)',
+  'function claimTimeoutRefund(uint256 _txId)',
+
+  // ─────────────────────────────────────────────
+  // ORACLE / PRICING
+  // ─────────────────────────────────────────────
+
+  'function update0GPrice(uint256 _newPriceUSD)',
+  'function current0GPriceUSD() view returns (uint256)',
+
+  // ─────────────────────────────────────────────
+  // ADMIN / PAUSABLE
+  // ─────────────────────────────────────────────
+
+  'function pause()',
+  'function unpause()',
+  'function paused() view returns (bool)',
+
+  // ─────────────────────────────────────────────
+  // ROLES
+  // ─────────────────────────────────────────────
+
+  'function DEFAULT_ADMIN_ROLE() view returns (bytes32)',
+  'function ORACLE_ROLE() view returns (bytes32)',
+  'function RESOLVER_ROLE() view returns (bytes32)',
+  'function hasRole(bytes32 role,address account) view returns (bool)',
+  'function grantRole(bytes32 role,address account)',
+  'function revokeRole(bytes32 role,address account)',
+  'function renounceRole(bytes32 role,address callerConfirmation)',
+  'function getRoleAdmin(bytes32 role) view returns (bytes32)',
+
+  // ─────────────────────────────────────────────
+  // ERC721
+  // ─────────────────────────────────────────────
+
+  'function balanceOf(address owner) view returns (uint256)',
+  'function ownerOf(uint256 tokenId) view returns (address)',
+  'function approve(address to,uint256 tokenId)',
+  'function getApproved(uint256 tokenId) view returns (address)',
+  'function setApprovalForAll(address operator,bool approved)',
+  'function isApprovedForAll(address owner,address operator) view returns (bool)',
+  'function transferFrom(address from,address to,uint256 tokenId)',
+  'function safeTransferFrom(address from,address to,uint256 tokenId)',
+  'function safeTransferFrom(address from,address to,uint256 tokenId,bytes data)',
+  'function tokenURI(uint256 tokenId) view returns (string)',
+  'function supportsInterface(bytes4 interfaceId) view returns (bool)',
+
+  // ─────────────────────────────────────────────
+  // METADATA
+  // ─────────────────────────────────────────────
+
+  'function name() view returns (string)',
+  'function symbol() view returns (string)',
+  'function VERSION() view returns (uint256)',
+
+  // ─────────────────────────────────────────────
+  // CONFIG
+  // ─────────────────────────────────────────────
+
+  'function feeCollector() view returns (address)',
+  'function registry() view returns (address)',
+  'function PLATFORM_FEE_PERCENTAGE() view returns (uint256)',
+  'function ESCROW_TIMEOUT() view returns (uint256)',
+
+  // ─────────────────────────────────────────────
+  // EVENTS
+  // ─────────────────────────────────────────────
+
+  'event AgentAccessGranted(uint256 indexed agentId,address indexed user,uint256 expiry)',
+  'event AgentCommsPriceUpdated(uint256 indexed agentId,uint256 newPrice)',
+  'event AgentCommsToggled(uint256 indexed agentId,bool enabled)',
+  'event AgentDeployed(uint256 indexed agentId,address indexed creator,uint8 tier,uint256 listingFeePaidUSD)',
+
+  'event TxPending(uint256 indexed txId,address indexed user,uint256 indexed agentId,uint8 txType,uint256 weiAmount)',
+  'event TxResolved(uint256 indexed txId,address indexed user,uint256 indexed agentId)',
+  'event TxRefunded(uint256 indexed txId,address indexed user,uint256 indexed agentId)',
+
+  'event Approval(address indexed owner,address indexed approved,uint256 indexed tokenId)',
+  'event ApprovalForAll(address indexed owner,address indexed operator,bool approved)',
+  'event Transfer(address indexed from,address indexed to,uint256 indexed tokenId)',
+
+  'event Paused(address account)',
+  'event Unpaused(address account)',
+
+  'event PriceUpdated(uint256 new0GPriceUSD)',
+
+  'event RoleAdminChanged(bytes32 indexed role,bytes32 indexed previousAdminRole,bytes32 indexed newAdminRole)',
+  'event RoleGranted(bytes32 indexed role,address indexed account,address indexed sender)',
+  'event RoleRevoked(bytes32 indexed role,address indexed account,address indexed sender)',
+
+  'event MetadataUpdate(uint256 _tokenId)',
+  'event BatchMetadataUpdate(uint256 _fromTokenId,uint256 _toTokenId)',
 ]
 
 // ─────────────────────────────────────────────

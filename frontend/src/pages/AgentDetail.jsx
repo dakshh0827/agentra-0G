@@ -975,7 +975,17 @@ const handlePurchaseSuccess = async () => {
 
 const handleExecute = async (opts = {}) => {
     const activeTask = opts.task ?? task
-    if (!activeTask.trim() || !isConnected) return
+    const hasRuntimePayload =
+      opts.runtimePayload &&
+      (
+        Object.keys(opts.runtimePayload.body || {}).length > 0 ||
+        Object.keys(opts.runtimePayload.files || {}).length > 0 ||
+        Object.keys(opts.runtimePayload.headers || {}).length > 0
+      )
+
+    if ((!activeTask?.trim() && !hasRuntimePayload) || !isConnected) {
+      return
+    }
     setExecuting(true); setResult(null)
     addLog({ level: 'system', message: `Initiating execution: ${agent.name}` })
     addLog({ level: 'info', message: `Task: ${activeTask}` })
@@ -987,6 +997,34 @@ const handleExecute = async (opts = {}) => {
       addLog({ level: 'info', message: 'Routing to agent endpoint...' })
       // Stage 3: payload is prepared but execution engine still uses task text
       // Future stage will pass full runtimePayload to backend
+      console.log('\n========== FRONTEND EXECUTION ==========')
+console.log('TASK:', activeTask)
+
+if (opts.runtimePayload) {
+  console.log(
+    'HEADERS:',
+    opts.runtimePayload.headers
+  )
+
+  console.log(
+    'BODY:',
+    opts.runtimePayload.body
+  )
+
+  console.log(
+    'FILES:',
+    Object.entries(opts.runtimePayload.files || {}).map(
+      ([k, f]) => ({
+        field: k,
+        name: f?.name,
+        size: f?.size,
+        type: f?.type,
+      })
+    )
+  )
+}
+
+console.log('========================================\n')
       let response
       if (opts.runtimePayload && Object.keys(opts.runtimePayload.files || {}).length > 0) {
         // Multipart submission when files are present

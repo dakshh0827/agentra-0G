@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import RuntimeFieldRenderer from './Runtimefieldrenderer'
-import RuntimeHeaderRenderer from './Runtimeheaderrenderer'
+import RuntimeHeaderRenderer from './Runtimeheadrenderer'
 import RuntimeFileUpload from './Runtimefileupload'
 import RuntimeSummaryPanel from './Runtimesummarypanel'
 

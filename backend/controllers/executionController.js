@@ -11,13 +11,25 @@ import { buildExecutionRequest } from '../utils/buildExecutionRequest.js'
 import { assertSafeUrl } from '../utils/ssrfGuard.js'
 
 const executeSchema = z.object({
-  task: z.string().min(1).max(10000),
-  runtimePayload: z.object({
-    headers: z.record(z.string()).optional().default({}),
-    body: z.record(z.unknown()).optional().default({}),
-    contentType: z.string().optional(),
-    method: z.string().optional(),
-  }).optional(),
+  task: z.string().max(10000).optional().default(''),
+
+  runtimePayload: z
+    .object({
+      headers: z
+        .record(z.string(), z.string())
+        .optional()
+        .default({}),
+
+      body: z
+        .record(z.string(), z.unknown())
+        .optional()
+        .default({}),
+
+      contentType: z.string().optional(),
+
+      method: z.string().optional(),
+    })
+    .optional(),
 })
 
 const composeSchema = z.object({
@@ -149,20 +161,21 @@ const executeAgent = asyncHandler(async (req, res) => {
 
   const executionTraceId = uuidv4()
 
-  const result = await orchestrator.executeAgent(
-    agent.agentId,
-    task,
-    callerWallet,
-    {
+  // Start execution asynchronously to avoid blocking the HTTP request
+  orchestrator
+    .executeAgent(agent.agentId, task, callerWallet, {
       runtimePayload: enrichedPayload,
       executionTraceId,
-    }
-  )
+    })
+    .then((result) => {
+      console.log('[EXECUTION] Background execution completed:', result?.interactionId)
+    })
+    .catch((err) => {
+      console.error('[EXECUTION] Background execution failed:', err.message)
+    })
 
-  res.json({
-    ...result,
-    executionTraceId,
-  })
+  // Immediately return accepted so callers don't hit HTTP timeouts
+  res.status(202).json({ status: 'accepted', executionTraceId })
 })
 
 /**
