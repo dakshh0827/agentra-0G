@@ -2,17 +2,17 @@
 
 # OVERVIEW
 
-Agentra is evolving from a simple text-only AI marketplace into a universal AI API execution platform supporting:
+Agentra has evolved from a simple text-only AI marketplace into a schema-driven AI execution platform supporting:
 
 - multipart/form-data
 - runtime headers
+- runtime secrets
 - file uploads
 - schema-driven execution
+- dynamic request building
 - multimodal AI APIs
-- runtime secrets
-- configurable execution schemas
 
-The migration is being implemented incrementally.
+The migration has been implemented incrementally across stages.
 
 ---
 
@@ -23,14 +23,13 @@ The migration is being implemented incrementally.
 Execution schemas remain:
 - off-chain
 - stored in Prisma
-- included inside metadataURI JSON
+- embedded inside metadataURI JSON
 
 Contracts continue handling:
 - ownership
 - pricing
 - access control
 - deployment lifecycle
-- metadata URI
 
 ---
 
@@ -40,13 +39,11 @@ Contracts continue handling:
 
 ✅ COMPLETE
 
-## Includes
-
+Includes:
 - Prisma executionConfig field
-- deploy validation schemas
+- backend validation
 - metadata propagation
 - DB persistence
-- update support
 - backward compatibility
 
 ---
@@ -57,16 +54,13 @@ Contracts continue handling:
 
 ✅ COMPLETE
 
-## Includes
-
-- Execution Config deploy step
-- dynamic schema builder
-- content type selector
+Includes:
+- schema builder UI
 - header builder
 - body field builder
 - validation
 - live preview
-- deploy payload integration
+- deploy integration
 
 ---
 
@@ -76,179 +70,214 @@ Contracts continue handling:
 
 ✅ COMPLETE
 
+Includes:
+- schema-driven runtime UI
+- dynamic field rendering
+- file upload UI
+- runtime payload preparation
+- backward compatibility
+
+---
+
+# STAGE 4 — DYNAMIC EXECUTION ENGINE
+
+## STATUS
+
+✅ COMPLETE
+
 ---
 
 # OBJECTIVE
 
-Upgrade AgentDetails from:
-- static task textarea
+Upgrade execution pipeline from:
+- task-only execution
 
 into:
-- fully schema-driven runtime execution UI.
+- fully schema-driven API execution.
 
-The runtime UI dynamically renders based on:
+The orchestrator now dynamically executes requests using:
 
 ```js
 agent.executionConfig
 ```
 
----
+and:
 
-# FILES CREATED
-
-## RuntimeFieldRenderer
-
-```txt
-frontend/src/components/execution/RuntimeFieldRenderer.jsx
+```js
+runtimePayload
 ```
-
-Dynamic field renderer for:
-- text
-- textarea
-- number
-- password
-- boolean
 
 ---
 
-## RuntimeHeaderRenderer
+# NEW UTILITIES CREATED
+
+## redactSecrets.js
 
 ```txt
-frontend/src/components/execution/RuntimeHeaderRenderer.jsx
+backend/utils/redactSecrets.js
 ```
 
-Dynamic runtime header input renderer.
-
----
-
-## RuntimeFileUpload
-
-```txt
-frontend/src/components/execution/RuntimeFileUpload.jsx
-```
+Centralized secret redaction utility.
 
 Supports:
-- drag/drop uploads
-- click uploads
-- file previews
-- file removal
-
-Frontend-only storage currently.
+- header redaction
+- payload redaction
+- secret-safe logging
 
 ---
 
-## RuntimeExecutionForm
+## ssrfGuard.js
 
 ```txt
-frontend/src/components/execution/RuntimeExecutionForm.jsx
+backend/utils/ssrfGuard.js
 ```
 
-Main schema-driven runtime execution form.
+SSRF protection utility.
 
-Handles:
-- runtime validation
-- runtime payload preparation
-- field orchestration
+Blocks:
+- localhost
+- internal IP ranges
+- metadata endpoints
+- unsafe protocols
+
+Also:
+- DNS resolves hostnames
+- validates resolved IPs
 
 ---
 
-## RuntimeSummaryPanel
+## buildExecutionRequest.js
 
 ```txt
-frontend/src/components/execution/RuntimeSummaryPanel.jsx
+backend/utils/buildExecutionRequest.js
 ```
 
-Pre-execution runtime summary.
+Core schema-driven request builder.
 
-Shows:
-- content type
-- file count
-- header count
-- field count
+Responsibilities:
+- build multipart requests
+- build JSON requests
+- build urlencoded requests
+- inject runtime headers
+- append runtime files
+- generate axios-compatible configs
 
-without exposing secrets.
+NO hardcoded field names exist.
+
+Execution is fully schema-driven.
 
 ---
 
-# FILES MODIFIED
-
-## AgentDetail Page
+## uploadValidation.js
 
 ```txt
-frontend/src/pages/AgentDetail.jsx
+backend/utils/uploadValidation.js
+```
+
+Upload validation utility.
+
+Supports:
+- mime validation
+- extension blocking
+- file size limits
+
+Blocks dangerous extensions:
+```txt
+.exe
+.sh
+.py
+.dll
+.jar
 ```
 
 ---
 
-# AGENTDETAILS EXECUTION FLOW UPDATED
+# BACKEND EXECUTION ENGINE UPDATED
 
-Current execution console now supports:
+## executionRoutes.js
 
-## Legacy Agents
+Multipart support added using:
 
-Fallback:
+```js
+multer.memoryStorage()
+```
+
+Uploads remain:
+- in-memory only
+- never persisted to disk
+
+---
+
+# executionController.js
+
+Execution controller now supports:
+- JSON payloads
+- multipart payloads
+- runtimePayload parsing
+- uploaded file attachment
+- runtime payload enrichment
+
+---
+
+# orchestrator.js UPDATED
+
+Execution engine now supports:
+
+## Legacy path
+
 ```json
 {
   "task": "..."
 }
 ```
 
-Rendered exactly as before.
-
 ---
 
-## executionConfig Agents
-
-Dynamic runtime execution UI rendered automatically.
-
----
-
-# execConfig SAFETY HANDLING
-
-Safe derived helper added:
+## Schema-driven path
 
 ```js
-const execConfig = agent?.executionConfig || null
-```
-
-Prevents:
-- null crashes
-- undefined schema issues
-- backward compatibility failures
-
----
-
-# RUNTIME FIELD TYPES SUPPORTED
-
-```txt
-text
-textarea
-number
-file
-password
-boolean
-```
-
----
-
-# SECRET FIELD SUPPORT
-
-Secret fields render as:
-
-```html
-<input type="password" />
+{
+  task,
+  runtimePayload
+}
 ```
 
 with:
-- hidden values
-- eye toggle
-- masked display
+- multipart execution
+- runtime headers
+- runtime files
+- dynamic request building
+
+---
+
+# FRONTEND EXECUTION UPDATED
+
+## AgentDetail.jsx
+
+Execution flow now dynamically selects:
+
+- standard JSON execution
+- payload execution
+- multipart execution
+
+depending on:
+- runtimePayload
+- uploaded files
+
+---
+
+# agents.js UPDATED
+
+Added:
+- executeWithPayload
+- executeMultipart
+
+without breaking:
+- existing execute()
 
 ---
 
 # RUNTIME PAYLOAD STRUCTURE
-
-Runtime execution payload now prepared dynamically:
 
 ```js
 {
@@ -260,142 +289,139 @@ Runtime execution payload now prepared dynamically:
 }
 ```
 
-IMPORTANT:
-Payload is prepared only.
-
-Execution engine rewrite comes later.
+Execution engine dynamically interprets this payload.
 
 ---
 
-# EXECUTION FLOW
-
-Current flow:
+# EXECUTION CONTENT TYPES SUPPORTED
 
 ```txt
-Runtime UI
-→ Runtime Payload Builder
-→ Existing Text Execution API
+application/json
+multipart/form-data
+application/x-www-form-urlencoded
 ```
 
-Future flow:
+---
 
+# FILE UPLOAD SUPPORT
+
+Supported:
+- runtime file uploads
+- multipart request generation
+- upload validation
+- temporary in-memory storage
+
+Current upload limit:
 ```txt
-Runtime UI
-→ Runtime Payload Builder
-→ Multipart Execution Engine
-→ Dynamic Orchestrator
+10 MB
 ```
+
+---
+
+# SECRET HANDLING
+
+Implemented:
+- secret log redaction
+- runtime-only secret usage
+
+Secrets are never:
+- persisted to DB
+- written to logs
+
+---
+
+# SSRF PROTECTION
+
+Implemented:
+- localhost blocking
+- private IP blocking
+- metadata endpoint blocking
+- DNS resolution validation
 
 ---
 
 # BACKWARD COMPATIBILITY
 
-Old agents:
-- remain unchanged
-- still use task textarea
-- require no migration
+Legacy agents remain fully functional.
 
-This migration is fully backward compatible.
+Fallback execution path preserved:
 
----
-
-# CURRENT LIMITATIONS
-
-Stage 3 does NOT yet:
-- upload files to backend
-- execute multipart requests
-- inject headers dynamically
-- execute schema-driven requests
-- sanitize uploads server-side
-- support dynamic orchestrator execution
-
-Those are implemented in Stage 4.
-
----
-
-# IMPORTANT SECURITY NOTES
-
-## Current limitations
-
-Files currently exist only in frontend memory.
-
-Secrets currently:
-- should never be logged
-- should never persist locally
-
-Further hardening required in future stages.
-
----
-
-# IMPORTANT FUTURE IMPROVEMENTS
-
-## Centralize runtime payload builder
-
-Future recommended utility:
-
-```txt
-utils/buildRuntimePayload.js
+```json
+{
+  "task": "..."
+}
 ```
 
-to avoid duplicated execution logic later.
+No migration required for existing marketplace agents.
 
 ---
 
-# File storage optimization
+# IMPORTANT CURRENT LIMITATIONS
 
-Future:
-- useRef for raw file blobs
-- React state only for previews/metadata
+## Runtime payload is not yet validated against executionConfig
+
+Current limitation:
+backend validates generic structure only.
+
+Future requirement:
+strict schema-level validation.
 
 ---
 
-# Add upload restrictions
+# Redirect SSRF protection incomplete
 
 Future:
+disable redirects or recursively validate redirects.
+
+---
+
+# File uploads currently memory-based
+
+Future:
+streaming uploads recommended for scalability.
+
+---
+
+# Header restrictions incomplete
+
+Future:
+block dangerous headers:
 ```txt
-accept
-maxSizeMB
+Host
+Content-Length
+Transfer-Encoding
 ```
 
-support.
-
 ---
 
-# Add validation-gated execution
+# CURRENT PLATFORM CAPABILITIES
 
-Future:
-disable EXECUTE when runtime validation fails.
+Creators can deploy:
+- multipart APIs
+- upload-based AI agents
+- API-key-based agents
+- multimodal APIs
+- dynamic schema-driven agents
 
----
-
-# CURRENT SYSTEM CAPABILITIES
-
-Creators can define:
-- headers
-- body fields
-- file uploads
-- runtime secrets
-- request content types
-
-Users can now:
-- dynamically fill schemas
+Users can:
 - upload files
 - provide runtime headers
-- prepare execution payloads
+- execute multipart agents
+- execute schema-driven APIs
 
-Execution engine still remains text-only internally.
+Execution engine now dynamically adapts to executionConfig.
 
 ---
 
-# NEXT STAGE
+# NEXT STAGES
 
 Upcoming:
-- multipart/form-data backend execution
-- dynamic request builder
-- orchestrator rewrite
-- temp file handling
-- upload limits
-- SSRF protection
-- runtime header injection
-- secret redaction
-- schema-driven request execution
+- strict runtime schema validation
+- advanced security hardening
+- execution analytics
+- retry strategies
+- timeout hardening
+- streaming uploads
+- request observability
+- execution tracing
+- production optimization
