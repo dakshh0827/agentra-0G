@@ -12,7 +12,7 @@ import { executionLimiter } from '../middlewares/rateLimiter.js'
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10 MB per file
+    fileSize: 200 * 1024 * 1024, // 10 MB per file
     files: 10,
   },
 })
