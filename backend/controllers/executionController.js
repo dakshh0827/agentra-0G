@@ -5,6 +5,7 @@ import config from '../config/config.js'
 import { asyncHandler } from '../middlewares/errorHandler.js'
 import { z } from 'zod'
 import { v4 as uuidv4 } from 'uuid'
+import { validateRuntimePayload } from '../utils/validateRuntimePayloadAgainstExecutionConfig.js'
 
 import { buildExecutionRequest } from '../utils/buildExecutionRequest.js'
 import { assertSafeUrl } from '../utils/ssrfGuard.js'
@@ -43,9 +44,13 @@ const executeAgent = asyncHandler(async (req, res) => {
 
   // Parse runtimePayload if sent as JSON string in multipart form
   let parsedRuntimePayload = rawBody.runtimePayload
+
   if (typeof parsedRuntimePayload === 'string') {
-    try { parsedRuntimePayload = JSON.parse(parsedRuntimePayload) }
-    catch { parsedRuntimePayload = undefined }
+    try {
+      parsedRuntimePayload = JSON.parse(parsedRuntimePayload)
+    } catch {
+      parsedRuntimePayload = undefined
+    }
   }
 
   const { task, runtimePayload } = executeSchema.parse({
@@ -60,7 +65,11 @@ const executeAgent = asyncHandler(async (req, res) => {
     where: buildAgentLookup(id),
   })
 
-  if (!agent) return res.status(404).json({ error: 'Agent not found' })
+  if (!agent) {
+    return res.status(404).json({
+      error: 'Agent not found',
+    })
+  }
 
   // Owner always has access
   if (agent.ownerWallet !== callerWallet) {
@@ -73,43 +82,87 @@ const executeAgent = asyncHandler(async (req, res) => {
       },
     })
 
-    const hasDbAccess = dbAccess && (dbAccess.isLifetime || dbAccess.expiresAt > new Date())
+    const hasDbAccess =
+      dbAccess &&
+      (dbAccess.isLifetime || dbAccess.expiresAt > new Date())
 
     if (!hasDbAccess) {
       if (agent.contractAgentId) {
-        const onChainAccess = await contractManager.hasAccess(agent.contractAgentId, callerWallet)
+        const onChainAccess = await contractManager.hasAccess(
+          agent.contractAgentId,
+          callerWallet
+        )
+
         if (!onChainAccess) {
-          return res.status(403).json({ error: 'Access not purchased' })
+          return res.status(403).json({
+            error: 'Access not purchased',
+          })
         }
       } else {
-        return res.status(403).json({ error: 'Access not purchased' })
+        return res.status(403).json({
+          error: 'Access not purchased',
+        })
       }
     }
   }
 
   // Attach uploaded files to runtimePayload.files — keyed by field name
   const uploadedFiles = {}
+
   if (req.files && req.files.length > 0) {
-    const { validateUploads } = await import('../utils/uploadValidation.js')
+    const { validateUploads } = await import(
+      '../utils/uploadValidation.js'
+    )
+
     const filesMap = {}
+
     for (const file of req.files) {
       filesMap[file.fieldname] = file
     }
+
     validateUploads(filesMap)
+
+    // Validate uploads against executionConfig schema
+    if (agent.executionConfig) {
+      validateRuntimePayload(
+        agent.executionConfig,
+        runtimePayload,
+        filesMap
+      )
+    }
+
     Object.assign(uploadedFiles, filesMap)
   }
 
   const enrichedPayload = runtimePayload
-    ? { ...runtimePayload, files: uploadedFiles }
+    ? {
+        ...runtimePayload,
+        files: uploadedFiles,
+      }
     : Object.keys(uploadedFiles).length > 0
-    ? { headers: {}, body: {}, files: uploadedFiles }
+    ? {
+        headers: {},
+        body: {},
+        files: uploadedFiles,
+      }
     : null
 
-  const result = await orchestrator.executeAgent(agent.agentId, task, callerWallet, {
-    runtimePayload: enrichedPayload,
-  })
+  const executionTraceId = uuidv4()
 
-  res.json(result)
+  const result = await orchestrator.executeAgent(
+    agent.agentId,
+    task,
+    callerWallet,
+    {
+      runtimePayload: enrichedPayload,
+      executionTraceId,
+    }
+  )
+
+  res.json({
+    ...result,
+    executionTraceId,
+  })
 })
 
 /**

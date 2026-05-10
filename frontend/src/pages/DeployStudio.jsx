@@ -1084,7 +1084,7 @@ export default function DeployStudio() {
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <NeonButton
                     icon={ChevronRight}
-                    onClick={() => setStep(s => Math.min(6, s + 1))}
+                    onClick={() => setStep(s => Math.min(7, s + 1))}
                     disabled={(step === 1 && !canProceedFromStep1) || deploying}
                   >
                     NEXT STEP

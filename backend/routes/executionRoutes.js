@@ -13,7 +13,9 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 200 * 1024 * 1024, // 10 MB per file
-    files: 10,
+    files: 5,
+    fields: 50,
+    headerPairs: 100,
   },
 })
 
@@ -24,7 +26,18 @@ router.post(
   '/agents/:id/execute',
   authMiddleware,
   executionLimiter,
-  upload.any(), // multer parses multipart; falls through cleanly for JSON
+  (req, res, next) => {
+    // Block oversized JSON payloads before multer
+    const contentType = req.headers['content-type'] || ''
+    if (!contentType.includes('multipart/form-data')) {
+      const bodySize = parseInt(req.headers['content-length'] || '0')
+      if (bodySize > 5 * 1024 * 1024) {
+        return res.status(413).json({ error: 'Request payload too large (max 5MB for JSON)' })
+      }
+    }
+    next()
+  },
+  upload.any(),
   executeAgent
 )
 

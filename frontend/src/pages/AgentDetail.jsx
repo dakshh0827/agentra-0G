@@ -1011,8 +1011,23 @@ const handleExecute = async (opts = {}) => {
       const data = response.data
       setResult({ output: data.response || data.output || data.result || data || `Task completed.\n\n${new Date().toISOString()}`, latency: data.latency || Math.floor(Math.random() * 500) + 100, success: true })
     } catch (error) {
-      addLog({ level: 'error', message: `Failed: ${error.message}` })
-      setResult({ output: `Error: ${error.message}`, latency: 0, success: false })
+      const errData = error?.response?.data
+      const errMsg = errData?.error || errData?.message || error.message
+      const errCode = errData?.code
+
+      let userMsg = errMsg
+      if (errCode === 'UNKNOWN_FIELD') userMsg = `Schema validation: ${errMsg}`
+      else if (errCode === 'UNKNOWN_HEADER') userMsg = `Header validation: ${errMsg}`
+      else if (errCode === 'MISSING_REQUIRED_FIELD' || errCode === 'MISSING_REQUIRED_FILE') userMsg = `Required field missing: ${errMsg}`
+      else if (errCode === 'RESTRICTED_HEADER') userMsg = `Security: ${errMsg}`
+      else if (errCode === 'INVALID_FILE_FIELD') userMsg = `File upload error: ${errMsg}`
+      else if (error?.response?.status === 413) userMsg = 'Payload too large — reduce file sizes or body size'
+      else if (error?.response?.status === 429) userMsg = 'Rate limit exceeded — please wait before retrying'
+      else if (errMsg?.toLowerCase().includes('timeout')) userMsg = 'Agent timed out — the agent endpoint did not respond in time'
+      else if (errMsg?.toLowerCase().includes('redirect')) userMsg = 'Execution blocked — SSRF protection triggered'
+
+      addLog({ level: 'error', message: `Failed: ${userMsg}` })
+      setResult({ output: `Error: ${userMsg}`, latency: 0, success: false })
     } finally { setExecuting(false); setTask('') }
   }
 

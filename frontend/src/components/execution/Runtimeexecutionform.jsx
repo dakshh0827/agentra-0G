@@ -262,14 +262,17 @@ export default function RuntimeExecutionForm({
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={isExecuting || !isConnected}
+          disabled={isExecuting || !isConnected || Object.keys(errors).length > 0}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-dark hover:bg-primary text-white font-semibold text-sm disabled:opacity-40 transition-all cursor-pointer"
+          title={Object.keys(errors).length > 0 ? 'Fix validation errors before executing' : ''}
         >
           {isExecuting ? (
             <>
               <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               EXECUTING...
             </>
+          ) : Object.keys(errors).length > 0 ? (
+            'FIX ERRORS'
           ) : (
             'EXECUTE'
           )}

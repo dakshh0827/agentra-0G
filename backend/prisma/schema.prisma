@@ -378,3 +378,30 @@ model GlobalStats {
 
   updatedAt    DateTime @updatedAt
 }
+
+
+
+  //////////////////////////////////////////////////
+// EXECUTION METRICS
+//////////////////////////////////////////////////
+
+model ExecutionMetric {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  executionTraceId  String   @unique
+  agentId           String
+
+  contentType       String?
+  executionDuration Int?
+  status            String   // 'success' | 'failed'
+  retryCount        Int      @default(0)
+  uploadCount       Int      @default(0)
+  payloadSize       Int      @default(0)
+  errorCategory     String?
+
+  createdAt         DateTime @default(now())
+
+  @@index([agentId])
+  @@index([status])
+  @@index([createdAt])
+}

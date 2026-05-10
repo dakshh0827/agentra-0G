@@ -3,6 +3,9 @@ import prisma from '../lib/prisma.js'
 import agentService from '../services/agentService.js'
 import config from '../config/config.js'
 import { v4 as uuidv4 } from 'uuid'
+import { executeWithRetry } from '../utils/executeWithRetry.js'
+import { logExecutionStart, logExecutionComplete, logExecutionError, categorizeError } from '../utils/executionLogger.js'
+import { validateRuntimePayload } from '../utils/validateRuntimePayloadAgainstExecutionConfig.js'
 
 class Orchestrator {
   constructor() {
@@ -15,140 +18,266 @@ async executeAgent(agentId, task, callerWallet, options = {}) {
     parentInteractionId = null,
     callChainId = uuidv4(),
     runtimePayload = null,
+    executionTraceId = uuidv4(),
   } = options
- 
-    if (callDepth > config.platform.maxCallDepth) {
-      throw Object.assign(
-        new Error(`Max call depth (${config.platform.maxCallDepth}) exceeded`),
-        { status: 429 }
+
+  if (callDepth > config.platform.maxCallDepth) {
+    throw Object.assign(
+      new Error(`Max call depth (${config.platform.maxCallDepth}) exceeded`),
+      { status: 429 }
+    )
+  }
+
+  if (!this.activeChains.has(callChainId)) {
+    this.activeChains.set(callChainId, new Set())
+  }
+
+  const chain = this.activeChains.get(callChainId)
+
+  if (chain.has(agentId)) {
+    throw Object.assign(
+      new Error(`Circular agent call detected: ${agentId}`),
+      { status: 400 }
+    )
+  }
+
+  chain.add(agentId)
+
+  const agent = await agentService.getById(agentId)
+
+  // Runtime payload validation against executionConfig schema
+  if (agent.executionConfig && runtimePayload) {
+    const uploadedFiles = runtimePayload.files || {}
+
+    validateRuntimePayload(
+      agent.executionConfig,
+      runtimePayload,
+      uploadedFiles
+    )
+  }
+
+  // Observability: log execution start
+  const uploadCount = runtimePayload
+    ? Object.keys(runtimePayload.files || {}).length
+    : 0
+
+  const payloadSize = runtimePayload
+    ? Buffer.byteLength(
+        JSON.stringify({
+          headers: runtimePayload.headers,
+          body: runtimePayload.body,
+        }),
+        'utf8'
       )
+    : 0
+
+  logExecutionStart({
+    executionTraceId,
+    agentId: agent.agentId,
+    contentType: agent.executionConfig?.contentType || 'legacy',
+    uploadCount,
+    payloadSize,
+  })
+
+  if (agent.status === 'offline' || agent.status === 'inactive') {
+    chain.delete(agentId)
+
+    if (chain.size === 0) {
+      this.activeChains.delete(callChainId)
     }
 
-    if (!this.activeChains.has(callChainId)) {
-      this.activeChains.set(callChainId, new Set())
-    }
-    const chain = this.activeChains.get(callChainId)
+    throw Object.assign(
+      new Error(`Agent "${agent.name}" is ${agent.status}`),
+      { status: 503 }
+    )
+  }
 
-    if (chain.has(agentId)) {
-      throw Object.assign(
-        new Error(`Circular agent call detected: ${agentId}`),
-        { status: 400 }
-      )
-    }
-    chain.add(agentId)
+  if (!agent.endpoint) {
+    chain.delete(agentId)
 
-    const agent = await agentService.getById(agentId)
-
-    if (agent.status === 'offline' || agent.status === 'inactive') {
-      chain.delete(agentId)
-      throw Object.assign(
-        new Error(`Agent "${agent.name}" is ${agent.status}`),
-        { status: 503 }
-      )
+    if (chain.size === 0) {
+      this.activeChains.delete(callChainId)
     }
 
-    if (!agent.endpoint) {
-      chain.delete(agentId)
-      if (chain.size === 0) this.activeChains.delete(callChainId)
-      throw Object.assign(
-        new Error(`Agent "${agent.name}" has no endpoint configured`),
-        { status: 400 }
-      )
-    }
+    throw Object.assign(
+      new Error(`Agent "${agent.name}" has no endpoint configured`),
+      { status: 400 }
+    )
+  }
 
-    const interactionId = uuidv4()
-    const startTime = Date.now()
-    let interactionRecord
+  const interactionId = uuidv4()
+  const startTime = Date.now()
 
-    try {
-      interactionRecord = await prisma.interaction.create({
-        data: {
-          agentId: agent.agentId,
-          callerWallet: callerWallet?.toLowerCase() || null,
-          task,
-          callDepth,
-          parentInteractionId,
-          status: 'success',
-        },
-      })
-    } catch (err) {
-      console.error('[ORCHESTRATOR] Interaction create failed:', err.message)
-    }
+  let interactionRecord
 
-    let response
-    let success = false
+  try {
+    interactionRecord = await prisma.interaction.create({
+      data: {
+        agentId: agent.agentId,
+        callerWallet: callerWallet?.toLowerCase() || null,
+        task,
+        callDepth,
+        parentInteractionId,
+        status: 'success',
+      },
+    })
+  } catch (err) {
+    console.error(
+      '[ORCHESTRATOR] Interaction create failed:',
+      err.message
+    )
+  }
 
-    try {
-      let result
+  let response
+  let success = false
+  let retryCount = 0
 
-result = await this._callAgentEndpoint(agent.endpoint, task, {
-  callDepth,
-  callChainId,
-  interactionId: interactionRecord?.id,
-  callerWallet,
-  agentId: agent.agentId,
-  contractAgentId: agent.contractAgentId ?? null,
-}, agent.executionConfig, runtimePayload)
+  try {
+    let result
 
-      response = result.data
-      success = true
-    } catch (err) {
-      if (interactionRecord) {
-        await prisma.interaction.update({
-          where: { id: interactionRecord.id },
-          data: {
-            status: 'failed',
-            errorMessage: err.message,
-            latency: Date.now() - startTime,
+    const { result: axiosResult, retryCount: rc } =
+      await executeWithRetry(
+        () =>
+          this._callAgentEndpoint(
+            agent.endpoint,
+            task,
+            {
+              callDepth,
+              callChainId,
+              interactionId: interactionRecord?.id,
+              callerWallet,
+              agentId: agent.agentId,
+              contractAgentId: agent.contractAgentId ?? null,
+            },
+            agent.executionConfig,
+            runtimePayload
+          ),
+        {
+          maxRetries: 2,
+          baseDelayMs: 500,
+          maxDelayMs: 5000,
+          onRetry: (attempt, err) => {
+            console.warn(
+              `[ORCHESTRATOR] Retry ${attempt} for agent ${agent.agentId}: ${err.message}`
+            )
           },
-        })
-      }
-
-      chain.delete(agentId)
-      if (chain.size === 0) this.activeChains.delete(callChainId)
-
-      throw Object.assign(
-        new Error(`Agent execution failed: ${err.message}`),
-        { status: 502 }
+        }
       )
-    }
 
-    const latency = Date.now() - startTime
+    result = axiosResult
+    retryCount = rc
 
+    response = result.data
+    success = true
+  } catch (err) {
     if (interactionRecord) {
       await prisma.interaction.update({
         where: { id: interactionRecord.id },
         data: {
-          response:
-            typeof response === 'string'
-              ? response
-              : JSON.stringify(response),
-          latency,
-          status: 'success',
+          status: 'failed',
+          errorMessage: err.message,
+          latency: Date.now() - startTime,
         },
       })
     }
 
-    await agentService.recordExecution(agent.agentId, {
-      success,
-      latency,
+    chain.delete(agentId)
+
+    if (chain.size === 0) {
+      this.activeChains.delete(callChainId)
+    }
+
+    // Observability: log error
+    logExecutionError({
+      executionTraceId,
+      agentId: agent.agentId,
+      errorCategory: categorizeError(err),
+      errorMessage: err.message,
+      retryCount,
     })
 
-    chain.delete(agentId)
-    if (chain.size === 0) this.activeChains.delete(callChainId)
-
-    return {
-      interactionId: interactionRecord?.id,
-      agentId: agent.agentId,
-      agentName: agent.name,
-      task,
-      response,
-      latency,
-      success: true,
-      callDepth,
-      timestamp: new Date().toISOString(),
-    }
+    throw Object.assign(
+      new Error(`Agent execution failed: ${err.message}`),
+      { status: 502 }
+    )
   }
+
+  const latency = Date.now() - startTime
+
+  if (interactionRecord) {
+    await prisma.interaction.update({
+      where: { id: interactionRecord.id },
+      data: {
+        response:
+          typeof response === 'string'
+            ? response
+            : JSON.stringify(response),
+        latency,
+        status: 'success',
+      },
+    })
+  }
+
+  await agentService.recordExecution(agent.agentId, {
+    success,
+    latency,
+  })
+
+  // Observability: log completion
+  logExecutionComplete({
+    executionTraceId,
+    agentId: agent.agentId,
+    contentType: agent.executionConfig?.contentType || 'legacy',
+    executionDuration: latency,
+    retryCount,
+    uploadCount,
+    payloadSize,
+    status: 'success',
+  })
+
+  // Persist execution metric (non-blocking)
+  import('../lib/prisma.js')
+    .then(({ default: prisma }) => {
+      prisma.executionMetric
+        .create({
+          data: {
+            executionTraceId,
+            agentId: agent.agentId,
+            contentType:
+              agent.executionConfig?.contentType || 'legacy',
+            executionDuration: latency,
+            status: 'success',
+            retryCount,
+            uploadCount,
+            payloadSize,
+          },
+        })
+        .catch((e) =>
+          console.error(
+            '[ORCHESTRATOR] ExecutionMetric save failed:',
+            e.message
+          )
+        )
+    })
+
+  chain.delete(agentId)
+
+  if (chain.size === 0) {
+    this.activeChains.delete(callChainId)
+  }
+
+  return {
+    interactionId: interactionRecord?.id,
+    agentId: agent.agentId,
+    agentName: agent.name,
+    task,
+    response,
+    latency,
+    success: true,
+    callDepth,
+    timestamp: new Date().toISOString(),
+  }
+}
 
   async agentToAgentCall(fromAgentId, toAgentId, task, parentOptions = {}) {
     return this.executeAgent(toAgentId, task, null, {
@@ -187,6 +316,7 @@ async _callAgentEndpoint(endpoint, task, meta = {}, executionConfig = null, runt
         headers: reqConfig.headers,
         data: reqConfig.data,
         timeout,
+        maxRedirects: 0,
         maxContentLength: 50 * 1024 * 1024,
       })
     } catch (primaryErr) {
@@ -198,6 +328,7 @@ async _callAgentEndpoint(endpoint, task, meta = {}, executionConfig = null, runt
           headers: reqConfig.headers,
           data: reqConfig.data,
           timeout,
+          maxRedirects: 0,
           maxContentLength: 50 * 1024 * 1024,
         })
       } catch (fallbackErr) {
@@ -237,6 +368,7 @@ async _callAgentEndpoint(endpoint, task, meta = {}, executionConfig = null, runt
     try {
       return await axios.post(attempt.url, attempt.payload, {
         timeout,
+        maxRedirects: 0,
         headers: { 'Content-Type': 'application/json' },
       })
     } catch (err) {

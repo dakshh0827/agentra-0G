@@ -43,4 +43,11 @@ const authLimiter = createLimiter(
   'Auth rate limit exceeded.'
 )
 
-export { apiLimiter, executionLimiter, deployLimiter, authLimiter }
+// ADD at the bottom before export:
+const multipartLimiter = createLimiter(
+  60 * 1000,
+  10,
+  'Multipart upload rate limit exceeded.'
+)
+
+export { apiLimiter, executionLimiter, deployLimiter, authLimiter, multipartLimiter }

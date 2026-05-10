@@ -66,6 +66,11 @@ const config = {
     deployRateLimitMax: 10,
     leaderboardCronSchedule: '*/5 * * * *',
     healthCheckCronSchedule: '*/2 * * * *',
+    // ADD inside platform: { ... }
+    executionTimeoutMs: parseInt(process.env.EXECUTION_TIMEOUT_MS) || 30000,
+    maxPayloadSizeBytes: parseInt(process.env.MAX_PAYLOAD_BYTES) || 5 * 1024 * 1024,
+    maxUploadSizeBytes: parseInt(process.env.MAX_UPLOAD_BYTES) || 10 * 1024 * 1024,
+    maxRetries: parseInt(process.env.EXECUTION_MAX_RETRIES) || 2,
   },
 }
 

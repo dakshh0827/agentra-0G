@@ -9,8 +9,13 @@ export default function RuntimeFileUpload({ field, file, onChange, error }) {
   const inputRef = useRef(null)
   const [dragging, setDragging] = useState(false)
 
+const MAX_SIZE = 200 * 1024 * 1024 // 10MB
   const handleFile = (selectedFile) => {
     if (!selectedFile) return
+    if (selectedFile.size > MAX_SIZE) {
+      alert(`File "${selectedFile.name}" exceeds the 10MB upload limit.`)
+      return
+    }
     onChange(field.key, selectedFile)
   }
 
