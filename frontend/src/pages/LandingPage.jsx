@@ -24,17 +24,42 @@ import {
   FileText,
   Gem,
   Loader2, 
-  Mail
+  Mail,
+  Zap
 } from 'lucide-react'
 import { analyticsAPI } from '../api/analytics'
 
 const capabilities = [
-  { title: 'Agent Registry', icon: Bot, body: 'Publish and discover AI agents with verifiable on-chain metadata, capability tags, and transparent pricing rules — all indexed without a centralised database.' },
-  { title: 'Execution Routing', icon: Network, body: 'Route inference requests across MCP-compatible endpoints with layered access control, rate limiting, and automatic failover built into the protocol.' },
-  { title: 'On-chain Revenue', icon: TrendingUp, body: 'Every execution is metered on-chain. Developers earn 0G per call with no intermediary. Full billing history is publicly auditable at any time.' },
-  { title: '0G Storage Backbone', icon: Database, body: 'Agent configurations, logs, and heavy metadata are pinned to the 0G storage network — permanent, censorship-resistant, and free from EVM gas bloat.' },
-  { title: 'NFT Ownership Guard', icon: Gem, body: 'Every agent is minted as an NFT. Ownership is wallet-native, transferable, and composable — your agent is a real on-chain asset with verifiable provenance.' },
-  { title: 'Composable Swarms', icon: Cpu, body: 'Build multi-agent pipelines where agents autonomously hire and pay each other via A2A communication — without writing orchestration logic from scratch.' },
+  { 
+    title: 'Verifiable Agent Network', 
+    icon: Bot, 
+    body: 'Ask query to any on-chain AI agent. Discover models via their tags and transparent execution rules indexed completely without centralised gatekeepers.' 
+  },
+  { 
+    title: 'MCP-Powered Routing', 
+    icon: Network, 
+    body: 'Connect AI agents to different MCP-compatible services. It manages permissions, usage limits, and automatic failover behind the scenes requests keep working smoothly.'
+  },
+  { 
+    title: 'Automated Economics', 
+    icon: TrendingUp, 
+    body: 'Every execution is cryptographically metered. Creators and their agents earn 0G per call instantly, with no intermediaries. Full billing history is transparent and auditable.' 
+  },
+  { 
+    title: '0G Storage Backbone', 
+    icon: Database, 
+    body: 'Heavy metadata, agent configurations, and execution logs are anchored to the 0G storage network ensuring censorship resistance without bloating EVM gas limits.' 
+  },
+  { 
+    title: 'iNFT Asset Standard', 
+    icon: Gem, 
+    body: 'Every deployed agent is minted as an iNFT (Intelligent NFT). Ownership is wallet-native and fully composable, transforming your AI models into tradeable, revenue-generating assets.' 
+  },
+  { 
+    title: 'Agent-Agent Comms', 
+    icon: Cpu, 
+    body: 'Build multi-agent pipelines. Deployed agents can independently hire, communicate, and pay each other on-chain to resolve complex tasks without manual orchestration.' 
+  },
 ]
 
 // ── Animated SVG components ────────────────────────────────────────────────
@@ -230,32 +255,32 @@ const SVGDashboard = () => (
 
 const platformFeatures = [
   {
-    title: 'Global Agent Marketplace',
-    desc: 'Browse a decentralised, on-chain registry of AI agents. Filter by capabilities, pricing tiers, and verifiable reputation. Every agent is an NFT — read immutable provenance before delegating tasks. No black-box listings.',
-    icon: Store,
-    link: '/marketplace',
-    linkText: 'Explore Agents',
-    svg: <SVGMarketplace />,
+    title: 'Decentralised Agent Explorer',
+    desc: 'Query any decentralised, on-chain registered AI agent. Filter by contract hashes, total computations, and on-chain verifications. Every agent is an iNFT with immutable provenance before delegating tasks. No confusing and black-box algorithms.',
+    icon: Network, // Consider importing Network from lucide-react instead of Store
+    link: '/explorer',
+    linkText: 'View Explorer',
+    svg: <SVGMarketplace />, // You can keep the SVG, but maybe rename the component later
   },
   {
     title: 'Deploy Studio',
-    desc: 'Publish your agent in minutes. Define MCP endpoints, set granular fee structures, and upload metadata to 0G Storage. The protocol automatically mints your agent as an NFT — giving you transferable, composable on-chain ownership the moment you deploy.',
+    desc: 'Publish your agent in minutes. Define MCP endpoints, set your own fee structures, and upload metadata to 0G Storage. The protocol automatically mints your agent as an iNFT giving you transferable, composable on-chain ownership the moment you deploy.',
     icon: Terminal,
     link: '/deploy',
-    linkText: 'Launch Agent',
+    linkText: 'Deploy Agent',
     svg: <SVGDeployStudio />,
   },
   {
-    title: 'Agent Swarms (A2A Comms)',
-    desc: 'Enable native Agent-to-Agent communication. Let deployed agents dynamically hire and pay each other via the on-chain billing layer (0G) to complete complex, multi-step tasks — no bespoke orchestration code required.',
+    title: 'Agent Communication (A2A Comms)',
+    desc: 'Enable native Agent-to-Agent communication. Let deployed agents dynamically hire and pay each other via the on-chain billing layer (0G) to complete complex, multi-step tasks no manual orchestration code required, everything is automated.',
     icon: Users,
-    link: '#',
-    linkText: 'Read Docs',
+    link: 'deploy',
+    linkText: 'Deploy Agent',
     svg: <SVGAgentComms />,
   },
   {
-    title: 'Command Dashboard',
-    desc: 'Monitor your entire agent portfolio in one place. Track total calls, real-time 0G revenue, delegation health, and API key provisioning. Every metric is sourced directly from on-chain execution data — no synthetic estimates.',
+    title: 'Personal Dashboard',
+    desc: 'Monitor your entire agent portfolio in one place. Track total calls, real-time 0G revenue, delegation health, and API key provisioning. Every metric is sourced directly from on-chain execution data no assumptions, everything is real-time.',
     icon: LayoutDashboard,
     link: '/dashboard',
     linkText: 'View Dashboard',
@@ -273,12 +298,12 @@ const faqs = [
     a: "The Model Context Protocol (MCP) is a standardised interface for agent communication and task execution. Agentra acts as the routing, access-control, and billing layer on top of any MCP-compatible endpoint you already operate."
   },
   {
-    q: "How are agents converted into NFTs?",
-    a: "When you deploy via Deploy Studio, a smart contract automatically mints an ERC-721 NFT representing your agent. This gives the agent real on-chain identity — it can be transferred, sold, or licensed just like any digital asset, with ownership history fully verifiable on-chain."
+    q: "How are agents converted into iNFTs?",
+    a: "When you deploy via Deploy Studio, a smart contract automatically mints an ERC-721 NFT representing your agent. This gives the agent real on-chain identity it can be transferred, sold, or licensed just like any digital asset, with ownership history fully verifiable on-chain."
   },
   {
     q: "How do agent payments work?",
-    a: "Users sign a single delegation transaction authorising a spend limit. The protocol autonomously deducts 0G per execution based on the agent's pre-defined pricing rules. Developers receive payments directly — no intermediary, no invoice cycle."
+    a: "Users sign a single delegation transaction authorising a spend limit. The protocol autonomously deducts 0G per execution based on the agent's pre-defined pricing rules. Developers receive payments directly no intermediary, no invoice cycle."
   },
   {
     q: "What is Agent-to-Agent (A2A) communication?",
@@ -305,113 +330,137 @@ function Counter({ value }) {
 
 // ── Workflow ───────────────────────────────────────────────────────────────
 
-const WorkflowStep = ({ x, y, emoji, label, sublabel, delay }) => (
-  <motion.g initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-    transition={{ delay, duration: 0.5, ease: 'backOut' }}
-    style={{ transformOrigin: `${x}px ${y}px` }}>
-    <circle cx={x} cy={y} r="72" fill="white" stroke="#e0c8f0" strokeWidth="1.5" />
-    <motion.circle cx={x} cy={y} r="65" fill="#faf5ff" stroke="#d4b8ea" strokeWidth="1"
-      animate={{ r: [65, 68, 65] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay }}
-    />
-    <text x={x} y={y - 22} fontSize="24" textAnchor="middle" dominantBaseline="middle">{emoji}</text>
-    <text x={x} y={y + 8} fontSize="12" fontWeight="600" textAnchor="middle" dominantBaseline="middle" fill="#5a3a80">{label}</text>
-    {sublabel && (
-      <text x={x} y={y + 26} fontSize="10" textAnchor="middle" dominantBaseline="middle" fill="#9880b8">{sublabel}</text>
-    )}
-  </motion.g>
-)
+// ── 1. The New Infrastructure Flow Component ──────────────────────────────
+const InfrastructureFlow = () => {
+  const steps = [
+    { icon: Terminal, title: 'Deploy', desc: 'Devs push agents via Deploy Studio' },
+    { icon: Gem, title: 'Mint iNFT', desc: 'Protocol mints immutable ownership' },
+    { icon: Network, title: 'Route', desc: 'MCP endpoints handle secure access' },
+    { icon: Zap, title: 'Execute', desc: 'Users & swarms invoke inferences' },
+    { icon: Lock, title: 'Settle', desc: '0G network meters and clears funds' }
+  ]
 
-const WorkflowArrow = ({ x1, y1, x2, y2, label, delay, curved }) => {
-  const mx = (x1 + x2) / 2
-  const my = (y1 + y2) / 2
-  const d = curved
-    ? `M ${x1} ${y1} Q ${curved.cx} ${curved.cy} ${x2} ${y2}`
-    : `M ${x1} ${y1} L ${x2} ${y2}`
-  const lx = curved ? curved.cx : mx
-  const ly = curved ? curved.cy - 12 : my - 12
   return (
-    <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay, duration: 0.4 }}>
-      <motion.path d={d} stroke="#d0b0e8" strokeWidth="1.5" fill="none"
-        strokeDasharray="6 4" markerEnd="url(#wf-arrow)"
-        animate={{ strokeDashoffset: [0, -20] }}
-        transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-      />
-      {label && (
-        <text x={lx} y={ly} fontSize="10" textAnchor="middle" fill="#a080c0" fontStyle="italic">{label}</text>
-      )}
-    </motion.g>
+    <div className="relative py-12">
+      {/* Connecting Line (Desktop) */}
+      <div className="hidden lg:block absolute top-1/2 left-0 w-full h-[2px] bg-border -translate-y-1/2">
+        <motion.div 
+          className="h-full bg-gradient-to-r from-primary-light via-primary to-primary-light"
+          animate={{ x: ['-100%', '100%'] }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+          style={{ width: '50%' }}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-4 relative z-10">
+        {steps.map((step, idx) => (
+          <motion.div 
+            key={idx}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: idx * 0.15, duration: 0.5 }}
+            className="flex flex-col items-center text-center group"
+          >
+            {/* Connecting Line (Mobile) */}
+            {idx !== 0 && <div className="h-8 w-[2px] bg-border lg:hidden mb-4" />}
+            
+            <div className="w-16 h-16 rounded-2xl glass-panel flex items-center justify-center mb-4 relative group-hover:border-primary/50 transition-colors shadow-soft">
+              {/* Ping effect */}
+              <div className="absolute inset-0 rounded-2xl bg-primary/20 scale-150 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <step.icon size={24} className="text-primary relative z-10" />
+              
+              {/* Step Number Badge */}
+              <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center shadow-md">
+                {idx + 1}
+              </div>
+            </div>
+            
+            <h4 className="text-base font-display font-bold text-text-primary mb-1">{step.title}</h4>
+            <p className="text-xs text-text-secondary leading-relaxed max-w-[160px]">{step.desc}</p>
+          </motion.div>
+        ))}
+      </div>
+    </div>
   )
 }
 
-const ImprovedWorkflow = () => (
-  <div className="w-full overflow-x-auto py-6">
-    <div style={{ minWidth: '900px' }}>
-      <svg width="100%" viewBox="0 0 1240 580" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <marker id="wf-arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-            <path d="M 2 2 L 10 6 L 2 10" fill="none" stroke="#c0a0d8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </marker>
-          <linearGradient id="wf-wave" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#f2c9e7" />
-            <stop offset="48%" stopColor="#dfc4f6" />
-            <stop offset="100%" stopColor="#eec6ef" />
-          </linearGradient>
-          <linearGradient id="wf-glow-line" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#efc5e5" />
-            <stop offset="100%" stopColor="#d8bff2" />
-          </linearGradient>
-        </defs>
+// ── 2. The New Tech Stack Diagram Component ──────────────────────────────
+const TechStackDiagram = () => {
+  return (
+    <div className="relative w-full aspect-square max-w-md mx-auto perspective-1000">
+      <div className="absolute inset-0 rounded-3xl glass-panel overflow-hidden border border-border shadow-panel">
+        <div className="absolute inset-0 line-grid opacity-30 pointer-events-none" />
+        
+        <div className="relative w-full h-full flex flex-col items-center justify-center gap-6 p-8">
+          
+          {/* Layer 1: Client App */}
+          <motion.div 
+            animate={{ y: [-4, 4, -4] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            className="w-full max-w-[280px] bg-bg/80 backdrop-blur-md border border-border p-4 rounded-xl shadow-soft text-center z-30"
+          >
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <LayoutDashboard size={14} className="text-text-dim" />
+              <p className="font-mono text-xs font-semibold tracking-wide text-text-secondary uppercase">Access Layer</p>
+            </div>
+            <p className="text-sm font-bold text-text-primary">Agentra Explorer & Client UI</p>
+          </motion.div>
 
-        {/* Large flowing wave track */}
-        <motion.path
-          d="M 50 258 C 180 118, 345 406, 490 254 C 632 102, 812 414, 952 246 C 1065 118, 1160 222, 1200 264"
-          stroke="url(#wf-wave)"
-          strokeWidth="62"
-          strokeOpacity="0.26"
-          fill="none"
-          strokeLinecap="round"
-          animate={{ d: [
-            'M 50 258 C 180 118, 345 406, 490 254 C 632 102, 812 414, 952 246 C 1065 118, 1160 222, 1200 264',
-            'M 50 275 C 190 148, 338 388, 500 268 C 638 124, 804 396, 944 260 C 1063 138, 1156 232, 1200 282',
-            'M 50 258 C 180 118, 345 406, 490 254 C 632 102, 812 414, 952 246 C 1065 118, 1160 222, 1200 264'
-          ] }}
-          transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <path
-          d="M 50 258 C 180 118, 345 406, 490 254 C 632 102, 812 414, 952 246 C 1065 118, 1160 222, 1200 264"
-          stroke="url(#wf-glow-line)"
-          strokeWidth="2"
-          strokeDasharray="8 6"
-          fill="none"
-          strokeLinecap="round"
-        />
+          {/* Animated Data Links */}
+          <div className="w-px h-8 bg-gradient-to-b from-border via-primary/50 to-border relative">
+            <motion.div animate={{ top: ['0%', '100%'], opacity: [0, 1, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="absolute left-1/2 -translate-x-1/2 w-1.5 h-3 bg-primary rounded-full blur-[1px]" />
+          </div>
 
-        {/* Nodes — same wave positions, bigger circles, fixed text */}
-        <WorkflowStep x={150} y={196} emoji="🏗️" label="Developers Deploy" sublabel="via Deploy Studio" delay={0} />
-        <WorkflowStep x={370} y={354} emoji="🛒" label="Users Discover" sublabel="& purchase agents" delay={0.15} />
-        <WorkflowStep x={620} y={188} emoji="⚡" label="Agents Execute" sublabel="tasks on demand" delay={0.3} />
-        <WorkflowStep x={870} y={354} emoji="🔗" label="A2A Collaboration" sublabel="agents hire agents" delay={0.45} />
-        <WorkflowStep x={1090} y={194} emoji="💰" label="0G Revenue" sublabel="flows on-chain" delay={0.6} />
+          {/* Layer 2: Orchestrator */}
+          <motion.div 
+            animate={{ y: [4, -4, 4] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+            className="w-full max-w-[320px] bg-accent-pink/80 backdrop-blur-md border border-primary/30 p-5 rounded-2xl shadow-[0_8px_32px_rgba(172,100,247,0.15)] text-center z-20 relative overflow-hidden"
+          >
+            <div className="absolute inset-0 dot-grid opacity-20" />
+            <div className="flex items-center justify-center gap-2 mb-2 relative z-10">
+              <Cpu size={16} className="text-primary-dark" />
+              <p className="font-mono text-xs font-bold tracking-widest text-primary-dark uppercase">Orchestration Layer</p>
+            </div>
+            <p className="text-base font-display font-bold text-text-primary relative z-10">Agentra MCP Router</p>
+          </motion.div>
 
-        {/* Arrows — adjusted to match new node positions/sizes */}
-        <WorkflowArrow x1={218} y1={238} x2={306} y2={312} label="listed as NFT" delay={0.8} curved={{ cx: 272, cy: 232 }} />
-        <WorkflowArrow x1={432} y1={316} x2={556} y2={226} label="pay per call" delay={0.95} curved={{ cx: 500, cy: 336 }} />
-        <WorkflowArrow x1={686} y1={228} x2={806} y2={312} label="sub-tasks delegated" delay={1.1} curved={{ cx: 750, cy: 204 }} />
-        <WorkflowArrow x1={936} y1={312} x2={1022} y2={234} label="billing settled" delay={1.25} curved={{ cx: 992, cy: 348 }} />
+          {/* Animated Data Links */}
+          <div className="w-full max-w-[280px] flex justify-between px-6 relative h-8">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="w-px h-full bg-gradient-to-b from-border via-primary/30 to-border relative">
+                <motion.div animate={{ top: ['0%', '100%'], opacity: [0, 1, 0] }} transition={{ duration: 1.5, delay: i * 0.3, repeat: Infinity }} className="absolute left-1/2 -translate-x-1/2 w-1 h-2 bg-primary-light rounded-full" />
+              </div>
+            ))}
+          </div>
 
-        {/* Centre AGENTRA badge */}
-        <motion.g animate={{ scale: [1, 1.04, 1] }} transition={{ duration: 4, repeat: Infinity }}
-            style={{ transformOrigin: '620px 300px' }}>
-            <circle cx="620" cy="300" r="74" fill="#faf4ff" stroke="#e0c8f0" strokeWidth="1.5" />
-            <text x="620" y="292" fontSize="16" fontWeight="700" textAnchor="middle" dominantBaseline="middle" fill="#6030a0">AGENTRA</text>
-            <text x="620" y="314" fontSize="11" textAnchor="middle" dominantBaseline="middle" fill="#a080c0">ECOSYSTEM</text>
-        </motion.g>
-      </svg>
+          {/* Layer 3: Base Primitives */}
+          <motion.div 
+            animate={{ y: [-2, 2, -2] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+            className="w-full max-w-[360px] flex justify-between gap-3 z-10"
+          >
+            {/* Box 1 */}
+            <div className="flex-1 bg-bg-secondary border border-border p-3 rounded-xl shadow-soft text-center flex flex-col items-center justify-center">
+              <Database size={16} className="text-text-dim mb-1" />
+              <p className="font-mono text-[10px] font-bold text-text-secondary">0G STORAGE</p>
+            </div>
+            {/* Box 2 */}
+            <div className="flex-1 bg-bg-secondary border border-border p-3 rounded-xl shadow-soft text-center flex flex-col items-center justify-center">
+              <Gem size={16} className="text-text-dim mb-1" />
+              <p className="font-mono text-[10px] font-bold text-text-secondary">iNFT REGISTRY</p>
+            </div>
+            {/* Box 3 */}
+            <div className="flex-1 bg-bg-secondary border border-border p-3 rounded-xl shadow-soft text-center flex flex-col items-center justify-center">
+              <Lock size={16} className="text-text-dim mb-1" />
+              <p className="font-mono text-[10px] font-bold text-text-secondary">EVM BILLING</p>
+            </div>
+          </motion.div>
+
+        </div>
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
-// ── Abstract Pastel Gradient Waves ─────────────────────────────────────────
 
 // const PastelWaveBackground = () => (
 //   <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
@@ -456,13 +505,13 @@ const ImprovedWorkflow = () => (
 const FAQItem = ({ faq }) => {
   const [isOpen, setIsOpen] = useState(false)
   return (
-    <div className="border border-border rounded-xl bg-panel overflow-hidden transition-all duration-300">
+    <div className="glass-panel rounded-xl overflow-hidden transition-all duration-300 mb-3">
       <button onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-6 py-4 flex items-center justify-between text-left focus:outline-none">
-        <span className="font-medium text-lg text-left">{faq.q}</span>
-        <ChevronDown className={`transform transition-transform duration-300 text-text-dim ${isOpen ? 'rotate-180' : ''}`} size={20} />
+        className="w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none">
+        <span className="font-semibold text-[1.05rem] text-text-primary">{faq.q}</span>
+        <ChevronDown className={`transform transition-transform duration-300 text-primary ${isOpen ? 'rotate-180' : ''}`} size={20} />
       </button>
-      <div className={`px-6 text-text-secondary text-sm overflow-hidden transition-all duration-300 ease-in-out text-left ${isOpen ? 'max-h-48 pb-4 opacity-100' : 'max-h-0 opacity-0'}`}>
+      <div className={`px-6 text-text-secondary text-base leading-relaxed overflow-hidden transition-all duration-300 ease-in-out text-left ${isOpen ? 'max-h-48 pb-5 opacity-100' : 'max-h-0 opacity-0'}`}>
         {faq.a}
       </div>
     </div>
@@ -470,24 +519,23 @@ const FAQItem = ({ faq }) => {
 }
 
 // ── Footer ──────────────────────────────────────────────────────────────────
-
 const Footer = () => (
   <footer className="relative z-10 border-t border-border mt-4 bg-bg-secondary/60">
-    <div className="max-w-7xl mx-auto px-5 py-10 grid grid-cols-2 md:grid-cols-4 gap-10">
+    <div className="max-w-7xl mx-auto px-5 py-10 grid grid-cols-2 md:grid-cols-3 gap-10">
       {/* Brand */}
       <div className="col-span-2 md:col-span-1">
         <p className="text-lg font-semibold uppercase tracking-widest text-primary mb-3">Agentra</p>
         <p className="text-xs text-text-secondary leading-relaxed max-w-xs">
-          The open infrastructure for building, publishing, and monetising AI agents — powered by MCP, 0G Storage, and on-chain ownership.
+          The open infrastructure for building, publishing, and monetising AI agents powered by 0G Chain, 0G Storage, and iNFTs ownership.
         </p>
         <div className="flex gap-3 mt-5">
           {[
             { icon: Twitter, href: 'https://x.com/Agentra69', label: 'Twitter' },
             { icon: Github, href: 'https://github.com/dakshh0827/agentra-0G', label: 'GitHub' },
-            { icon: Mail, href: 'mailto:agentra69@gmail.com', label: 'Mail' },
+            { icon: Mail, href: 'https://mail.google.com/mail/?view=cm&fs=1&to=agentra69@gmail.com', label: 'Mail' },
             { icon: FileText, href: 'https://docs.0g.ai', label: 'Docs' },
           ].map(({ icon: Icon, href, label }) => (
-            <a key={label} href={href} aria-label={label}
+            <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
               className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-primary hover:border-border-bright hover:text-text-primary transition-colors">
               <Icon size={14} />
             </a>
@@ -499,8 +547,22 @@ const Footer = () => (
       <div>
         <p className="text-xs font-semibold uppercase tracking-widest text-text-dim mb-4">Product</p>
         <ul className="space-y-2.5">
-          {['Marketplace', 'Deploy Studio', 'Dashboard', 'Agent Swarms', 'Pricing'].map(l => (
-            <li key={l}><a href="#" className="text-sm text-text-secondary hover:text-text-primary transition-colors">{l}</a></li>
+          {[
+            { name: 'Explorer', to: '/explorer' },
+            { name: 'Deploy Studio', to: '/deploy' },
+            { name: 'Dashboard', to: '/dashboard' },
+          ].map(link => (
+            <li key={link.name}>
+              {link.to.startsWith('/') ? (
+                <Link to={link.to} className="text-sm text-text-secondary hover:text-text-primary transition-colors">
+                  {link.name}
+                </Link>
+              ) : (
+                <a href={link.to} className="text-sm text-text-secondary hover:text-text-primary transition-colors">
+                  {link.name}
+                </a>
+              )}
+            </li>
           ))}
         </ul>
       </div>
@@ -509,18 +571,16 @@ const Footer = () => (
       <div>
         <p className="text-xs font-semibold uppercase tracking-widest text-text-dim mb-4">Developers</p>
         <ul className="space-y-2.5">
-          {['Documentation', 'MCP Protocol', '0G Storage', 'API Reference', 'Changelog'].map(l => (
-            <li key={l}><a href="#" className="text-sm text-text-secondary hover:text-text-primary transition-colors">{l}</a></li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Company */}
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-widest text-text-dim mb-4">Company</p>
-        <ul className="space-y-2.5">
-          {['About', 'Blog', 'Careers', 'Privacy Policy', 'Terms of Service'].map(l => (
-            <li key={l}><a href="#" className="text-sm text-text-secondary hover:text-text-primary transition-colors">{l}</a></li>
+          {[
+            { name: 'Documentation', href: 'https://docs.0g.ai/' },
+            { name: 'MCP Protocol', href: 'https://modelcontextprotocol.io/docs/getting-started/intro' },
+            { name: '0G Storage', href: 'https://docs.0g.ai/concepts/storage' }
+          ].map(link => (
+            <li key={link.name}>
+              <a href={link.href} target="_blank" rel="noopener noreferrer" className="text-sm text-text-secondary hover:text-text-primary transition-colors">
+                {link.name}
+              </a>
+            </li>
           ))}
         </ul>
       </div>
@@ -573,28 +633,35 @@ export default function LandingPage() {
       <section className="relative z-10 max-w-7xl mx-auto px-5 pt-24 pb-14">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}
-            className="lg:col-span-8 rounded-2xl border border-panel-border bg-panel px-7 py-8 text-left">
-            <p className="text-xs uppercase tracking-wide text-text-dim font-semibold">Agent Infrastructure · Powered by 0G</p>
-            <h1 className="mt-3 text-4xl sm:text-5xl font-semibold leading-[1.05] tracking-tight text-left">
-              Build, publish, and monetise AI agents with a cleaner protocol stack.
-            </h1>
-            <p className="mt-4 text-md sm:text-base text-text-secondary max-w-2xl text-left">
-              Agentra gives developers a complete control surface for deployment, NFT ownership, on-chain billing, access control, and multi-agent orchestration — designed for teams shipping real agents, not demos.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link to="/marketplace" className="btn-primary px-6 py-3 rounded-xl inline-flex items-center gap-2 text-sm">
-                Explore Marketplace <ArrowRight size={14} />
-              </Link>
-              <Link to="/deploy" className="btn-outline-glow px-6 py-3 rounded-xl inline-flex items-center gap-2 text-sm">
-                <Code2 size={14} /> Deploy Agent
-              </Link>
+            className="lg:col-span-8 glass-panel rounded-2xl px-7 py-10 text-left relative overflow-hidden">
+            {/* Subtle background texture */}
+            <div className="absolute inset-0 dot-grid opacity-50 pointer-events-none" />
+            
+            <div className="relative z-10">
+              <p className="text-xs uppercase tracking-widest text-primary font-semibold mb-3">0G Network Infrastructure</p>
+              <h1 className="text-5xl sm:text-6xl font-display font-semibold leading-[1.05] tracking-tight text-text-primary text-left">
+                You built the Agent. <br/><span className="gradient-text-purple">We made it an Asset.</span>
+              </h1>
+              <p className="mt-5 text-lg text-text-secondary max-w-2xl text-left font-body">
+                Agentra is the infrastructure where creators deploy AI agents as iNFTs, allowing users to seamlessly interact with these on-chain machines. We turn agents into assets. Pure execution, platform where both creators and their agents get paid.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-4">
+                <Link to="/explorer" className="btn-primary px-7 py-3.5 rounded-xl inline-flex items-center gap-2 text-sm tracking-wide">
+                  Explore the Network <ArrowRight size={16} />
+                </Link>
+                <Link to="/deploy" className="btn-outline-glow px-7 py-3.5 rounded-xl inline-flex items-center gap-2 text-sm tracking-wide">
+                  <Code2 size={16} /> Deploy Agent
+                </Link>
+              </div>
             </div>
           </motion.div>
 
+          {/* Video / Visual Hero side */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.08 }}
-            className="lg:col-span-4 rounded-2xl border border-panel-border bg-panel-light">
-            <div className="w-full h-full rounded-xl overflow-hidden">
-              <video autoPlay loop muted playsInline className="w-full h-full object-cover bg-black/5">
+            className="lg:col-span-4 rounded-2xl border border-border bg-bg-secondary p-2 shadow-soft">
+            <div className="w-full h-full rounded-xl overflow-hidden relative">
+               {/* Ensure your video looks good on light mode, or use a lighter placeholder */}
+              <video autoPlay loop muted playsInline className="w-full h-full object-cover mix-blend-multiply opacity-80">
                 <source src="/videos/earth.mp4" type="video/mp4" />
               </video>
             </div>
@@ -604,15 +671,15 @@ export default function LandingPage() {
 
       {/* STATS */}
       <section className="relative z-10 max-w-7xl mx-auto px-5 pb-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {quickStats.map((item, idx) => (
             <motion.div key={item.label} initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }} transition={{ duration: 0.35, delay: idx * 0.06 }}
-              className="rounded-xl border border-border bg-panel px-4 py-4 text-left">
-              <div className="text-2xl font-semibold tracking-tight text-primary">
-                {statsLoading ? <Loader2 size={18} className="animate-spin" /> : (typeof item.value === 'number' ? <Counter value={item.value} /> : item.value)}{statsLoading ? '' : item.suffix}
+              className="glass-card-landing rounded-xl px-5 py-6 text-left">
+              <div className="text-3xl font-display font-semibold tracking-tight gradient-text-purple">
+                {statsLoading ? <Loader2 size={24} className="animate-spin text-primary" /> : (typeof item.value === 'number' ? <Counter value={item.value} /> : item.value)}{statsLoading ? '' : item.suffix}
               </div>
-              <div className="mt-1 text-xs uppercase tracking-wide text-text-dim">{item.label}</div>
+              <div className="mt-2 text-xs uppercase tracking-widest text-text-dim font-medium">{item.label}</div>
             </motion.div>
           ))}
         </div>
@@ -624,7 +691,7 @@ export default function LandingPage() {
           animate={{ x: ['0%', '-50%'] }} transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}>
                   {[...Array(2)].map((_, i) => (
             <div key={i} className="inline-flex items-center gap-6 min-w-full justify-around px-4">
-              {['MCP Protocol', 'NFT Ownership', 'Delegation Billing', 'Agent Swarms', 'On-chain Access', '0G Storage', '0G Revenue', 'A2A Comms'].map(t => (
+              {['MCP Protocol', 'iNFT Ownership', 'Delegation Billing', 'Agent Swarms', 'On-chain Access', '0G Storage', '0G Revenue', 'A2A Comms'].map(t => (
                 <span key={t} className="text-xs font-medium text-text-secondary uppercase tracking-widest flex items-center gap-1.5">
                   <span className="w-1 h-1 rounded-full bg-accent-pink inline-block" />{t}
                 </span>
@@ -638,8 +705,8 @@ export default function LandingPage() {
       <section className="relative z-10 max-w-7xl mx-auto px-5 py-16">
         <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4 mb-8">
           <div className="text-left">
-            <h2 className="text-3xl font-semibold tracking-tight">Platform Capabilities</h2>
-            <p className="mt-2 text-text-secondary">The core primitives powering the Agentra network.</p>
+            <h2 className="text-3xl font-semibold tracking-tight">Agentra Capabilities</h2>
+            <p className="mt-2 text-text-secondary">The core features powering the Agentra infrastructure.</p>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -661,105 +728,91 @@ export default function LandingPage() {
       </section>
 
       {/* WORKFLOW */}
-      <section className="relative z-10 max-w-7xl mx-auto px-5 pt-16 border-t border-border">
-        <div className="max-w-2xl text-left">
-          <h2 className="text-3xl font-semibold tracking-tight mb-2">Ecosystem Workflow</h2>
-          <p className="text-text-secondary">How agents, developers, and users create compounding value inside Agentra.</p>
+      <section className="relative z-10 w-full border-t border-border section-light">
+        <div className="max-w-7xl mx-auto px-5 py-20">
+          <div className="max-w-3xl mx-auto text-center mb-10">
+            <h2 className="text-3xl font-display font-semibold tracking-tight mb-3">Protocol Lifecycle</h2>
+            <p className="text-text-secondary text-lg">How agents, creators, and users exchange value inside the Agentra network.</p>
+          </div>
+          <InfrastructureFlow /> {/* <--- REPLACED HERE */}
         </div>
-        <ImprovedWorkflow />
       </section>
 
       {/* THE PLATFORM — alternating layout */}
-      <section className="relative z-10 max-w-7xl mx-auto px-5 py-20 border-t border-border">
-        <div className="max-w-2xl mb-14 text-left">
-          <h2 className="text-3xl font-semibold tracking-tight">Inside the Agentra App</h2>
-          <p className="mt-3 text-text-secondary">
-            Everything you need to launch, manage, and scale AI agents is built into a single, cohesive platform.
-          </p>
-        </div>
+      <section className="relative z-10 w-full border-t border-border section-cream">
+        <div className="max-w-7xl mx-auto px-5 py-20">
+          <div className="max-w-2xl mb-16 text-left">
+            <h2 className="text-3xl font-display font-semibold tracking-tight">Deepdive into AGENTRA</h2>
+            <p className="mt-3 text-lg text-text-secondary">
+              Everything you need "to launch, manage, and scale AI agents" is built into a single, cohesive infrastructure provided by AGENTRA.
+            </p>
+          </div>
 
-        <div className="flex flex-col gap-20">
-          {platformFeatures.map((feat, i) => {
-            const isEven = i % 2 === 0
-            return (
-              <motion.div key={feat.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ duration: 0.45 }}
-                className={`flex flex-col ${isEven ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-10 lg:gap-16`}>
-                {/* Text side */}
-                <div className="flex-1 text-left">
-                  <div className="w-10 h-10 rounded-xl bg-accent-pink border border-[#d9b6c9] flex items-center justify-center mb-5">
-                    <feat.icon size={18} className="text-primary" />
+          <div className="flex flex-col gap-24">
+            {platformFeatures.map((feat, i) => {
+              const isEven = i % 2 === 0
+              return (
+                <motion.div key={feat.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }} transition={{ duration: 0.45 }}
+                  className={`flex flex-col ${isEven ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-10 lg:gap-16`}>
+                  {/* Text side */}
+                  <div className="flex-1 text-left">
+                    <div className="w-12 h-12 rounded-xl bg-accent-pink border border-primary-light flex items-center justify-center mb-6 shadow-soft">
+                      <feat.icon size={20} className="text-primary-dark" />
+                    </div>
+                    <h3 className="text-3xl font-display font-bold mb-4 text-text-primary">{feat.title}</h3>
+                    <p className="text-text-secondary text-lg leading-relaxed mb-6">{feat.desc}</p>
+                    <Link to={feat.link} className="inline-flex items-center text-sm font-semibold text-primary hover:text-primary-dark transition-colors">
+                      {feat.linkText} <ArrowRight className="ml-1.5 w-4 h-4" />
+                    </Link>
                   </div>
-                  <h3 className="text-2xl font-bold mb-4">{feat.title}</h3>
-                  <p className="text-text-secondary text-md leading-relaxed mb-6">{feat.desc}</p>
-                  <Link to={feat.link} className="inline-flex items-center text-sm font-medium hover:text-accent-pink transition-colors">
-                    {feat.linkText} <ArrowRight className="ml-1 w-4 h-4" />
-                  </Link>
-                </div>
-                {/* SVG side */}
-                <div className="flex-1 w-full flex items-center justify-center min-h-55">
-                  {feat.svg}
-                </div>
-              </motion.div>
-            )
-          })}
+                  {/* SVG side */}
+                  <div className="flex-1 w-full flex items-center justify-center min-h-55">
+                    {feat.svg}
+                  </div>
+                </motion.div>
+              )
+            })}
+          </div>
         </div>
       </section>
 
       {/* TECHNICAL INFRASTRUCTURE */}
-      <section className="relative z-10 max-w-7xl mx-auto px-5 py-20 border-t border-border bg-bg-secondary/50 rounded-3xl my-10">
-        <div className="flex flex-col lg:flex-row items-center gap-12">
-          <div className="lg:w-1/2 text-left">
-            <h2 className="text-3xl font-semibold tracking-tight mb-4">Powered by 0G & Web3</h2>
-            <p className="text-text-secondary mb-8 text-lg">
-              Agentra leverages decentralised primitives so you never depend on a centralised orchestrator holding your API keys or agent IP.
-            </p>
-            <ul className="space-y-6">
-              <li className="flex gap-4">
-                <div className="shrink-0 mt-1"><Globe className="w-6 h-6 text-primary" /></div>
-                <div>
-                  <h4 className="font-semibold text-lg text-left">0G Storage Integration</h4>
-                  <p className="text-md text-text-secondary mt-1 text-left">Agent metadata, configurations, and execution logs are pinned to the 0G network — verifiable, permanent, and gas-free on the execution layer.</p>
-                </div>
-              </li>
-              <li className="flex gap-4">
-                <div className="shrink-0 mt-1"><Lock className="w-6 h-6 text-primary" /></div>
-                <div>
-                  <h4 className="font-semibold text-lg text-left">Smart Contract Delegation</h4>
-                  <p className="text-md text-text-secondary mt-1 text-left">Users sign once to authorise a spend limit. The protocol autonomously meters and bills each execution on-chain, paying developers in real time — no invoices, no intermediaries.</p>
-                </div>
-              </li>
-              <li className="flex gap-4">
-                <div className="shrink-0 mt-1"><Gem className="w-6 h-6 text-primary" /></div>
-                <div>
-                  <h4 className="font-semibold text-lg text-left">Agents as NFTs</h4>
-                  <p className="text-md text-text-secondary mt-1 text-left">Every deployed agent is minted as an ERC-721 NFT. Ownership is wallet-native, fully transferable, and composable — your agent is a real, tradeable on-chain asset with provable provenance.</p>
-                </div>
-              </li>
-            </ul>
-          </div>
-          <div className="lg:w-1/2 relative">
-            <div className="aspect-square max-w-md mx-auto relative rounded-2xl bg-panel border border-border flex items-center justify-center p-8 overflow-hidden shadow-2xl">
-              <div className="absolute inset-0 dot-grid opacity-30" />
-              <div className="relative z-10 flex flex-col gap-4 w-full">
-                <div className="bg-bg border border-border p-4 rounded-xl text-center shadow-sm">
-                  <p className="font-mono text-md">Frontend / App UI</p>
-                </div>
-                <div className="w-px h-6 bg-border mx-auto" />
-                <div className="bg-bg border border-border p-4 rounded-xl text-center shadow-sm">
-                  <p className="font-mono text-md text-primary">Agentra Orchestrator</p>
-                </div>
-                <div className="flex justify-between gap-4 mt-2">
-                  <div className="w-1/3 bg-bg border border-border p-3 rounded-xl text-center shadow-sm">
-                    <p className="font-mono text-sm">EVM Contracts</p>
-                  </div>
-                  <div className="w-1/3 bg-bg border border-border p-3 rounded-xl text-center shadow-sm">
-                    <p className="font-mono text-sm">NFT Registry</p>
-                  </div>
-                  <div className="w-1/3 bg-bg border border-border p-3 rounded-xl text-center shadow-sm">
-                    <p className="font-mono text-sm">0G Network</p>
-                  </div>
-                </div>
+      <section className="relative z-10 w-full py-20 border-t border-border section-light">
+        <div className="max-w-7xl mx-auto px-5">
+          <div className="section-highlight rounded-3xl border border-border p-8 lg:p-14 shadow-panel">
+            <div className="flex flex-col lg:flex-row items-center gap-14">
+              <div className="lg:w-1/2 text-left">
+                <h2 className="text-3xl font-display font-semibold tracking-tight mb-4 text-text-primary">Powered by 0G & Web3</h2>
+                <p className="text-text-secondary mb-10 text-lg">
+                  Agentra leverages decentralised features so you never depend on a centralised orchestrator holding your API keys or Agent IP.
+                </p>
+                <ul className="space-y-8">
+                  <li className="flex gap-4">
+                    <div className="shrink-0 mt-1"><Globe className="w-6 h-6 text-primary" /></div>
+                    <div>
+                      <h4 className="font-semibold text-lg text-text-primary text-left">0G Storage Integration</h4>
+                      <p className="text-base text-text-secondary mt-1 text-left">Agent metadata, configurations, and execution logs are pinned to the 0G network all verifiable, permanent, and gas-free on the execution layer.</p>
+                    </div>
+                  </li>
+                  <li className="flex gap-4">
+                    <div className="shrink-0 mt-1"><Lock className="w-6 h-6 text-primary" /></div>
+                    <div>
+                      <h4 className="font-semibold text-lg text-text-primary text-left">Smart Contract Delegation</h4>
+                      <p className="text-base text-text-secondary mt-1 text-left">Users sign once to authorise a spend limit. The protocol autonomously meters and bills each execution on-chain, paying developers in real time.</p>
+                    </div>
+                  </li>
+                  <li className="flex gap-4">
+                    <div className="shrink-0 mt-1"><Gem className="w-6 h-6 text-primary" /></div>
+                    <div>
+                      <h4 className="font-semibold text-lg text-text-primary text-left">Agents as iNFTs</h4>
+                      <p className="text-base text-text-secondary mt-1 text-left">Every deployed agent is minted as an ERC-721 iNFT. Ownership is wallet-native, fully transferable, and composable a real, tradeable on-chain asset.</p>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+              <div className="lg:w-1/2 relative w-full flex items-center justify-center">
+                <TechStackDiagram /> {/* <--- REPLACED HERE */}
               </div>
             </div>
           </div>
@@ -767,20 +820,12 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section className="relative z-10 max-w-7xl mx-auto px-5 py-16">
-        <h2 className="text-3xl font-semibold tracking-tight text-left mb-10">Frequently Asked Questions</h2>
-        <div className="space-y-3 max-w-7xl">
-          {faqs.map((faq, idx) => <FAQItem key={idx} faq={faq} />)}
-        </div>
-      </section>
-
-      {/* SUMMARY */}
-      <section className="relative z-10 max-w-7xl mx-auto px-5 pb-12 pt-10">
-        <div className="max-w-7xl text-left">
-          <h2 className="text-2xl font-semibold">Built for real agent economies</h2>
-          <p className="mt-3 text-md text-text-secondary">
-            Agentra unifies deployment, NFT ownership, monetisation, and execution into a seamless protocol stack. Developers publish agents with clear ownership, pricing, and access controls minted on-chain; users discover, purchase, and invoke them on demand. Every interaction is transparently metered and billed in 0G — no intermediaries, no synthetic estimates. Agents operate independently for focused tasks or collaborate dynamically via A2A communication, forming intelligent composable systems. By aligning infrastructure, incentives, and execution, Agentra creates a scalable ecosystem where autonomous agents continuously deliver — and capture — real-world value.
-          </p>
+      <section className="relative z-10 w-full py-20 border-t border-border section-cream">
+        <div className="max-w-4xl mx-auto px-5">
+          <h2 className="text-3xl font-display font-semibold tracking-tight text-center mb-10">Frequently Asked Questions</h2>
+          <div className="space-y-4">
+            {faqs.map((faq, idx) => <FAQItem key={idx} faq={faq} />)}
+          </div>
         </div>
       </section>
 

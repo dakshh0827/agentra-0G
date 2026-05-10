@@ -8,8 +8,7 @@ import {
 import clsx from 'clsx'
 
 const navItems = [
-  { to: '/marketplace', icon: LayoutGrid, label: 'Marketplace', sublabel: 'Discover agents' },
-  { to: '/deploy', icon: Upload, label: 'Deploy', sublabel: 'Launch agent' },
+  { to: '/explorer', icon: LayoutGrid, label: 'Explorer', sublabel: 'Agents Network' },  { to: '/deploy', icon: Upload, label: 'Deploy', sublabel: 'Launch agent' },
   { to: '/dashboard', icon: BarChart3, label: 'Dashboard', sublabel: 'Analytics' },
   { to: '/leaderboard', icon: Trophy, label: 'Leaderboard', sublabel: 'Rankings' },
 ]
@@ -36,7 +35,7 @@ export default function Sidebar() {
           "border-b border-border"
         )}>
           <NavLink to="/" className="flex items-center gap-3 min-w-0">
-            <img src="/logo/logo48.png" alt="Agentra" className="w-9 h-9 rounded-xl shrink-0" />
+            <img src="/logo/logo180.png" alt="Agentra" className="w-9 h-9 rounded-xl shrink-0" />
             <AnimatePresence>
               {!collapsed && (
                 <motion.div

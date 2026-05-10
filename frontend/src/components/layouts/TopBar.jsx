@@ -50,34 +50,33 @@ export default function TopBar() {
 
   return (
     <header
-      className="h-14 flex items-center justify-between px-4 sm:px-6 shrink-0 z-10 border-b border-border"
+      className="h-14 flex items-center justify-between px-4 sm:px-6 shrink-0 z-10 border-b border-border shadow-sm"
       style={{ background: 'var(--color-panel)' }}
     >
       {/* Left */}
       <div className="flex items-center gap-4">
         {/* Mobile logo */}
         <Link to="/" className="lg:hidden flex items-center gap-2.5 shrink-0">
-            <img src="/logo/logo48.png" alt="Agentra" className="w-7 h-7 rounded-xl" />
-          <span className="font-display font-semibold text-xs text-text-primary tracking-tight">AGENTRA</span>
+          <img src="/logo/logo48.png" alt="Agentra" className="w-7 h-7 rounded-lg shadow-soft" />
+          <span className="font-display font-bold text-sm tracking-wider text-text-primary uppercase">AGENTRA</span>
         </Link>
 
         {/* Network status */}
-        <div className="hidden md:flex items-center gap-2 text-xs font-mono text-text-dim tracking-wide uppercase">
-          <Radio size={10} />
+        <div className="hidden md:flex items-center gap-1.5 text-xs font-mono font-bold text-text-secondary tracking-widest uppercase">
+          <Radio size={12} className="text-primary-dark" />
           {isConnected && chain ? chain.name : 'Disconnected'}
         </div>
 
         {/* Agents live pill */}
         <motion.div
-          animate={{ opacity: [0.6, 1, 0.6] }}
+          animate={{ opacity: [0.7, 1, 0.7] }}
           transition={{ duration: 3, repeat: Infinity }}
-          className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-mono text-text-dim tracking-wide uppercase"
-          style={{ borderColor: '#d9c6b5', background: '#f4ebdf' }}
+          className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-bg-secondary text-xs font-mono font-bold text-text-primary tracking-widest uppercase shadow-soft"
         >
           {statsLoading ? (
-            <Loader2 size={11} className="animate-spin text-primary" />
+            <Loader2 size={12} className="animate-spin text-primary" />
           ) : (
-            <span className="w-1.5 h-1.5 rounded-full bg-success pulse-dot" />
+            <span className="w-1.5 h-1.5 rounded-full bg-success pulse-dot shadow-[0_0_8px_rgba(47,141,99,0.6)]" />
           )}
           {statsLoading ? 'Loading' : `${stats?.activeAgents ?? 0} Online`}
         </motion.div>
@@ -85,29 +84,29 @@ export default function TopBar() {
 
       {/* Right */}
       <div className="flex items-center gap-3">
-        <button className="p-2 rounded-lg text-text-dim hover:text-primary hover:bg-accent-pink transition-colors">
-          <Bell size={15} />
+        <button className="p-2 rounded-lg text-text-secondary hover:text-primary-dark hover:bg-accent-pink transition-all">
+          <Bell size={18} />
         </button>
 
         {isConnected ? (
           <button
             onClick={() => disconnect()}
-            className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-[#d7b4c8] bg-accent-pink text-primary hover:border-[#c99eb8] hover:bg-[#f4d6e6] transition-all cursor-pointer"
+            className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg border border-primary-light bg-accent-pink/50 text-primary-dark hover:border-primary hover:bg-accent-pink transition-all shadow-soft cursor-pointer"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-success pulse-dot" />
-            <span className="text-xs font-mono tracking-tight">
+            <span className="w-1.5 h-1.5 rounded-full bg-success pulse-dot shadow-[0_0_8px_rgba(47,141,99,0.6)]" />
+            <span className="text-xs font-mono font-bold tracking-tight">
               {`${address.slice(0, 6)}...${address.slice(-4)}`}
             </span>
             {tokenBalance !== undefined && (
-              <span className="hidden sm:inline text-xs font-mono text-text-dim">
+              <span className="hidden sm:inline text-xs font-mono font-bold text-text-primary pl-2.5 border-l border-primary/20">
                 {Number(formatUnits(tokenBalance, 18)).toFixed(2)} 0G
               </span>
             )}
-            <ChevronDown size={12} />
+            <ChevronDown size={12} className="text-text-dim" />
           </button>
         ) : (
           <NeonButton size="sm" onClick={() => open()}>
-            Connect Wallet
+            <span className="font-bold tracking-wide text-xs">Connect Wallet</span>
           </NeonButton>
         )}
       </div>

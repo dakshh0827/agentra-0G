@@ -257,7 +257,7 @@ export default function Dashboard() {
               ) : (
                 <div className="glass-card-landing rounded-xl p-10 text-center border-dashed border border-[rgba(52,211,153,0.3)] bg-[rgba(52,211,153,0.02)]">
                   <div className="text-[var(--color-text-dim)] font-mono text-xs  mb-3">NO ON-CHAIN AGENTS PURCHASED</div>
-                  <Link to="/marketplace" className="text-[var(--color-success)] text-xs font-mono hover:underline">EXPLORE MARKETPLACE →</Link>
+                  <Link to="/explorer" className="text-[var(--color-success)] text-xs font-mono hover:underline">EXPLORE REGISTRY →</Link>
                 </div>
               )}
             </div>

@@ -12,8 +12,8 @@ export function getContracts(chainId) {
 const config = {
   contracts: {
     // Fallback to local hardhat addresses; overridden at runtime via CHAIN_CONFIG
-    agentra: deployments['31337']?.Agentra?.address || '',
-    token: deployments['31337']?.AgentToken?.address || '',
+    agentra: deployments['16602']?.Agentra?.address || '',
+    token: deployments['16602']?.AgentToken?.address || '',
   },
 }
 

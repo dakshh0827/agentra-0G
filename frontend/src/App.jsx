@@ -5,7 +5,7 @@ import AppLoader from './components/ui/AppLoader'
 const Layout = lazy(() => import('./components/layouts/Layout'))
 const LandingLayout = lazy(() => import('./components/layouts/LandingLayout'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
-const Marketplace = lazy(() => import('./pages/Marketplace'))
+const Explorer = lazy(() => import('./pages/Explorer')) 
 const AgentDetail = lazy(() => import('./pages/AgentDetail'))
 const DeployStudio = lazy(() => import('./pages/DeployStudio'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -23,7 +23,7 @@ function App() {
 
           {/* App pages with sidebar layout */}
           <Route element={<Layout />}>
-            <Route path="marketplace" element={<Marketplace />} />
+            <Route path="explorer" element={<Explorer />} />
             <Route path="agent/:id" element={<AgentDetail />} />
             <Route path="deploy" element={<DeployStudio />} />
             <Route path="dashboard" element={<Dashboard />} />
@@ -36,5 +36,3 @@ function App() {
 }
 
 export default App
-
-
