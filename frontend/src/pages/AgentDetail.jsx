@@ -18,6 +18,7 @@ import ReviewSection from '../components/ui/ReviewSection'
 import AgentCommsPanel from '../components/ui/AgentcommsPanel'
 import OutputRenderer from '../components/ui/OutputRenderer'
 import { useInteractionStore } from '../stores/interactionStore'
+import RuntimeExecutionForm from '../components/execution/RuntimeExecutionForm'
 import { agentsAPI } from '../api/agents'
 import { CHAIN_CONFIG } from '../config/chains.config'
 import { getAgentExternalId } from '../utils/helpers'
@@ -834,8 +835,10 @@ export default function AgentDetail() {
   const [pendingTx, setPendingTx] = useState(null)
   const pollIntervalRef = useRef(null)
 
-  const accessGrantedForWallet = useRef(null)
+const accessGrantedForWallet = useRef(null)
 
+  // Stage 3: derived executionConfig — null for legacy text-only agents
+  const execConfig = agent?.executionConfig || null
   const ownerWallet = agent?.ownerWallet?.toLowerCase()
   const currentWallet = address?.toLowerCase()
   const isOwner = !!(currentWallet && ownerWallet && currentWallet === ownerWallet)
@@ -970,14 +973,21 @@ const handlePurchaseSuccess = async () => {
   }
 }
 
-  const handleExecute = async () => {
-    if (!task.trim() || !isConnected) return
+const handleExecute = async (opts = {}) => {
+    const activeTask = opts.task ?? task
+    if (!activeTask.trim() || !isConnected) return
     setExecuting(true); setResult(null)
     addLog({ level: 'system', message: `Initiating execution: ${agent.name}` })
-    addLog({ level: 'info', message: `Task: ${task}` })
+    addLog({ level: 'info', message: `Task: ${activeTask}` })
+    if (opts.runtimePayload) {
+      const { headers, body, files, contentType } = opts.runtimePayload
+      addLog({ level: 'info', message: `Schema-driven: ${Object.keys(headers).length} headers, ${Object.keys(body).length} body fields, ${Object.keys(files).length} files, content-type: ${contentType}` })
+    }
     try {
       addLog({ level: 'info', message: 'Routing to agent endpoint...' })
-      const response = await agentsAPI.execute(externalAgentId, task)
+      // Stage 3: payload is prepared but execution engine still uses task text
+      // Future stage will pass full runtimePayload to backend
+      const response = await agentsAPI.execute(externalAgentId, activeTask)
       addLog({ level: 'success', message: 'Agent responded successfully' })
       const data = response.data
       setResult({ output: data.response || data.output || data.result || data || `Task completed.\n\n${new Date().toISOString()}`, latency: data.latency || Math.floor(Math.random() * 500) + 100, success: true })
@@ -1123,20 +1133,41 @@ const handlePurchaseSuccess = async () => {
                               <Terminal size={16} className="text-[var(--color-primary)]" />
                             </div>
                             EXECUTION CONSOLE
+                            {execConfig && (
+                              <span className="ml-2 text-xs font-mono px-2 py-0.5 rounded bg-[rgba(124,58,237,0.1)] border border-[rgba(124,58,237,0.25)] text-[var(--color-primary)]">
+                                DYNAMIC SCHEMA
+                              </span>
+                            )}
                           </h2>
-                          <div className="mb-5">
-                            <label className="text-xs font-mono text-[var(--color-text-dim)]  uppercase block mb-2">TASK INPUT</label>
-                            <textarea value={task} onChange={e => setTask(e.target.value)} placeholder="Describe the task for this agent..." rows={4} className="input-field w-full px-4 py-3 rounded-xl text-sm resize-none" />
-                          </div>
-                          <div className="flex items-center justify-between gap-4">
-                            <div className="text-sm font-mono text-[var(--color-text-dim)]">
-                              STATUS: <span className="text-[var(--color-success)] font-bold text-sm">UNLOCKED</span>
-                              {isOwner && <span className="ml-2 text-[var(--color-primary)]">(OWNER)</span>}
-                            </div>
-                            <NeonButton icon={Send} onClick={handleExecute} loading={isExecuting} disabled={!isConnected || !task.trim()}>
-                              {isConnected ? 'EXECUTE' : 'CONNECT WALLET'}
-                            </NeonButton>
-                          </div>
+
+                          {execConfig ? (
+                            /* Stage 3: Dynamic schema-driven execution UI */
+                            <RuntimeExecutionForm
+                              execConfig={execConfig}
+                              task={task}
+                              onTaskChange={setTask}
+                              onSubmit={handleExecute}
+                              isExecuting={isExecuting}
+                              isConnected={isConnected}
+                            />
+                          ) : (
+                            /* Legacy: text-only task textarea */
+                            <>
+                              <div className="mb-5">
+                                <label className="text-xs font-mono text-[var(--color-text-dim)] uppercase block mb-2">TASK INPUT</label>
+                                <textarea value={task} onChange={e => setTask(e.target.value)} placeholder="Describe the task for this agent..." rows={4} className="input-field w-full px-4 py-3 rounded-xl text-sm resize-none" />
+                              </div>
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="text-sm font-mono text-[var(--color-text-dim)]">
+                                  STATUS: <span className="text-[var(--color-success)] font-bold text-sm">UNLOCKED</span>
+                                  {isOwner && <span className="ml-2 text-[var(--color-primary)]">(OWNER)</span>}
+                                </div>
+                                <NeonButton icon={Send} onClick={handleExecute} loading={isExecuting} disabled={!isConnected || !task.trim()}>
+                                  {isConnected ? 'EXECUTE' : 'CONNECT WALLET'}
+                                </NeonButton>
+                              </div>
+                            </>
+                          )}
                         </motion.div>
                       ) : (
                         <motion.div key="paywall" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
