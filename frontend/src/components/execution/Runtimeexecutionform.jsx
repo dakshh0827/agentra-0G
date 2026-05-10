@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
-import RuntimeFieldRenderer from './RuntimeFieldRenderer'
-import RuntimeHeaderRenderer from './RuntimeHeaderRenderer'
-import RuntimeFileUpload from './RuntimeFileUpload'
-import RuntimeSummaryPanel from './RuntimeSummaryPanel'
+import RuntimeFieldRenderer from './Runtimefieldrenderer'
+import RuntimeHeaderRenderer from './Runtimeheaderrenderer'
+import RuntimeFileUpload from './Runtimefileupload'
+import RuntimeSummaryPanel from './Runtimesummarypanel'
 
 /**
  * Validates runtime form values against executionConfig schema.
