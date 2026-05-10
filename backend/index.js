@@ -120,7 +120,7 @@ const start = async () => {
       contractManager.startAllListeners(prisma)
     }
 
-    startOracleJob()
+    // startOracleJob() // ❌ DISABLED: No more automated price update transactions
     startResolverJob()
 
     app.listen(config.port, () => {
