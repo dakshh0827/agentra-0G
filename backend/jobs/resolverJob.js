@@ -291,10 +291,11 @@ async function runResolverCycle() {
     await contractManager.init()
 
     if (contractManager.isMock) {
-      console.log('[RESOLVER] Mock mode — skipping resolver cycle')
+      console.log('[RESOLVER] ⚠️ Mock mode active — skipping resolver cycle (blockchain not connected)')
       return
     }
 
+    console.log('[RESOLVER] ✅ Live mode — proceeding with resolver cycle')
     const txCounter = await contractManager.getTxCounter()
     if (!txCounter || txCounter === 0n) {
       console.log('[RESOLVER] No transactions on-chain yet')

@@ -74,4 +74,15 @@ const config = {
   },
 }
 
+// Log configuration on load
+console.log('[CONFIG] Configuration loaded:')
+console.log('[CONFIG] Node Environment:', config.nodeEnv)
+console.log('[CONFIG] Port:', config.port)
+console.log('[CONFIG] Blockchain RPC URL:', config.blockchain.rpcUrl || '(not set)')
+console.log('[CONFIG] Agentra Contract Address:', config.blockchain.contracts.agentra || '(not set)')
+console.log('[CONFIG] Has Private Key:', !!config.blockchain.privateKey)
+console.log('[CONFIG] Storage RPC URL:', config.storage.rpcUrl || '(not set)')
+console.log('[CONFIG] Storage Indexer RPC:', config.storage.indexerRpc || '(not set)')
+console.log('[CONFIG] Has Storage Private Key:', !!config.storage.privateKey)
+
 export default config

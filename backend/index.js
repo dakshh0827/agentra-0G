@@ -114,24 +114,41 @@ app.use(errorHandler)
 // ── Start server ───────────────────────────────────────────────
 const start = async () => {
   try {
+    console.log('\n═══════════════════════════════════════════════════════════')
+    console.log('🚀 AGENTRA BACKEND STARTUP')
+    console.log('═══════════════════════════════════════════════════════════')
+    
+    console.log('\n[STARTUP] Initializing contract manager...')
     await contractManager.init()
+    console.log('[STARTUP] Contract manager initialization complete')
+    console.log('[STARTUP] Contract manager mock mode:', contractManager.isMock)
 
     if (!contractManager.isMock) {
+      console.log('[STARTUP] Starting blockchain event listeners...')
       contractManager.startAllListeners(prisma)
+      console.log('[STARTUP] ✅ Blockchain event listeners started')
+    } else {
+      console.log('[STARTUP] ⚠️ Mock mode active - no blockchain event listeners')
     }
 
     // startOracleJob() // ❌ DISABLED: No more automated price update transactions
+    console.log('[STARTUP] Starting resolver job...')
     startResolverJob()
+    console.log('[STARTUP] ✅ Resolver job started')
 
     app.listen(config.port, () => {
-      console.log(`\n🚀 Agentra API running on port ${config.port}`)
+      console.log(`\n═══════════════════════════════════════════════════════════`)
+      console.log(`✅ Agentra API ready on port ${config.port}`)
+      console.log(`═══════════════════════════════════════════════════════════`)
       console.log(`   Environment  : ${config.nodeEnv}`)
       console.log(`   Database     : Prisma / MongoDB`)
-      console.log(`   Blockchain   : ${contractManager.isMock ? 'Mock Mode' : 'Connected'}`)
-      console.log(`   Health       : http://localhost:${config.port}/health\n`)
+      console.log(`   Blockchain   : ${contractManager.isMock ? '🔴 MOCK MODE' : '🟢 LIVE MODE'}`)
+      console.log(`   Health       : http://localhost:${config.port}/health`)
+      console.log(`═══════════════════════════════════════════════════════════\n`)
     })
   } catch (err) {
-    console.error('❌ Startup error:', err)
+    console.error('\n❌ STARTUP ERROR')
+    console.error(err)
     process.exit(1)
   }
 }

@@ -154,40 +154,67 @@ class ContractManager {
   async init() {
     if (this._initialized) return
 
+    console.log('[CONTRACTS] ━━━ INITIALIZATION START ━━━')
+    console.log('[CONTRACTS] Config Blockchain:', {
+      rpcUrl: config.blockchain.rpcUrl || '(empty)',
+      contractAddress: config.blockchain.contracts?.agentra || '(empty)',
+      hasPrivateKey: !!config.blockchain.privateKey
+    })
+
     if (!config.blockchain.rpcUrl) {
-      console.warn('[CONTRACTS] Mock mode enabled — no RPC URL configured')
+      console.warn('[CONTRACTS] ❌ Mock mode enabled — no RPC URL configured')
       this._mockMode = true
       this._initialized = true
       return
     }
 
     try {
+      console.log('[CONTRACTS] Creating JSON RPC Provider:', config.blockchain.rpcUrl)
       this.provider = new ethers.JsonRpcProvider(config.blockchain.rpcUrl)
 
+      // Test provider connection
+      console.log('[CONTRACTS] Testing provider connection...')
+      const network = await this.provider.getNetwork()
+      console.log('[CONTRACTS] ✅ Connected to network:', {
+        chainId: network.chainId,
+        name: network.name
+      })
+
       if (config.blockchain.privateKey) {
+        console.log('[CONTRACTS] Creating signer from private key...')
         this.signer = new ethers.Wallet(config.blockchain.privateKey, this.provider)
-        console.log('[CONTRACTS] Signer:', this.signer.address)
+        console.log('[CONTRACTS] ✅ Signer created:', this.signer.address)
+      } else {
+        console.log('[CONTRACTS] ⚠️ No private key provided, using provider as runner')
       }
 
       const runner = this.signer || this.provider
       const { agentra } = config.blockchain.contracts
 
       if (!agentra) {
-        console.warn('[CONTRACTS] Agentra contract address not configured — mock mode enabled')
+        console.warn('[CONTRACTS] ❌ Agentra contract address not configured — mock mode enabled')
         this._mockMode = true
         this._initialized = true
         return
       }
 
+      console.log('[CONTRACTS] Creating contract instance for:', agentra)
       this.agentra = new ethers.Contract(agentra, AGENTRA_ABI, runner)
+      console.log('[CONTRACTS] ✅ Contract instance created')
 
-      console.log('[CONTRACTS] Agentra:', agentra)
       this._initialized = true
-      console.log('[CONTRACTS] ✅ Initialized')
+      console.log('[CONTRACTS] ✅ INITIALIZATION COMPLETE (LIVE MODE)')
+      console.log('[CONTRACTS] ━━━ INITIALIZATION END ━━━')
     } catch (err) {
-      console.error('[CONTRACTS] Init failed:', err.message)
+      console.error('[CONTRACTS] ❌ INITIALIZATION FAILED')
+      console.error('[CONTRACTS] Error type:', err.constructor.name)
+      console.error('[CONTRACTS] Error message:', err.message)
+      console.error('[CONTRACTS] Error code:', err.code)
+      console.error('[CONTRACTS] Error details:', err)
       this._mockMode = true
       this._initialized = true
+      console.log('[CONTRACTS] ✅ Fallback to MOCK MODE')
+      console.log('[CONTRACTS] ━━━ INITIALIZATION END ━━━')
     }
   }
 
@@ -315,15 +342,33 @@ class ContractManager {
   }
 
   async hasAccess(agentId, user) {
-    if (this._mockMode) return true
+    // In mock mode do NOT grant access by default — safer for production deployments.
+    if (this._mockMode) {
+      console.log('[CONTRACTS] hasAccess() - Mock mode active, denying access', { agentId, user })
+      return false
+    }
 
     try {
+      console.log('[CONTRACTS] hasAccess() - Checking on-chain access', { agentId, user })
       const exp = await this.agentra.accessRegistry(agentId, user)
-      if (!exp) return false
+      if (!exp) {
+        console.log('[CONTRACTS] hasAccess() - No access record found')
+        return false
+      }
       const expNum = Number(exp)
-      if (expNum === Number.MAX_SAFE_INTEGER) return true
-      return expNum > Math.floor(Date.now() / 1000)
-    } catch {
+      const isLifetime = expNum === Number.MAX_SAFE_INTEGER
+      const hasNotExpired = expNum > Math.floor(Date.now() / 1000)
+      console.log('[CONTRACTS] hasAccess() - Access found:', {
+        agentId,
+        user,
+        isLifetime,
+        expiresAt: new Date(expNum * 1000),
+        hasNotExpired
+      })
+      if (isLifetime) return true
+      return hasNotExpired
+    } catch (err) {
+      console.error('[CONTRACTS] hasAccess() - Error checking access:', err.message)
       return false
     }
   }

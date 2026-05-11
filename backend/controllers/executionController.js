@@ -85,6 +85,12 @@ const executeAgent = asyncHandler(async (req, res) => {
 
   // Owner always has access
   if (agent.ownerWallet !== callerWallet) {
+    console.log('[EXECUTION] Access check - Caller is not owner, checking DB and on-chain access', {
+      agentId: agent.agentId,
+      caller: callerWallet,
+      owner: agent.ownerWallet
+    })
+
     const dbAccess = await prisma.agentAccess.findUnique({
       where: {
         agentId_userWallet: {
@@ -98,12 +104,28 @@ const executeAgent = asyncHandler(async (req, res) => {
       dbAccess &&
       (dbAccess.isLifetime || dbAccess.expiresAt > new Date())
 
+    console.log('[EXECUTION] DB access check result:', {
+      agentId: agent.agentId,
+      caller: callerWallet,
+      hasDbAccess,
+      isLifetime: dbAccess?.isLifetime,
+      expiresAt: dbAccess?.expiresAt
+    })
+
     if (!hasDbAccess) {
       if (agent.contractAgentId) {
+        console.log('[EXECUTION] DB access denied, checking on-chain with contract agent ID:', agent.contractAgentId)
         const onChainAccess = await contractManager.hasAccess(
           agent.contractAgentId,
           callerWallet
         )
+
+        console.log('[EXECUTION] On-chain access result:', {
+          agentId: agent.agentId,
+          contractAgentId: agent.contractAgentId,
+          caller: callerWallet,
+          onChainAccess
+        })
 
         if (!onChainAccess) {
           return res.status(403).json({
@@ -111,11 +133,16 @@ const executeAgent = asyncHandler(async (req, res) => {
           })
         }
       } else {
+        console.log('[EXECUTION] No DB access and no contract agent ID - denying access')
         return res.status(403).json({
           error: 'Access not purchased',
         })
       }
+    } else {
+      console.log('[EXECUTION] DB access granted, proceeding')
     }
+  } else {
+    console.log('[EXECUTION] Caller is owner, granting access')
   }
 
   // Attach uploaded files to runtimePayload.files — keyed by field name
