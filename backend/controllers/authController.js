@@ -118,7 +118,6 @@ const getProfile = asyncHandler(async (req, res) => {
         select: {
           agents: true,
           transactions: true,
-          interactions: true,
         },
       },
     },

@@ -168,7 +168,6 @@ class AgentService {
         take: limit,
         include: {
           metrics: true,
-          _count: { select: { interactions: true } },
         },
       }),
       prisma.agent.count({ where }),
@@ -195,7 +194,6 @@ class AgentService {
       where: buildAgentLookup(id),
       include: {
         metrics: true,
-        _count: { select: { interactions: true } },
       },
     })
 

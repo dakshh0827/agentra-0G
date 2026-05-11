@@ -39,7 +39,6 @@ class AnalyticsService {
       take: limit,
       include: {
         metrics: true,
-        _count: { select: { interactions: true } },
       },
     })
   }
@@ -148,7 +147,6 @@ class AnalyticsService {
         : { OR: [{ id: normalized }, { agentId: normalized }] },
       include: {
         metrics: true,
-        _count: { select: { interactions: true } },
       },
     })
 

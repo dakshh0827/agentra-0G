@@ -24,9 +24,6 @@ const getLeaderboard = asyncHandler(async (req, res) => {
     take: limit,
     include: {
       metrics: true,
-      _count: {
-        select: { interactions: true },
-      },
     },
   })
 
