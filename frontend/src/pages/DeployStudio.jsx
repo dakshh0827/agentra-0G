@@ -44,8 +44,8 @@ const CATEGORIES = ['Analysis', 'Development', 'Security', 'Data', 'NLP', 'Web3'
 
 const TIER_OPTIONS = [
   { label: 'STANDARD', tier: 'Standard', tierIndex: 0, listingFee: '0.01 0G', listingFeeUSD: 0.01, desc: '...', suggestedMonthly: '1' },
-  { label: 'PROFESSIONAL', tier: 'Professional', tierIndex: 1, listingFee: '50 0G', listingFeeUSD: 50, desc: '...', suggestedMonthly: '5' },
-  { label: 'ENTERPRISE', tier: 'Enterprise', tierIndex: 2, listingFee: '200 0G', listingFeeUSD: 200, desc: '...', suggestedMonthly: '15' },
+  { label: 'PROFESSIONAL', tier: 'Professional', tierIndex: 1, listingFee: '0.1 0G', listingFeeUSD: 0.1, desc: '...', suggestedMonthly: '5' },
+  { label: 'ENTERPRISE', tier: 'Enterprise', tierIndex: 2, listingFee: '1 0G', listingFeeUSD: 1, desc: '...', suggestedMonthly: '15' },
 ]
 
 const DEPLOY_FUNCTION_BY_TIER = {
