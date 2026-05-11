@@ -11,16 +11,48 @@ const api = axios.create({
   },
 })
 
+function extractWalletFromStorage() {
+  const direct = localStorage.getItem('wallet-address')
+  if (/^0x[a-fA-F0-9]{40}$/.test(direct || '')) {
+    return direct.toLowerCase()
+  }
+
+  try {
+    const authStoreRaw = localStorage.getItem('auth-store')
+    if (authStoreRaw) {
+      const authStore = JSON.parse(authStoreRaw)
+      const authWallet = authStore?.state?.walletAddress
+      if (/^0x[a-fA-F0-9]{40}$/.test(authWallet || '')) {
+        return authWallet.toLowerCase()
+      }
+    }
+  } catch {
+    // Ignore malformed local storage values.
+  }
+
+  try {
+    const wagmiStoreRaw = localStorage.getItem('wagmi.store')
+    if (wagmiStoreRaw) {
+      // wagmi persists a complex serialized state; grab the first address-shaped value.
+      const match = wagmiStoreRaw.match(/0x[a-fA-F0-9]{40}/)
+      if (match?.[0]) {
+        return match[0].toLowerCase()
+      }
+    }
+  } catch {
+    // Ignore malformed local storage values.
+  }
+
+  return null
+}
+
 // ─────────────────────────────────────────────
 // REQUEST INTERCEPTOR (WALLET + AUTH)
 // ─────────────────────────────────────────────
 api.interceptors.request.use((config) => {
-  // Prefer wagmi-connected address stored in localStorage
-  const wallet =
-    localStorage.getItem('wallet-address') ||
-    localStorage.getItem('wagmi.store') // fallback
+  const wallet = extractWalletFromStorage()
 
-  if (wallet && wallet.startsWith('0x')) {
+  if (wallet) {
     config.headers['x-wallet-address'] = wallet
   }
 
