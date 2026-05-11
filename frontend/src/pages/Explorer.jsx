@@ -204,14 +204,14 @@ export default function Explorer() {
                             {agent.description || "No execution schema provided for this node."}
                           </p>
 
-                          {/* Contract Address / Status */}
+                          {/* Deployer Address */}
                           <div className="mb-4 p-2.5 bg-bg-secondary rounded-lg border border-border/50">
                             <div className="flex justify-between items-center mb-1">
-                              <p className="text-[10px] uppercase tracking-wider text-text-dim font-semibold">Contract Hash</p>
+                              <p className="text-[10px] uppercase tracking-wider text-text-dim font-semibold">Deployer</p>
                               <span className="text-[9px] text-primary bg-primary/10 px-1.5 py-0.5 rounded font-mono">0G Network</span>
                             </div>
                             <p className="font-mono text-xs text-text-primary break-all opacity-80">
-                              {agent.contractAddress || agent.deployerAddress || "0xUnverified...DeployPending"}
+                              {agent.deployerAddress || ''}
                             </p>
                           </div>
 
