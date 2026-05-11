@@ -151,12 +151,11 @@ export default function Explorer() {
           {/* MAIN CONTENT AREA */}
           <section className="lg:col-span-9 space-y-6">
             {/* STATS BAR */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {[
                 { icon: Database, label: 'Deployed Contracts', value: stats?.totalAgents ?? list.length },
                 { icon: Activity, label: 'Live Endpoints', value: stats?.activeAgents ?? 0 },
                 { icon: Cpu, label: 'Total Computations', value: stats?.totalCalls ?? 0 },
-                { icon: Shield, label: 'On-Chain Volume', value: stats?.totalRevenue ?? 0 },
               ].map((item) => {
                 const Icon = item.icon
                 return (

@@ -161,21 +161,24 @@ const executeAgent = asyncHandler(async (req, res) => {
 
   const executionTraceId = uuidv4()
 
-  // Start execution asynchronously to avoid blocking the HTTP request
-  orchestrator
-    .executeAgent(agent.agentId, task, callerWallet, {
+  // Wait for full execution response (can take 1-3+ minutes for Hugging Face models)
+  // Only log to console, don't display acceptance message to user
+  console.log('[EXECUTION] Starting agent execution:', { agentId: agent.agentId, executionTraceId, task: task.substring(0, 100) })
+
+  try {
+    const result = await orchestrator.executeAgent(agent.agentId, task, callerWallet, {
       runtimePayload: enrichedPayload,
       executionTraceId,
     })
-    .then((result) => {
-      console.log('[EXECUTION] Background execution completed:', result?.interactionId)
-    })
-    .catch((err) => {
-      console.error('[EXECUTION] Background execution failed:', err.message)
-    })
 
-  // Immediately return accepted so callers don't hit HTTP timeouts
-  res.status(202).json({ status: 'accepted', executionTraceId })
+    console.log('[EXECUTION] Execution completed:', { executionTraceId, interactionId: result?.interactionId, resultKeys: Object.keys(result || {}) })
+
+    // Return the actual response from the agent
+    return res.status(200).json(result)
+  } catch (err) {
+    console.error('[EXECUTION] Execution failed:', { executionTraceId, error: err.message, status: err.status })
+    throw err // Let the error handler catch it
+  }
 })
 
 /**

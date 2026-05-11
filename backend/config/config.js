@@ -59,7 +59,7 @@ const config = {
 
   platform: {
     maxCallDepth: parseInt(process.env.MAX_CALL_DEPTH) || 5,
-    callTimeoutMs: parseInt(process.env.CALL_TIMEOUT_MS) || 30000,
+    callTimeoutMs: parseInt(process.env.CALL_TIMEOUT_MS) || 600000, // 10 minutes for Hugging Face models
     rateLimitWindow: 60 * 1000,
     rateLimitMax: 100,
     executionRateLimitMax: 20,
@@ -67,7 +67,7 @@ const config = {
     leaderboardCronSchedule: '*/5 * * * *',
     healthCheckCronSchedule: '*/2 * * * *',
     // ADD inside platform: { ... }
-    executionTimeoutMs: parseInt(process.env.EXECUTION_TIMEOUT_MS) || 30000,
+    executionTimeoutMs: parseInt(process.env.EXECUTION_TIMEOUT_MS) || 600000, // 10 minutes for Hugging Face models
     maxPayloadSizeBytes: parseInt(process.env.MAX_PAYLOAD_BYTES) || 5 * 1024 * 1024,
     maxUploadSizeBytes: parseInt(process.env.MAX_UPLOAD_BYTES) || 10 * 1024 * 1024,
     maxRetries: parseInt(process.env.EXECUTION_MAX_RETRIES) || 2,

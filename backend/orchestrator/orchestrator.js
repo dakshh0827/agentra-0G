@@ -21,6 +21,13 @@ async executeAgent(agentId, task, callerWallet, options = {}) {
     executionTraceId = uuidv4(),
   } = options
 
+  console.log('[ORCHESTRATOR] ▶️  Starting agent execution:', {
+    executionTraceId,
+    agentId,
+    callDepth,
+    taskLength: task?.length || 0,
+  })
+
   if (callDepth > config.platform.maxCallDepth) {
     throw Object.assign(
       new Error(`Max call depth (${config.platform.maxCallDepth}) exceeded`),
@@ -167,8 +174,73 @@ async executeAgent(agentId, task, callerWallet, options = {}) {
     result = axiosResult
     retryCount = rc
 
-    response = result.data
+    // Normalize headers and content
+    const resHeaders = result.headers || {}
+    const contentType = (resHeaders['content-type'] || '').toLowerCase()
+    let extracted
+
+    // If the response is binary (ArrayBuffer / Buffer), convert to base64
+    try {
+      const raw = result.data
+
+      // Detect Buffer/ArrayBuffer
+      const isArrayBuffer = raw && (raw instanceof ArrayBuffer || raw.buffer instanceof ArrayBuffer)
+      const isBuffer = Buffer.isBuffer(raw)
+
+      if (isArrayBuffer || isBuffer) {
+        const buffer = Buffer.from(raw)
+
+        if (contentType.includes('application/json') || contentType.startsWith('text/')) {
+          // Decode as text
+          const text = buffer.toString('utf8')
+          try {
+            extracted = JSON.parse(text)
+          } catch {
+            extracted = text
+          }
+        } else {
+          // Binary payload — return base64 with metadata
+          const cd = resHeaders['content-disposition'] || ''
+          const match = cd.match(/filename\*=UTF-8''([^;]+)|filename="?([^;\"]+)"?/) || []
+          const filename = (match[1] || match[2] || '').replace(/"/g, '') || 'output.bin'
+          extracted = {
+            isBinary: true,
+            filename,
+            mimeType: contentType || 'application/octet-stream',
+            base64: buffer.toString('base64'),
+            size: buffer.length,
+          }
+        }
+      } else {
+        // Non-binary: try to parse JSON, otherwise use as-is
+        if (typeof raw === 'string') {
+          try {
+            extracted = JSON.parse(raw)
+          } catch {
+            extracted = raw
+          }
+        } else {
+          extracted = raw
+        }
+      }
+    } catch (procErr) {
+      console.warn('[ORCHESTRATOR] Response processing failed:', procErr.message)
+      extracted = result.data ?? {}
+    }
+
+    console.log('[ORCHESTRATOR] Raw response received:', {
+      status: result.status,
+      hasData: !!result.data,
+      dataType: ArrayBuffer.isView(result.data) ? 'arraybuffer' : typeof result.data,
+    })
+
+    response = extracted
     success = true
+
+    console.log('[ORCHESTRATOR] Response extracted for return:', {
+      responseType: typeof response,
+      responsePreview: typeof response === 'string' ? response.substring(0, 100) : (response && response.isBinary ? `${response.filename} (${response.size} bytes)` : JSON.stringify(response).slice(0, 100)),
+    })
   } catch (err) {
     if (interactionRecord) {
       await prisma.interaction.update({
@@ -215,6 +287,11 @@ async executeAgent(agentId, task, callerWallet, options = {}) {
         latency,
         status: 'success',
       },
+    })
+    console.log('[ORCHESTRATOR] ✅ Interaction recorded:', {
+      interactionId: interactionRecord.id,
+      latency,
+      responsePreview: typeof response === 'string' ? response.substring(0, 100) : JSON.stringify(response).substring(0, 100),
     })
   }
 
@@ -266,7 +343,7 @@ async executeAgent(agentId, task, callerWallet, options = {}) {
     this.activeChains.delete(callChainId)
   }
 
-  return {
+  const returnObj = {
     interactionId: interactionRecord?.id,
     agentId: agent.agentId,
     agentName: agent.name,
@@ -277,6 +354,16 @@ async executeAgent(agentId, task, callerWallet, options = {}) {
     callDepth,
     timestamp: new Date().toISOString(),
   }
+
+  console.log('[ORCHESTRATOR] ✅ Returning execution result:', {
+    executionTraceId,
+    interactionId: returnObj.interactionId,
+    latency: returnObj.latency,
+    hasResponse: !!returnObj.response,
+    responseType: typeof returnObj.response,
+  })
+
+  return returnObj
 }
 
   async agentToAgentCall(fromAgentId, toAgentId, task, parentOptions = {}) {
@@ -316,6 +403,7 @@ async _callAgentEndpoint(endpoint, task, meta = {}, executionConfig = null, runt
         headers: reqConfig.headers,
         data: reqConfig.data,
         timeout,
+        responseType: 'arraybuffer',
         maxRedirects: 0,
         maxContentLength: 50 * 1024 * 1024,
       })
@@ -328,6 +416,7 @@ async _callAgentEndpoint(endpoint, task, meta = {}, executionConfig = null, runt
           headers: reqConfig.headers,
           data: reqConfig.data,
           timeout,
+          responseType: 'arraybuffer',
           maxRedirects: 0,
           maxContentLength: 50 * 1024 * 1024,
         })
@@ -363,15 +452,22 @@ async _callAgentEndpoint(endpoint, task, meta = {}, executionConfig = null, runt
   ]
 
   let lastError = null
+  let attemptNum = 0
 
   for (const attempt of attempts) {
+    attemptNum++
     try {
-      return await axios.post(attempt.url, attempt.payload, {
+      console.log(`[ORCHESTRATOR] Attempt ${attemptNum}/${attempts.length}: POST ${attempt.url}`)
+      const response = await axios.post(attempt.url, attempt.payload, {
         timeout,
+        responseType: 'arraybuffer',
         maxRedirects: 0,
         headers: { 'Content-Type': 'application/json' },
       })
+      console.log(`[ORCHESTRATOR] ✅ Attempt ${attemptNum} succeeded with status ${response.status}`)
+      return response
     } catch (err) {
+      console.log(`[ORCHESTRATOR] ❌ Attempt ${attemptNum} failed: ${err.message}`)
       lastError = err
     }
   }

@@ -1047,7 +1047,24 @@ console.log('========================================\n')
       }
       addLog({ level: 'success', message: 'Agent responded successfully' })
       const data = response.data
-      setResult({ output: data.response || data.output || data.result || data || `Task completed.\n\n${new Date().toISOString()}`, latency: data.latency || Math.floor(Math.random() * 500) + 100, success: true })
+
+      // If backend returned binary data metadata, prepare downloadable blob URL
+      if (data?.response && data.response.isBinary) {
+        try {
+          const b64 = data.response.base64
+          const byteChars = atob(b64)
+          const byteNumbers = new Array(byteChars.length)
+          for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i)
+          const byteArray = new Uint8Array(byteNumbers)
+          const blob = new Blob([byteArray], { type: data.response.mimeType || 'application/octet-stream' })
+          const url = URL.createObjectURL(blob)
+          setResult({ output: `Binary file ready: ${data.response.filename}`, latency: data.latency || 0, success: true, download: { url, filename: data.response.filename } })
+        } catch (e) {
+          setResult({ output: `Received binary response (failed to create download): ${e.message}`, latency: data.latency || 0, success: true })
+        }
+      } else {
+        setResult({ output: data.response || data.output || data.result || data || `Task completed.\n\n${new Date().toISOString()}`, latency: data.latency || Math.floor(Math.random() * 500) + 100, success: true })
+      }
     } catch (error) {
       const errData = error?.response?.data
       const errMsg = errData?.error || errData?.message || error.message
@@ -1083,7 +1100,7 @@ console.log('========================================\n')
       <div className="glass-card-landing rounded-2xl p-10 text-center">
         <Zap size={40} className="mx-auto mb-4 text-[var(--color-primary)] opacity-40" />
         <div className="text-[var(--color-text-muted)] text-lg font-display font-bold mb-2">AGENT NOT FOUND</div>
-        <Link to="/marketplace" className="text-[var(--color-primary)] text-xs font-mono hover:underline">← BACK TO MARKETPLACE</Link>
+        <Link to="/explorer" className="text-[var(--color-primary)] text-xs font-mono hover:underline">← BACK TO EXPLORER</Link>
       </div>
     </div>
   )
@@ -1101,10 +1118,10 @@ console.log('========================================\n')
       <div className="fixed top-20 right-10 w-[500px] h-[400px] rounded-full pointer-events-none opacity-25 bg-[var(--color-bg-secondary)]" />
 
       <div className="relative z-10 p-5 lg:p-8 max-w-7xl mx-auto">
-        <Link to="/marketplace">
+        <Link to="/explorer">
           <motion.div whileHover={{ x: -4 }} className="inline-flex items-center gap-2 text-[var(--color-text-dim)] hover:text-[var(--color-primary)] text-[11px] font-mono  mb-6 transition-colors cursor-pointer group">
             <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
-            BACK TO MARKETPLACE
+            BACK TO EXPLORER
           </motion.div>
         </Link>
 
@@ -1341,6 +1358,13 @@ console.log('========================================\n')
                   transition={{ duration: 0.4, ease: 'easeOut' }}
                   className="space-y-5"
                 >
+                  {/* Downloadable binary (if present) */}
+                  {executionResult.download && (
+                    <div className="mb-3">
+                      <a href={executionResult.download.url} download={executionResult.download.filename} className="inline-block px-4 py-2 rounded bg-[var(--color-primary)] text-white text-sm">Download {executionResult.download.filename}</a>
+                    </div>
+                  )}
+
                   {/* Readable Output — full width */}
                   <ReadableOutput response={executionResult.output} success={executionResult.success} />
 
