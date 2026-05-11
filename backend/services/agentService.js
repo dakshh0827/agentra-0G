@@ -1,6 +1,7 @@
 import prisma from '../lib/prisma.js'
 import { v4 as uuidv4 } from 'uuid'
 import axios from 'axios'
+import config from '../config/config.js'
 
 function prismaSupportsAgentField(fieldName) {
   const model = prisma?._runtimeDataModel?.models?.Agent
@@ -173,8 +174,15 @@ class AgentService {
       prisma.agent.count({ where }),
     ])
 
+    // Attach helpful display fields so frontend can show contract/deployer info
+    const enriched = agents.map((a) => ({
+      ...a,
+      contractAddress: a.contractAgentId ? config.blockchain.contracts.agentra || null : null,
+      deployerAddress: a.ownerWallet || null,
+    }))
+
     return {
-      agents,
+      agents: enriched,
       total,
       page,
       pages: Math.ceil(total / limit),
@@ -192,7 +200,12 @@ class AgentService {
     })
 
     if (!agent) throw Object.assign(new Error('Agent not found'), { status: 404 })
-    return agent
+    // Add contractAddress + deployerAddress for single agent responses
+    return {
+      ...agent,
+      contractAddress: agent.contractAgentId ? config.blockchain.contracts.agentra || null : null,
+      deployerAddress: agent.ownerWallet || null,
+    }
   }
 
   async updateAgent(id, updates, wallet) {
