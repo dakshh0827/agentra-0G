@@ -206,7 +206,7 @@ class BlockchainService {
           update: {},
           create: {
             txHash: `${event.log.transactionHash}:${txId.toString()}`,
-            type: txType === 0 ? 'purchase_access' : 'comms',
+            type: txType === 0 ? 'purchase_access' : 'agent_to_agent',
             status: 'pending',
             agentId: agent ? agent.agentId : null,
             callerWallet: user,
@@ -269,11 +269,11 @@ class BlockchainService {
       try {
         await prisma.transaction.upsert({
           where: { txHash: `${event.log.transactionHash}:${txId.toString()}` },
-          update: { status: 'refunded' },
+          update: { status: 'failed' },
           create: {
             txHash: `${event.log.transactionHash}:${txId.toString()}`,
-            type: 'refund',
-            status: 'refunded',
+            type: 'purchase_access',
+            status: 'failed',
             agentId: null,
             callerWallet: user,
             ownerWallet: null,

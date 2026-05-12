@@ -837,6 +837,39 @@ export default function AgentDetail() {
 
 const accessGrantedForWallet = useRef(null)
 
+  const getAccessCacheKey = useCallback((agentData, walletAddr) => {
+    const agentKey = getAgentExternalId(agentData)
+    const walletKey = String(walletAddr || '').toLowerCase()
+    if (!agentKey || !walletKey) return null
+    return `agent-access:${agentKey}:${walletKey}`
+  }, [])
+
+  const readCachedAccess = useCallback((agentData, walletAddr) => {
+    const cacheKey = getAccessCacheKey(agentData, walletAddr)
+    if (!cacheKey) return false
+
+    try {
+      return localStorage.getItem(cacheKey) === '1'
+    } catch {
+      return false
+    }
+  }, [getAccessCacheKey])
+
+  const writeCachedAccess = useCallback((agentData, walletAddr, granted) => {
+    const cacheKey = getAccessCacheKey(agentData, walletAddr)
+    if (!cacheKey) return
+
+    try {
+      if (granted) {
+        localStorage.setItem(cacheKey, '1')
+      } else {
+        localStorage.removeItem(cacheKey)
+      }
+    } catch {
+      // Ignore storage failures.
+    }
+  }, [getAccessCacheKey])
+
   // Stage 3: derived executionConfig — null for legacy text-only agents
   const execConfig = agent?.executionConfig || null
   const ownerWallet = agent?.ownerWallet?.toLowerCase()
@@ -861,17 +894,25 @@ const accessGrantedForWallet = useRef(null)
   }
 
   const checkAccess = useCallback(async (agentData, walletAddr) => {
-    setHasValidAccess(false)
-    accessGrantedForWallet.current = null
-
     if (!agentData || !walletAddr) return
 
     const normalized = walletAddr.toLowerCase()
+    const cachedAccess = readCachedAccess(agentData, normalized)
 
     if (agentData.ownerWallet?.toLowerCase() === normalized) {
       setHasValidAccess(true)
       accessGrantedForWallet.current = normalized
+      writeCachedAccess(agentData, normalized, true)
       return
+    }
+
+    // Restore immediately from local cache to prevent relock flicker after wallet reconnect.
+    if (cachedAccess) {
+      setHasValidAccess(true)
+      accessGrantedForWallet.current = normalized
+    } else {
+      setHasValidAccess(false)
+      accessGrantedForWallet.current = null
     }
 
     setAccessLoading(true)
@@ -882,14 +923,18 @@ const accessGrantedForWallet = useRef(null)
       if (stillSameWallet) {
         setHasValidAccess(granted)
         accessGrantedForWallet.current = granted ? normalized : null
+        writeCachedAccess(agentData, normalized, granted)
       }
     } catch {
-      setHasValidAccess(false)
-      accessGrantedForWallet.current = null
+      // Preserve cached access until a successful re-check can happen.
+      if (!cachedAccess) {
+        setHasValidAccess(false)
+        accessGrantedForWallet.current = null
+      }
     } finally {
       setAccessLoading(false)
     }
-  }, [address])
+  }, [address, readCachedAccess, writeCachedAccess])
 
   const checkPendingTx = useCallback(async (agentData) => {
   if (!address || !agentData) return
@@ -936,27 +981,20 @@ const startAccessPolling = useCallback((agentData) => {
     fetchAgentDetails()
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-useEffect(() => {
-  if (agent) {
-    checkAccess(agent, address || null)
-    if (address) checkPendingTx(agent)
-  }
-}, [agent])
-
   useEffect(() => {
-  if (!agent) return
+    if (!agent) return
 
-  // Only reset if NO pending transaction
-  if (!pendingTx) {
-    setHasValidAccess(false)
-    accessGrantedForWallet.current = null
-  }
+    const wallet = address || null
 
-  if (address) {
-    checkAccess(agent, address)
+    if (!wallet) {
+      setHasValidAccess(false)
+      accessGrantedForWallet.current = null
+      return
+    }
+
+    checkAccess(agent, wallet)
     checkPendingTx(agent)
-  }
-}, [address]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [agent, address, checkAccess, checkPendingTx])
 
   useEffect(() => {
   return () => {
@@ -968,6 +1006,7 @@ const handlePurchaseSuccess = async () => {
   showToast('Purchase submitted! Awaiting resolver confirmation...', 'success')
 
   if (agent && address) {
+    writeCachedAccess(agent, address, true)
     await checkPendingTx(agent)
     startAccessPolling(agent)
   }
