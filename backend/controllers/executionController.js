@@ -108,7 +108,6 @@ const executeAgent = asyncHandler(async (req, res) => {
     console.log('[EXECUTION] DB access check result:', {
       agentId: agent.agentId,
       caller: callerWallet,
-    return hasPersistentAgentAccess(agent, callerWallet)
       hasDbAccess,
       isLifetime: dbAccess?.isLifetime,
       expiresAt: dbAccess?.expiresAt
