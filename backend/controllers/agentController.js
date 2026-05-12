@@ -3,6 +3,7 @@ import prisma from '../lib/prisma.js'
 import contractManager from '../lib/contractManager.js'
 import config from '../config/config.js'
 import { uploadAgentMetadata } from '../services/storageService.js'
+import { getAgentAccessState, recordAgentPurchase } from '../services/accessService.js'
 import { asyncHandler } from '../middlewares/errorHandler.js'
 import { ethers } from 'ethers'
 import { z } from 'zod'
@@ -410,6 +411,14 @@ const purchaseAccess = asyncHandler(async (req, res) => {
     },
   })
 
+  await recordAgentPurchase({
+    agent,
+    walletAddress: req.walletAddress,
+    txHash,
+    isLifetime: isLifetime || false,
+    expiresAt,
+  })
+
   // ✅ Record as PENDING (escrow not resolved yet)
   await prisma.transaction.upsert({
     where: { txHash },
@@ -526,26 +535,10 @@ const checkAccess = asyncHandler(async (req, res) => {
   const agent = await prisma.agent.findFirst({ where: buildAgentLookup(agentId) })
   if (!agent) return res.status(404).json({ error: 'Agent not found' })
 
-  // Owner always has access
-  if (agent.ownerWallet === walletAddress) {
-    return res.json({ hasAccess: true, reason: 'owner' })
-  }
+  const accessState = await getAgentAccessState(agent, walletAddress)
 
-  // Check DB access record
-  const access = await prisma.agentAccess.findUnique({
-    where: { agentId_userWallet: { agentId: agent.agentId, userWallet: walletAddress } },
-  })
-
-  if (access && (access.isLifetime || access.expiresAt > new Date())) {
-    return res.json({ hasAccess: true, reason: 'purchased', expiresAt: access.expiresAt })
-  }
-
-  // For blockchain agents, also check on-chain
-  if (agent.contractAgentId) {
-    const onChainAccess = await contractManager.hasAccess(agent.contractAgentId, walletAddress)
-    if (onChainAccess) {
-      return res.json({ hasAccess: true, reason: 'on-chain' })
-    }
+  if (accessState.hasAccess) {
+    return res.json({ hasAccess: true, reason: accessState.reason, expiresAt: accessState.access?.expiresAt || accessState.purchase?.expiresAt || null })
   }
 
   res.json({ hasAccess: false })

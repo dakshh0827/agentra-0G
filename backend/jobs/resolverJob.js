@@ -3,6 +3,7 @@ import axios from 'axios'
 import prisma from '../lib/prisma.js'
 import contractManager from '../lib/contractManager.js'
 import config from '../config/config.js'
+import { recordAgentPurchase } from '../services/accessService.js'
 
 let isRunning = false
 
@@ -127,6 +128,14 @@ async function grantAgentAccess(txId) {
         expiresAt,
         isLifetime: false,
       },
+    })
+
+    await recordAgentPurchase({
+      agent,
+      walletAddress: userWallet,
+      txHash: `${txId.toString()}`,
+      isLifetime: false,
+      expiresAt,
     })
 
     console.log(`[RESOLVER] ✅ Access granted: agent=${agent.agentId}, user=${userWallet}, expires=${expiresAt.toISOString()}`)

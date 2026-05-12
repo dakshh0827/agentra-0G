@@ -2,6 +2,7 @@ import { z } from 'zod'
 import prisma from '../lib/prisma.js'
 import orchestrator from '../orchestrator/orchestrator.js'
 import contractManager from '../lib/contractManager.js'
+import { hasPersistentAgentAccess } from '../services/accessService.js'
 import { asyncHandler } from '../middlewares/errorHandler.js'
 
 const callAgentSchema = z.object({
@@ -60,24 +61,7 @@ async function _resolveTargetAgent(targetAgentName, targetAgentId) {
 }
 
 async function _checkAccessToSourceAgent(agent, callerWallet) {
-  if (agent.ownerWallet === callerWallet) return true
-
-  const dbAccess = await prisma.agentAccess.findUnique({
-    where: {
-      agentId_userWallet: {
-        agentId: agent.agentId,
-        userWallet: callerWallet,
-      },
-    },
-  })
-
-  if (dbAccess && (dbAccess.isLifetime || dbAccess.expiresAt > new Date())) return true
-
-  if (agent.contractAgentId) {
-    return contractManager.hasAccess(agent.contractAgentId, callerWallet)
-  }
-
-  return false
+  return hasPersistentAgentAccess(agent, callerWallet)
 }
 
 async function _discoverTargetAgent(task, excludeAgentId) {

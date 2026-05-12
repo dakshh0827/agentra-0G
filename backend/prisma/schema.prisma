@@ -73,6 +73,7 @@ model User {
   transactions  Transaction[]
   interactions  Interaction[]
   accesses      AgentAccess[]
+  purchases     AgentPurchase[]
   upvotes       AgentUpvote[]
   reviews       Review[]
   reviewLikes   ReviewLike[]
@@ -127,6 +128,7 @@ model Agent {
   updatedAt       DateTime      @updatedAt
 
   accesses        AgentAccess[]
+  purchases       AgentPurchase[]
   transactions    Transaction[]
   interactions    Interaction[]
   metrics         UsageMetrics?
@@ -214,6 +216,31 @@ model AgentAccess {
   user        User     @relation(fields: [userWallet], references: [walletAddress])
 
   createdAt   DateTime @default(now())
+
+  @@unique([agentId, userWallet])
+  @@index([agentId])
+  @@index([userWallet])
+}
+
+//////////////////////////////////////////////////
+// PERMANENT PURCHASE HISTORY
+//////////////////////////////////////////////////
+
+model AgentPurchase {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  agentId      String
+  userWallet   String
+
+  txHash       String?
+  isLifetime   Boolean  @default(false)
+  expiresAt    DateTime?
+
+  agent        Agent    @relation(fields: [agentId], references: [agentId])
+  user         User     @relation(fields: [userWallet], references: [walletAddress])
+
+  purchasedAt  DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([agentId, userWallet])
   @@index([agentId])

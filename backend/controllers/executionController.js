@@ -1,6 +1,7 @@
 import orchestrator from '../orchestrator/orchestrator.js'
 import prisma from '../lib/prisma.js'
 import contractManager from '../lib/contractManager.js'
+import { hasPersistentAgentAccess } from '../services/accessService.js'
 import config from '../config/config.js'
 import { asyncHandler } from '../middlewares/errorHandler.js'
 import { z } from 'zod'
@@ -107,6 +108,7 @@ const executeAgent = asyncHandler(async (req, res) => {
     console.log('[EXECUTION] DB access check result:', {
       agentId: agent.agentId,
       caller: callerWallet,
+    return hasPersistentAgentAccess(agent, callerWallet)
       hasDbAccess,
       isLifetime: dbAccess?.isLifetime,
       expiresAt: dbAccess?.expiresAt
@@ -279,24 +281,7 @@ const composeAgents = asyncHandler(async (req, res) => {
 
 // Internal helper
 async function _checkAgentAccess(agent, callerWallet) {
-  if (agent.ownerWallet === callerWallet) return true
-
-  const dbAccess = await prisma.agentAccess.findUnique({
-    where: {
-      agentId_userWallet: {
-        agentId: agent.agentId,
-        userWallet: callerWallet,
-      },
-    },
-  })
-
-  if (dbAccess && (dbAccess.isLifetime || dbAccess.expiresAt > new Date())) return true
-
-  if (agent.contractAgentId) {
-    return contractManager.hasAccess(agent.contractAgentId, callerWallet)
-  }
-
-  return false
+  return hasPersistentAgentAccess(agent, callerWallet)
 }
 
 /**

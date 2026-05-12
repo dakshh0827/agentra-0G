@@ -1,6 +1,7 @@
 import { ethers } from 'ethers'
 import prisma from '../lib/prisma.js'
 import config from '../config/config.js'
+import { recordAgentPurchase } from './accessService.js'
 
 // ─────────────────────────────────────────────
 // ABIs
@@ -248,6 +249,14 @@ class BlockchainService {
             where: { agentId_userWallet: { agentId: agent.agentId, userWallet: user } },
             update: { expiresAt, isLifetime: false, txHash: `${event.log.transactionHash}:${txId.toString()}` },
             create: { agentId: agent.agentId, userWallet: user, expiresAt, isLifetime: false, txHash: `${event.log.transactionHash}:${txId.toString()}` },
+          })
+
+          await recordAgentPurchase({
+            agent,
+            walletAddress: user,
+            txHash: `${event.log.transactionHash}:${txId.toString()}`,
+            isLifetime: false,
+            expiresAt,
           })
         }
       } catch (err) {
