@@ -334,9 +334,10 @@ async function runResolverCycle() {
           await resolveAccessTx(txId, pTx)
           resolved++
         } else if (txType === 1) {
-          // Comms transaction
-          await resolveCommsTx(txId, pTx)
-          resolved++
+          // Comms transaction: resolver job will skip resolving comms transactions
+          // (agent-to-agent comms are handled synchronously at call time)
+          console.log(`[RESOLVER] Skipping comms txId=${txId} (resolver no-op for comms)`) 
+          skipped++
         } else {
           console.warn(`[RESOLVER] Unknown txType=${txType} for txId=${txId}`)
           skipped++
