@@ -385,6 +385,15 @@ async _callAgentEndpoint(endpoint, task, meta = {}, executionConfig = null, runt
   const { assertSafeUrl } = await import('../utils/ssrfGuard.js')
   await assertSafeUrl(baseEndpoint)
 
+  // Targeted MCP transport for the Sect8 agent only.
+  if (runtimePayload !== null) {
+    const { isSect8McpEndpoint, callSect8McpAgent } = await import('../utils/sect8McpClient.js')
+
+    if (isSect8McpEndpoint(baseEndpoint)) {
+      return callSect8McpAgent(baseEndpoint, task, runtimePayload, timeout)
+    }
+  }
+
   // Schema-driven execution when executionConfig exists
   if (executionConfig && runtimePayload !== null) {
     const { buildExecutionRequest } = await import('../utils/buildExecutionRequest.js')

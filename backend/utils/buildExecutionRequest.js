@@ -87,6 +87,7 @@ export function buildExecutionRequest(endpoint, executionConfig, runtimePayload,
     // Default: JSON
     data = runtimeBody
     requestHeaders['Content-Type'] = 'application/json'
+    requestHeaders['Accept'] = 'application/json, text/event-stream'
   }
 
   const baseEndpoint = String(endpoint || '').trim().replace(/\/+$/, '')
