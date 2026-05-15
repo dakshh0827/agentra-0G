@@ -229,6 +229,7 @@ async function resolveCommsTx(txId, pTx) {
           }).then(agents => agents.map(a => a.agentId)),
         },
         status: 'success',
+        response: { not: null },
         createdAt: { gte: new Date(Number(pTx.timestamp) * 1000 - 5 * 60 * 1000) },
       },
       orderBy: { createdAt: 'desc' },

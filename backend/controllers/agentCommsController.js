@@ -298,7 +298,6 @@ const callAgent = asyncHandler(async (req, res) => {
       toAgentId: targetAgent.agentId,
       callerWallet,
       task,
-      status: 'pending',
       priceWei: priceWei.toString(),
       platformFeeWei: platformFeeWei.toString(),
       creatorAmountWei: creatorAmountWei.toString(),
