@@ -228,8 +228,9 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
   const { writeContractAsync } = useWriteContract()
   const [tab, setTab] = useState('call') // 'call' | 'history'
   const [mode, setMode] = useState('manual') // 'manual' | 'discover'
-  const [targetId, setTargetId] = useState('')
   const [task, setTask] = useState('')
+  const [manualAgents, setManualAgents] = useState([])
+  const [manualAgentsLoading, setManualAgentsLoading] = useState(false)
   const [discoveryResults, setDiscoveryResults] = useState([])
   const [selectedAgent, setSelectedAgent] = useState(null)
   const [selectedAgentLoading, setSelectedAgentLoading] = useState(false)
@@ -247,6 +248,37 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
     setOwnerCommsEnabled(commsEnabled)
     setOwnerCommsPrice(formatWeiToAgt(commsPricePerCall || '0'))
   }, [commsEnabled, commsPricePerCall])
+
+  useEffect(() => {
+    if (mode !== 'manual') return
+
+    let cancelled = false
+
+    const loadManualAgents = async () => {
+      setManualAgentsLoading(true)
+      try {
+        const res = await agentsAPI.getAll({ limit: 100, status: 'all', sortBy: 'newest' })
+        const agents = (res.data?.agents || res.data || []).filter((agent) => agent.agentId !== agentId)
+        if (!cancelled) {
+          setManualAgents(agents)
+        }
+      } catch {
+        if (!cancelled) {
+          setManualAgents([])
+        }
+      } finally {
+        if (!cancelled) {
+          setManualAgentsLoading(false)
+        }
+      }
+    }
+
+    loadManualAgents()
+
+    return () => {
+      cancelled = true
+    }
+  }, [mode, agentId])
 
   const handleSaveCommsConfig = async () => {
     if (savingConfig) return
@@ -296,7 +328,6 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
     try {
       const res = await agentsAPI.getById(target.agentId)
       setSelectedAgent(res.data)
-      setTargetId(res.data.name || target.agentId)
       setDiscoveryResults([])
     } catch (e) {
       setError(e?.response?.data?.error || 'Failed to load target agent details')
@@ -307,24 +338,7 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
   }
 
   const handleLoadManualTarget = async () => {
-    const value = targetId.trim()
-    if (!value) {
-      setError('Enter a target agent name or ID first')
-      return
-    }
-    setSelectedAgentLoading(true)
-    setError(null)
-    try {
-      const res = await agentsAPI.getById(value)
-      setSelectedAgent(res.data)
-      setTargetId(res.data.name || value)
-      setDiscoveryResults([])
-    } catch (e) {
-      setSelectedAgent(null)
-      setError(e?.response?.data?.error || 'Target agent not found')
-    } finally {
-      setSelectedAgentLoading(false)
-    }
+    return null
   }
 
   const handleCall = async ({ task: runtimeTask, runtimePayload }) => {
@@ -338,10 +352,6 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
     const contracts = chain?.id ? CHAIN_CONFIG[chain.id]?.contracts : null
 
     let target = selectedAgent
-    if (!target?.name && mode === 'manual') {
-      await handleLoadManualTarget()
-      target = selectedAgent
-    }
     if (!target?.name && mode === 'discover') {
       const discovery = await agentsAPI.discoverForComms(activeTask, agentId)
       const first = discovery.data?.agents?.[0]
@@ -543,21 +553,35 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
               {/* Manual: target agent ID input */}
               {mode === 'manual' && (
                 <div className="space-y-3 mb-4">
-                  <input
-                    type="text"
-                    value={targetId}
-                    onChange={e => setTargetId(e.target.value)}
-                    placeholder="Target Agent Name (exact match)"
-                    className="input-field w-full px-4 py-3 rounded-xl text-sm font-mono"
-                  />
-                  <button
-                    onClick={handleLoadManualTarget}
-                    disabled={selectedAgentLoading || !targetId.trim()}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-primary-dark bg-[rgba(124,58,237,0.06)] text-primary font-semibold text-sm disabled:opacity-40 hover:bg-[rgba(124,58,237,0.12)] transition-all cursor-pointer"
-                  >
-                    {selectedAgentLoading ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />}
-                    LOAD TARGET DETAILS
-                  </button>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-xs font-mono text-text-dim uppercase">Choose a target agent</div>
+                    {manualAgentsLoading && (
+                      <div className="flex items-center gap-2 text-xs font-mono text-text-dim">
+                        <Loader2 size={12} className="animate-spin" /> Loading agents...
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {manualAgents.map(agent => (
+                      <DiscoveryResult
+                        key={agent.agentId}
+                        agent={agent}
+                        selected={selectedAgent}
+                        onSelect={(picked) => {
+                          setSelectedAgent(picked)
+                          setDiscoveryResults([])
+                          setError(null)
+                          setResult(null)
+                        }}
+                      />
+                    ))}
+                    {!manualAgentsLoading && manualAgents.length === 0 && (
+                      <div className="text-xs font-mono text-text-dim p-3 rounded-lg border border-border bg-bg-secondary">
+                        No other agents found.
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -577,7 +601,7 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
                       <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[rgba(52,211,153,0.08)] border border-[rgba(52,211,153,0.25)] text-success font-semibold text-base">
                         <CheckCircle size={13} />
                         {selectedAgent.name}
-                        <button onClick={() => { setSelectedAgent(null); setTargetId('') }} className="ml-1 opacity-50 hover:opacity-100 cursor-pointer">×</button>
+                        <button onClick={() => { setSelectedAgent(null) }} className="ml-1 opacity-50 hover:opacity-100 cursor-pointer">×</button>
                       </div>
                     )}
                   </div>
