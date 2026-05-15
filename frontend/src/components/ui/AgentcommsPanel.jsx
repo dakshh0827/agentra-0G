@@ -392,6 +392,7 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
 
       const buffered = requiredWei + (requiredWei * 2n) / 100n
 
+      setCommsPending(true)
       const commsTx = await writeContractAsync({
         address: contracts.Agentra.address,
         abi: contracts.Agentra.abi,
@@ -402,7 +403,7 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
       txHash = commsTx
 
       setCommsTxHash(commsTx)
-      setCommsPending(true)
+      setCommsPending(false)
     }
 
     const payloadBase = {
@@ -439,6 +440,8 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
     }
     setResult(res.data)
 
+    // The transaction has already been broadcast; do not keep the UI stuck
+    // waiting for resolver/settlement while the delegated agent runs.
     setCommsPending(false)
     } catch (e) {
       setError(e?.response?.data?.error || e?.message || 'Call failed')

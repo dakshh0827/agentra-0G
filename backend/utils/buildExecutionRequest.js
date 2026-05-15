@@ -85,7 +85,10 @@ export function buildExecutionRequest(endpoint, executionConfig, runtimePayload,
 
   } else {
     // Default: JSON
-    data = runtimeBody
+    data = {
+      task: task || '',
+      ...runtimeBody,
+    }
     requestHeaders['Content-Type'] = 'application/json'
     requestHeaders['Accept'] = 'application/json, text/event-stream'
   }
