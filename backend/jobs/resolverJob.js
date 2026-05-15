@@ -250,10 +250,9 @@ async function resolveCommsTx(txId, pTx) {
 
       await updateDbTransactionStatus(txId, 'confirmed', platformFee, creatorAmount)
     } else {
-      // No matching comms record found — refund
-      console.warn(`[RESOLVER] No comms record found, refunding comms txId=${txId}`)
-      await contractManager.refundTransaction(txId)
-      await updateDbTransactionStatus(txId, 'failed', null, null)
+      // No matching comms record yet — skip for now and let a later resolver cycle
+      // pick it up once the comms message has been written by the backend.
+      console.warn(`[RESOLVER] No comms record found yet, skipping comms txId=${txId} for now`)
     }
   } catch (err) {
     console.error(`[RESOLVER] resolveCommsTx error txId=${txId}:`, err.message)

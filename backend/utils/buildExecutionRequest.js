@@ -94,10 +94,29 @@ export function buildExecutionRequest(endpoint, executionConfig, runtimePayload,
   }
 
   const baseEndpoint = String(endpoint || '').trim().replace(/\/+$/, '')
+  const candidateUrls = new Set([baseEndpoint])
+
+  try {
+    const parsed = new URL(baseEndpoint)
+    const pathname = parsed.pathname.replace(/\/+$/, '')
+    const origin = parsed.origin
+
+    if (pathname.endsWith('/apply')) {
+      candidateUrls.add(`${origin}${pathname.replace(/\/apply$/, '')}`)
+    } else if (pathname.endsWith('/execute')) {
+      candidateUrls.add(`${origin}${pathname.replace(/\/execute$/, '')}`)
+    } else {
+      candidateUrls.add(`${origin}${pathname}/apply`)
+      candidateUrls.add(`${origin}${pathname}/execute`)
+    }
+  } catch {
+    // ignore URL parsing issues; the base endpoint will still be tried
+  }
 
   return {
     url: `${baseEndpoint}`,
     fallbackUrl: baseEndpoint,
+    candidateUrls: [...candidateUrls],
     method,
     headers: requestHeaders,
     data,

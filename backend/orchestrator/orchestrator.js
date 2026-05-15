@@ -400,39 +400,35 @@ async _callAgentEndpoint(endpoint, task, meta = {}, executionConfig = null, runt
     const { redactHeaders } = await import('../utils/redactSecrets.js')
 
     const reqConfig = buildExecutionRequest(baseEndpoint, executionConfig, runtimePayload, task)
+    const candidateUrls = reqConfig.candidateUrls?.length > 0 ? reqConfig.candidateUrls : [reqConfig.url]
 
     console.log(`[ORCHESTRATOR] Schema-driven execution: ${reqConfig.url}`)
     console.log(`[ORCHESTRATOR] Content-Type: ${executionConfig.contentType}`)
     console.log(`[ORCHESTRATOR] Headers (redacted):`, redactHeaders(reqConfig.headers))
 
-    try {
-      return await axios({
-        method: reqConfig.method,
-        url: reqConfig.url,
-        headers: reqConfig.headers,
-        data: reqConfig.data,
-        timeout,
-        responseType: 'arraybuffer',
-        maxRedirects: 0,
-        maxContentLength: 50 * 1024 * 1024,
-      })
-    } catch (primaryErr) {
-      // Fallback to base endpoint
+    let lastErr = null
+
+    for (const url of candidateUrls) {
+      console.log(`[ORCHESTRATOR] Schema-driven attempt: ${url}`)
       try {
         return await axios({
           method: reqConfig.method,
-          url: reqConfig.fallbackUrl,
+          url,
           headers: reqConfig.headers,
           data: reqConfig.data,
           timeout,
           responseType: 'arraybuffer',
           maxRedirects: 0,
           maxContentLength: 50 * 1024 * 1024,
+          maxBodyLength: 50 * 1024 * 1024,
         })
-      } catch (fallbackErr) {
-        throw fallbackErr
+      } catch (err) {
+        lastErr = err
+        console.log(`[ORCHESTRATOR] Schema-driven attempt failed: ${url} → ${err.message}`)
       }
     }
+
+    throw lastErr
   }
 
   // Legacy text-only execution — backward compatible

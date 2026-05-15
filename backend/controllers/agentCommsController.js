@@ -292,6 +292,20 @@ const callAgent = asyncHandler(async (req, res) => {
     },
   })
 
+  const commsMessage = await prisma.agentCommsMessage.create({
+    data: {
+      fromAgentId: sourceAgent.agentId,
+      toAgentId: targetAgent.agentId,
+      callerWallet,
+      task,
+      status: 'pending',
+      priceWei: priceWei.toString(),
+      platformFeeWei: platformFeeWei.toString(),
+      creatorAmountWei: creatorAmountWei.toString(),
+      transactionHash: txHash || null,
+    },
+  })
+
   try {
     const delegatedResult = await orchestrator.executeAgent(targetAgent.agentId, task, callerWallet, {
       callDepth: 1,
@@ -322,20 +336,14 @@ const callAgent = asyncHandler(async (req, res) => {
       })
     }
 
-    await prisma.agentCommsMessage.create({
+    await prisma.agentCommsMessage.update({
+      where: { id: commsMessage.id },
       data: {
-        fromAgentId: sourceAgent.agentId,
-        toAgentId: targetAgent.agentId,
-        callerWallet,
-        task,
         response: typeof delegatedResult.response === 'string'
           ? delegatedResult.response
           : JSON.stringify(delegatedResult.response),
         status: 'success',
         latency: delegatedResult.latency,
-        priceWei: priceWei.toString(),
-        platformFeeWei: platformFeeWei.toString(),
-        creatorAmountWei: creatorAmountWei.toString(),
         transactionHash: priceWei > 0n ? txHash : null,
       },
     })
@@ -375,19 +383,13 @@ const callAgent = asyncHandler(async (req, res) => {
       result: delegatedResult,
     })
   } catch (error) {
-    await prisma.agentCommsMessage.create({
+    await prisma.agentCommsMessage.update({
+      where: { id: commsMessage.id },
       data: {
-        fromAgentId: sourceAgent.agentId,
-        toAgentId: targetAgent.agentId,
-        callerWallet,
-        task,
         status: 'failed',
         errorMessage: error.message,
-        priceWei: '0',
-        platformFeeWei: '0',
-        creatorAmountWei: '0',
       },
-    })
+    }).catch(() => {})
 
     await prisma.interaction.update({
       where: { id: sourceInteraction.id },
