@@ -27,6 +27,8 @@ const extractReadableText = (payload) => {
   if (typeof payload === 'number' || typeof payload === 'boolean') return String(payload)
   if (Array.isArray(payload)) return payload.map(item => extractReadableText(item)).filter(Boolean).join('\n')
 
+  if (payload?.isBinary && payload?.base64) return ''
+
   const candidates = [
     payload.message,
     payload.summary,
@@ -48,6 +50,33 @@ const extractReadableText = (payload) => {
     return JSON.stringify(payload, null, 2)
   } catch {
     return ''
+  }
+
+  const buildBinaryDownload = (binaryPayload) => {
+    if (!binaryPayload?.isBinary || !binaryPayload?.base64) return null
+
+    try {
+      const byteChars = atob(binaryPayload.base64)
+      const byteNumbers = new Array(byteChars.length)
+
+      for (let i = 0; i < byteChars.length; i++) {
+        byteNumbers[i] = byteChars.charCodeAt(i)
+      }
+
+      const byteArray = new Uint8Array(byteNumbers)
+      const blob = new Blob([byteArray], {
+        type: binaryPayload.mimeType || 'application/octet-stream',
+      })
+
+      return {
+        url: URL.createObjectURL(blob),
+        filename: binaryPayload.filename || 'download.bin',
+        mimeType: binaryPayload.mimeType || 'application/octet-stream',
+        size: binaryPayload.size || byteArray.length,
+      }
+    } catch {
+      return null
+    }
   }
 }
 
@@ -88,7 +117,26 @@ function DiscoveryResult({ agent, onSelect, selected }) {
 function CallResultDisplay({ result }) {
   if (!result) return null
   const { targetAgent, sourceAgent, result: execResult, billing } = result
-  const readableText = extractReadableText(execResult?.response)
+  const binaryResponse = execResult?.response?.isBinary ? execResult.response : null
+  const [download, setDownload] = useState(null)
+
+  useEffect(() => {
+    if (!binaryResponse) {
+      setDownload(null)
+      return undefined
+    }
+
+    const nextDownload = buildBinaryDownload(binaryResponse)
+    setDownload(nextDownload)
+
+    return () => {
+      if (nextDownload?.url) {
+        URL.revokeObjectURL(nextDownload.url)
+      }
+    }
+  }, [binaryResponse?.base64, binaryResponse?.filename, binaryResponse?.mimeType, binaryResponse?.size])
+
+  const readableText = binaryResponse ? '' : extractReadableText(execResult?.response)
 
   return (
     <motion.div
@@ -138,15 +186,38 @@ function CallResultDisplay({ result }) {
         </div>
       )}
 
-      <div className="p-3 rounded-xl bg-bg-secondary border border-border">
-        <div className="text-xs font-mono text-text-dim mb-2">JSON RESPONSE</div>
-        <OutputRenderer
-          response={execResult?.response}
-          agentName={targetAgent?.name}
-          latency={execResult?.latency}
-          success={execResult?.success}
-        />
-      </div>
+      {download && (
+        <div className="p-3 rounded-xl bg-[rgba(52,211,153,0.05)] border border-[rgba(52,211,153,0.2)]">
+          <div className="text-xs font-mono text-text-dim mb-2">DOWNLOADABLE FILE</div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-text-primary truncate">{download.filename}</div>
+              <div className="text-xs font-mono text-text-dim">
+                {download.mimeType}{download.size ? ` · ${download.size} bytes` : ''}
+              </div>
+            </div>
+            <a
+              href={download.url}
+              download={download.filename}
+              className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-mono bg-[rgba(52,211,153,0.1)] border border-[rgba(52,211,153,0.25)] text-success hover:bg-[rgba(52,211,153,0.2)] transition-all cursor-pointer"
+            >
+              Download ZIP
+            </a>
+          </div>
+        </div>
+      )}
+
+      {!binaryResponse && (
+        <div className="p-3 rounded-xl bg-bg-secondary border border-border">
+          <div className="text-xs font-mono text-text-dim mb-2">JSON RESPONSE</div>
+          <OutputRenderer
+            response={execResult?.response}
+            agentName={targetAgent?.name}
+            latency={execResult?.latency}
+            success={execResult?.success}
+          />
+        </div>
+      )}
     </motion.div>
   )
 }
