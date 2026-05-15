@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import multer from 'multer'
 import {
   getAgents,
   getAgentById,
@@ -22,6 +23,8 @@ import { getAgentMetrics } from '../controllers/analyticsController.js'
 import { getReviews, createReview } from '../controllers/reviewController.js'
 import { callAgent, discoverAgents, getCommsTarget, getMessages } from '../controllers/agentCommsController.js'
 
+const upload = multer({ storage: multer.memoryStorage() })
+
 const router = Router()
 
 // ─────────────────────────────────────────────
@@ -43,7 +46,7 @@ router.post('/deploy', authMiddleware, deployLimiter, deployAgent)
 
 // Other protected routes before /:id to avoid conflicts
 router.post('/validate-endpoint', authMiddleware, validateEndpoint)
-router.post('/:fromId/call-agent', authMiddleware, callAgent)
+router.post('/:fromId/call-agent', authMiddleware, upload.any(), callAgent)
 router.get('/:agentId/messages', authMiddleware, getMessages)
 
 // Routes with :id param

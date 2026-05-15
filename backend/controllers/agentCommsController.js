@@ -4,6 +4,7 @@ import orchestrator from '../orchestrator/orchestrator.js'
 import contractManager from '../lib/contractManager.js'
 import { hasPersistentAgentAccess } from '../services/accessService.js'
 import { asyncHandler } from '../middlewares/errorHandler.js'
+import { validateRuntimePayload } from '../utils/validateRuntimePayloadAgainstExecutionConfig.js'
 
 const callAgentSchema = z.object({
   task: z.string().min(1).max(10000),
@@ -11,6 +12,15 @@ const callAgentSchema = z.object({
   targetAgentId: z.union([z.string(), z.number()]).transform((v) => String(v)).optional(),
   autoDiscover: z.boolean().optional().default(false),
   txHash: z.string().min(10).optional(),
+  runtimePayload: z
+    .object({
+      headers: z.record(z.string(), z.string()).optional().default({}),
+      body: z.record(z.string(), z.unknown()).optional().default({}),
+      files: z.record(z.string(), z.unknown()).optional().default({}),
+      contentType: z.string().optional(),
+      method: z.string().optional(),
+    })
+    .optional(),
 })
 
 const discoverSchema = z.object({
@@ -166,13 +176,37 @@ const getCommsTarget = asyncHandler(async (req, res) => {
     commsEnabled: !!targetAgent.commsEnabled,
     commsPricePerCall: targetAgent.commsPricePerCall || '0',
     status: targetAgent.status,
+    executionConfig: targetAgent.executionConfig || null,
+    mcpSchema: targetAgent.mcpSchema || null,
+    category: targetAgent.category,
+    description: targetAgent.description,
+    tags: targetAgent.tags,
+    endpoint: targetAgent.endpoint,
   })
 })
 
 const callAgent = asyncHandler(async (req, res) => {
   const { fromId } = req.params
   const callerWallet = req.walletAddress
-  const { task, targetAgentName, targetAgentId, autoDiscover, txHash } = callAgentSchema.parse(req.body)
+  const rawBody = req.body || {}
+
+  let parsedRuntimePayload = rawBody.runtimePayload
+  if (typeof parsedRuntimePayload === 'string') {
+    try {
+      parsedRuntimePayload = JSON.parse(parsedRuntimePayload)
+    } catch {
+      parsedRuntimePayload = undefined
+    }
+  }
+
+  const { task, targetAgentName, targetAgentId, autoDiscover, txHash, runtimePayload } = callAgentSchema.parse({
+    task: rawBody.task,
+    targetAgentName: rawBody.targetAgentName,
+    targetAgentId: rawBody.targetAgentId,
+    autoDiscover: rawBody.autoDiscover === true || rawBody.autoDiscover === 'true',
+    txHash: rawBody.txHash,
+    runtimePayload: parsedRuntimePayload,
+  })
 
   const sourceAgent = await _resolveAgent(fromId)
   if (!sourceAgent) return res.status(404).json({ error: 'Source agent not found' })
@@ -192,6 +226,37 @@ const callAgent = asyncHandler(async (req, res) => {
   if (!targetAgent) {
     return res.status(404).json({ error: 'Target agent not found for delegation' })
   }
+
+  const uploadedFiles = {}
+  if (req.files && req.files.length > 0) {
+    const { validateUploads } = await import('../utils/uploadValidation.js')
+
+    const filesMap = {}
+    for (const file of req.files) {
+      filesMap[file.fieldname] = file
+    }
+
+    validateUploads(filesMap)
+
+    if (targetAgent.executionConfig) {
+      validateRuntimePayload(targetAgent.executionConfig, runtimePayload, filesMap)
+    }
+
+    Object.assign(uploadedFiles, filesMap)
+  }
+
+  const enrichedRuntimePayload = runtimePayload
+    ? {
+        ...runtimePayload,
+        files: uploadedFiles,
+      }
+    : Object.keys(uploadedFiles).length > 0
+    ? {
+        headers: {},
+        body: {},
+        files: uploadedFiles,
+      }
+    : null
 
   if (sourceAgent.agentId === targetAgent.agentId) {
     return res.status(400).json({ error: 'Source and target agents must be different' })
@@ -238,6 +303,7 @@ const callAgent = asyncHandler(async (req, res) => {
     const delegatedResult = await orchestrator.executeAgent(targetAgent.agentId, task, callerWallet, {
       callDepth: 1,
       parentInteractionId: sourceInteraction.id,
+      runtimePayload: enrichedRuntimePayload,
     })
 
     if (priceWei > 0n) {

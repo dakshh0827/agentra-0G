@@ -100,6 +100,11 @@ deploy: (data) =>
   callAgent: (fromId, payload) =>
     api.post(`/agents/${fromId}/call-agent`, payload),
 
+  callAgentMultipart: (fromId, formData) =>
+    api.post(`/agents/${fromId}/call-agent`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+
   getCommsMessages: (agentId) =>
     api.get(`/agents/${agentId}/messages`),
 

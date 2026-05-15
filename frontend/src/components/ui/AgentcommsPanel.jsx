@@ -10,6 +10,7 @@ import { parseUnits } from 'viem'
 import { useAccount, usePublicClient, useWriteContract } from 'wagmi'
 import { agentsAPI } from '../../api/agents'
 import { CHAIN_CONFIG } from '../../config/chains.config'
+import RuntimeExecutionForm from '../execution/Runtimeexecutionform'
 import OutputRenderer from './OutputRenderer'
 
 const formatWeiToAgt = (weiValue) => {
@@ -231,6 +232,7 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
   const [task, setTask] = useState('')
   const [discoveryResults, setDiscoveryResults] = useState([])
   const [selectedAgent, setSelectedAgent] = useState(null)
+  const [selectedAgentLoading, setSelectedAgentLoading] = useState(false)
   const [discovering, setDiscovering] = useState(false)
   const [calling, setCalling] = useState(false)
   const [result, setResult] = useState(null)
@@ -240,6 +242,7 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
   const [ownerCommsEnabled, setOwnerCommsEnabled] = useState(commsEnabled)
   const [ownerCommsPrice, setOwnerCommsPrice] = useState(formatWeiToAgt(commsPricePerCall || '0'))
   const [savingConfig, setSavingConfig] = useState(false)
+  const [task, setTask] = useState('')
 
   useEffect(() => {
     setOwnerCommsEnabled(commsEnabled)
@@ -287,8 +290,47 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
     }
   }
 
-const handleCall = async () => {
-  if (!task.trim() || calling) return
+  const loadSelectedTarget = async (target) => {
+    if (!target?.agentId) return
+    setSelectedAgentLoading(true)
+    setError(null)
+    try {
+      const res = await agentsAPI.getById(target.agentId)
+      setSelectedAgent(res.data)
+      setTargetId(res.data.name || target.agentId)
+      setDiscoveryResults([])
+    } catch (e) {
+      setError(e?.response?.data?.error || 'Failed to load target agent details')
+      setSelectedAgent(null)
+    } finally {
+      setSelectedAgentLoading(false)
+    }
+  }
+
+  const handleLoadManualTarget = async () => {
+    const value = targetId.trim()
+    if (!value) {
+      setError('Enter a target agent name or ID first')
+      return
+    }
+    setSelectedAgentLoading(true)
+    setError(null)
+    try {
+      const res = await agentsAPI.getById(value)
+      setSelectedAgent(res.data)
+      setTargetId(res.data.name || value)
+      setDiscoveryResults([])
+    } catch (e) {
+      setSelectedAgent(null)
+      setError(e?.response?.data?.error || 'Target agent not found')
+    } finally {
+      setSelectedAgentLoading(false)
+    }
+  }
+
+  const handleCall = async ({ task: runtimeTask, runtimePayload }) => {
+  const activeTask = runtimeTask || task
+  if (!activeTask.trim() || calling) return
   setCalling(true)
   setResult(null)
   setError(null)
@@ -296,20 +338,20 @@ const handleCall = async () => {
   try {
     const contracts = chain?.id ? CHAIN_CONFIG[chain.id]?.contracts : null
 
-    let target = null
-    if (mode === 'manual' && targetId) {
-      const targetRes = await agentsAPI.getCommsTarget({ targetAgentName: targetId })
-      target = targetRes.data
-    } else if (mode === 'discover' && selectedAgent) {
+    let target = selectedAgent
+    if (!target?.name && mode === 'manual') {
+      await handleLoadManualTarget()
       target = selectedAgent
-    } else if (mode === 'discover' && !selectedAgent) {
-      const discovery = await agentsAPI.discoverForComms(task, agentId)
+    }
+    if (!target?.name && mode === 'discover') {
+      const discovery = await agentsAPI.discoverForComms(activeTask, agentId)
       const first = discovery.data?.agents?.[0]
       if (!first) throw new Error('No comms-enabled target found for this task')
+      await loadSelectedTarget(first)
       target = first
     }
 
-    if (!target?.name) throw new Error('Target agent name is required')
+    if (!target?.name) throw new Error('Select a target agent first')
     if (target.status && target.status !== 'active') throw new Error('Target agent is not active')
 
     const rawPrice = BigInt(target.commsPricePerCall || '0')
@@ -355,13 +397,38 @@ const handleCall = async () => {
       setCommsPending(true)
     }
 
-    const payload = {
-      task,
+    const payloadBase = {
+      task: activeTask,
       targetAgentName: target.name,
+      targetAgentId: target.agentId,
       ...(txHash ? { txHash } : {}),
     }
 
-    const res = await agentsAPI.callAgent(agentId, payload)
+    let res
+    if (runtimePayload && Object.keys(runtimePayload.files || {}).length > 0) {
+      const formData = new FormData()
+      formData.append('task', activeTask)
+      formData.append('targetAgentName', target.name)
+      formData.append('targetAgentId', target.agentId)
+      if (txHash) formData.append('txHash', txHash)
+      formData.append('runtimePayload', JSON.stringify({
+        headers: runtimePayload.headers,
+        body: runtimePayload.body,
+        contentType: runtimePayload.contentType,
+        method: runtimePayload.method,
+      }))
+      for (const [key, file] of Object.entries(runtimePayload.files || {})) {
+        if (file) formData.append(key, file)
+      }
+      res = await agentsAPI.callAgentMultipart(agentId, formData)
+    } else if (runtimePayload) {
+      res = await agentsAPI.callAgent(agentId, {
+        ...payloadBase,
+        runtimePayload,
+      })
+    } else {
+      res = await agentsAPI.callAgent(agentId, payloadBase)
+    }
     setResult(res.data)
 
     setCommsPending(false)
@@ -451,20 +518,8 @@ const handleCall = async () => {
             <div>
               <p className="text-text-muted text-xs leading-relaxed mb-4">
                 <strong className="text-primary">{agentName}</strong> can delegate tasks to other agents on the marketplace.
-                Either specify a target agent name or let the system auto-discover the best match.
+                Select a target agent to load its execution schema, then submit the delegated request.
               </p>
-
-              {/* Task input */}
-              <div className="mb-4">
-                <label className="text-xs font-mono text-text-dim uppercase block mb-2">TASK TO DELEGATE</label>
-                <textarea
-                  value={task}
-                  onChange={e => setTask(e.target.value)}
-                  placeholder="Describe the task to delegate to another agent..."
-                  rows={3}
-                  className="input-field w-full px-4 py-3 rounded-xl text-sm resize-none"
-                />
-              </div>
 
               {/* Mode selector */}
               <div className="flex gap-2 mb-4">
@@ -488,13 +543,23 @@ const handleCall = async () => {
 
               {/* Manual: target agent ID input */}
               {mode === 'manual' && (
-                <input
-                  type="text"
-                  value={targetId}
-                  onChange={e => setTargetId(e.target.value)}
+                <div className="space-y-3 mb-4">
+                  <input
+                    type="text"
+                    value={targetId}
+                    onChange={e => setTargetId(e.target.value)}
                     placeholder="Target Agent Name (exact match)"
-                  className="input-field w-full px-4 py-3 rounded-xl text-sm mb-4 font-mono"
-                />
+                    className="input-field w-full px-4 py-3 rounded-xl text-sm font-mono"
+                  />
+                  <button
+                    onClick={handleLoadManualTarget}
+                    disabled={selectedAgentLoading || !targetId.trim()}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-primary-dark bg-[rgba(124,58,237,0.06)] text-primary font-semibold text-sm disabled:opacity-40 hover:bg-[rgba(124,58,237,0.12)] transition-all cursor-pointer"
+                  >
+                    {selectedAgentLoading ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />}
+                    LOAD TARGET DETAILS
+                  </button>
+                </div>
               )}
 
               {/* Discover: search and results */}
@@ -513,7 +578,7 @@ const handleCall = async () => {
                       <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[rgba(52,211,153,0.08)] border border-[rgba(52,211,153,0.25)] text-success font-semibold text-base">
                         <CheckCircle size={13} />
                         {selectedAgent.name}
-                        <button onClick={() => setSelectedAgent(null)} className="ml-1 opacity-50 hover:opacity-100 cursor-pointer">×</button>
+                        <button onClick={() => { setSelectedAgent(null); setTargetId('') }} className="ml-1 opacity-50 hover:opacity-100 cursor-pointer">×</button>
                       </div>
                     )}
                   </div>
@@ -525,11 +590,40 @@ const handleCall = async () => {
                           key={agent.agentId}
                           agent={agent}
                           selected={selectedAgent}
-                          onSelect={setSelectedAgent}
+                          onSelect={loadSelectedTarget}
                         />
                       ))}
                     </div>
                   )}
+                </div>
+              )}
+
+              {selectedAgent && selectedAgent.executionConfig && (
+                <div className="mb-4 rounded-xl border border-border bg-bg-secondary p-4 space-y-2">
+                  <div className="text-xs font-mono text-text-dim uppercase">TARGET READY</div>
+                  <div className="text-sm font-semibold text-text-primary">{selectedAgent.name}</div>
+                  <div className="text-xs text-text-dim font-mono">
+                    Body and header fields are loaded from this agent&apos;s execution schema.
+                  </div>
+                </div>
+              )}
+
+              {selectedAgent?.executionConfig ? (
+                <RuntimeExecutionForm
+                  execConfig={selectedAgent.executionConfig}
+                  task={task}
+                  onTaskChange={setTask}
+                  onSubmit={handleCall}
+                  isExecuting={calling}
+                  isConnected={isConnected}
+                />
+              ) : selectedAgentLoading ? (
+                <div className="flex items-center gap-2 text-xs font-mono text-text-dim p-3 rounded-lg border border-border bg-bg-secondary">
+                  <Loader2 size={13} className="animate-spin" /> Loading target schema...
+                </div>
+              ) : (
+                <div className="text-xs font-mono text-text-dim p-3 rounded-lg border border-border bg-bg-secondary">
+                  Select a target agent to load its execution schema before delegating.
                 </div>
               )}
 
@@ -539,16 +633,6 @@ const handleCall = async () => {
                   <AlertCircle size={13} /> {error}
                 </div>
               )}
-
-              {/* Call button */}
-              <button
-                onClick={handleCall}
-                disabled={calling || !task.trim()}
-                className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl bg-primary-dark hover:bg-primary text-white font-semibold text-base disabled:opacity-40 transition-all cursor-pointer"
-              >
-                {calling ? <Loader2 size={15} className="animate-spin" /> : <Zap size={15} />}
-                {calling ? 'DELEGATING...' : 'DELEGATE TASK'}
-              </button>
             </div>
 
             {/* Pending indicator */}
@@ -558,10 +642,10 @@ const handleCall = async () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex items-center gap-3 p-4 rounded-xl bg-[rgba(251,191,36,0.08)] border border-[rgba(251,191,36,0.25)]"
               >
-                <Loader2 size={16} className="animate-spin text-[var(--color-warning)] shrink-0" />
+                <Loader2 size={16} className="animate-spin text-warning shrink-0" />
                 <div>
-                  <div className="text-xs font-bold text-[var(--color-warning)]">COMMS TX PENDING</div>
-                  <div className="text-xs font-mono text-[var(--color-text-dim)]">
+                  <div className="text-xs font-bold text-warning">COMMS TX PENDING</div>
+                  <div className="text-xs font-mono text-text-dim">
                     Escrow submitted — resolver confirming agent execution...
                     {commsTxHash && <span className="ml-1 opacity-60">{commsTxHash.slice(0, 14)}...</span>}
                   </div>
