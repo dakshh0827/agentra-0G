@@ -671,7 +671,7 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
                 <div>
                   <div className="text-xs font-bold text-warning">COMMS TX PENDING</div>
                   <div className="text-xs font-mono text-text-dim">
-                    Escrow submitted — resolver confirming agent execution...
+                    Payment submitted — dispatching agent call...
                     {commsTxHash && <span className="ml-1 opacity-60">{commsTxHash.slice(0, 14)}...</span>}
                   </div>
                 </div>
