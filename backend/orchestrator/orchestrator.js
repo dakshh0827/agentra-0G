@@ -402,20 +402,22 @@ async _callAgentEndpoint(endpoint, task, meta = {}, executionConfig = null, runt
     const reqConfig = buildExecutionRequest(baseEndpoint, executionConfig, runtimePayload, task)
     const candidateUrls = reqConfig.candidateUrls?.length > 0 ? reqConfig.candidateUrls : [reqConfig.url]
 
-    console.log(`[ORCHESTRATOR] Schema-driven execution: ${reqConfig.url}`)
+    console.log(`[ORCHESTRATOR] Schema-driven execution: ${candidateUrls[0]}`)
     console.log(`[ORCHESTRATOR] Content-Type: ${executionConfig.contentType}`)
-    console.log(`[ORCHESTRATOR] Headers (redacted):`, redactHeaders(reqConfig.headers))
+    const previewConfig = reqConfig.buildRequestConfig(candidateUrls[0])
+    console.log(`[ORCHESTRATOR] Headers (redacted):`, redactHeaders(previewConfig.headers))
 
     let lastErr = null
 
     for (const url of candidateUrls) {
       console.log(`[ORCHESTRATOR] Schema-driven attempt: ${url}`)
       try {
+        const attemptConfig = reqConfig.buildRequestConfig(url)
         return await axios({
-          method: reqConfig.method,
-          url,
-          headers: reqConfig.headers,
-          data: reqConfig.data,
+          method: attemptConfig.method,
+          url: attemptConfig.url,
+          headers: attemptConfig.headers,
+          data: attemptConfig.data,
           timeout,
           responseType: 'arraybuffer',
           maxRedirects: 0,

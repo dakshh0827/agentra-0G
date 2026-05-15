@@ -19,82 +19,35 @@ export function buildExecutionRequest(endpoint, executionConfig, runtimePayload,
   const runtimeFiles   = runtimePayload?.files   || {}
 
   // ── Build request headers ────────────────────────────────────
-  const requestHeaders = {}
+  const baseRequestHeaders = {}
 
   // Inject static (non-userProvided) header defaults from schema
   for (const headerDef of (executionConfig?.headers || [])) {
     if (!headerDef.userProvided && headerDef.value) {
-      requestHeaders[headerDef.key] = headerDef.value
+      baseRequestHeaders[headerDef.key] = headerDef.value
     }
   }
 
   // Inject runtime user-provided headers
   for (const [k, v] of Object.entries(runtimeHeaders)) {
     if (v !== undefined && v !== '') {
-      requestHeaders[k] = v
+      baseRequestHeaders[k] = v
     }
   }
 
-  console.log('[EXECUTION] Headers (redacted):', redactHeaders(requestHeaders))
+  console.log('[EXECUTION] Headers (redacted):', redactHeaders(baseRequestHeaders))
 
   // ── Build request body ────────────────────────────────────────
-  let data
-  if (contentType === 'form-data') {
-    const form = new FormData()
-
-    // Always include task
-    form.append('task', task || '')
-
-    // Append schema-defined static body fields (non-userProvided with defaults)
-    for (const fieldDef of (executionConfig?.bodyFields || [])) {
-      if (!fieldDef.userProvided && fieldDef.type !== 'file') {
-        // skip — no static defaults supported for body fields currently
-      }
-    }
-
-    // Append runtime body fields
-    for (const [k, v] of Object.entries(runtimeBody)) {
-      if (v !== undefined && v !== '') {
-        form.append(k, String(v))
-      }
-    }
-
-    // Append runtime files
-    for (const [k, fileBuffer] of Object.entries(runtimeFiles)) {
-      if (fileBuffer) {
-        form.append(k, fileBuffer.buffer, {
-          filename: fileBuffer.originalname || k,
-          contentType: fileBuffer.mimetype || 'application/octet-stream',
-        })
-      }
-    }
-
-    Object.assign(requestHeaders, form.getHeaders())
-    data = form
-
-  } else if (contentType === 'x-www-form-urlencoded') {
-    const params = new URLSearchParams()
-    params.append('task', task || '')
-    for (const [k, v] of Object.entries(runtimeBody)) {
-      if (v !== undefined && v !== '') {
-        params.append(k, String(v))
-      }
-    }
-    requestHeaders['Content-Type'] = 'application/x-www-form-urlencoded'
-    data = params.toString()
-
-  } else {
-    // Default: JSON
-    data = {
-      task: task || '',
-      ...runtimeBody,
-    }
-    requestHeaders['Content-Type'] = 'application/json'
-    requestHeaders['Accept'] = 'application/json, text/event-stream'
-  }
-
   const baseEndpoint = String(endpoint || '').trim().replace(/\/+$/, '')
-  const candidateUrls = new Set([baseEndpoint])
+  const candidateUrls = []
+
+  const isHfSpace = (() => {
+    try {
+      return new URL(baseEndpoint).hostname.endsWith('hf.space')
+    } catch {
+      return false
+    }
+  })()
 
   try {
     const parsed = new URL(baseEndpoint)
@@ -102,23 +55,90 @@ export function buildExecutionRequest(endpoint, executionConfig, runtimePayload,
     const origin = parsed.origin
 
     if (pathname.endsWith('/apply')) {
-      candidateUrls.add(`${origin}${pathname.replace(/\/apply$/, '')}`)
+      candidateUrls.push(baseEndpoint)
+      candidateUrls.push(`${origin}${pathname.replace(/\/apply$/, '')}`)
     } else if (pathname.endsWith('/execute')) {
-      candidateUrls.add(`${origin}${pathname.replace(/\/execute$/, '')}`)
+      candidateUrls.push(baseEndpoint)
+      candidateUrls.push(`${origin}${pathname.replace(/\/execute$/, '')}`)
     } else {
-      candidateUrls.add(`${origin}${pathname}/apply`)
-      candidateUrls.add(`${origin}${pathname}/execute`)
+      if (isHfSpace) {
+        candidateUrls.push(`${origin}${pathname}/apply`)
+        candidateUrls.push(baseEndpoint)
+        candidateUrls.push(`${origin}${pathname}/execute`)
+      } else {
+        candidateUrls.push(baseEndpoint)
+        candidateUrls.push(`${origin}${pathname}/apply`)
+        candidateUrls.push(`${origin}${pathname}/execute`)
+      }
     }
   } catch {
     // ignore URL parsing issues; the base endpoint will still be tried
   }
 
+  const uniqueCandidateUrls = [...new Set(candidateUrls.filter(Boolean))]
+
+  const buildRequestConfig = (targetUrl) => {
+    const requestHeaders = { ...baseRequestHeaders }
+    let data
+
+    if (contentType === 'form-data') {
+      const form = new FormData()
+
+      // Always include task
+      form.append('task', task || '')
+
+      for (const fieldDef of (executionConfig?.bodyFields || [])) {
+        if (!fieldDef.userProvided && fieldDef.type !== 'file') {
+          // skip — no static defaults supported for body fields currently
+        }
+      }
+
+      for (const [k, v] of Object.entries(runtimeBody)) {
+        if (v !== undefined && v !== '') {
+          form.append(k, String(v))
+        }
+      }
+
+      for (const [k, fileBuffer] of Object.entries(runtimeFiles)) {
+        if (fileBuffer) {
+          form.append(k, fileBuffer.buffer, {
+            filename: fileBuffer.originalname || k,
+            contentType: fileBuffer.mimetype || 'application/octet-stream',
+          })
+        }
+      }
+
+      Object.assign(requestHeaders, form.getHeaders())
+      data = form
+    } else if (contentType === 'x-www-form-urlencoded') {
+      const params = new URLSearchParams()
+      params.append('task', task || '')
+      for (const [k, v] of Object.entries(runtimeBody)) {
+        if (v !== undefined && v !== '') {
+          params.append(k, String(v))
+        }
+      }
+      requestHeaders['Content-Type'] = 'application/x-www-form-urlencoded'
+      data = params.toString()
+    } else {
+      data = {
+        task: task || '',
+        ...runtimeBody,
+      }
+      requestHeaders['Content-Type'] = 'application/json'
+      requestHeaders['Accept'] = 'application/json, text/event-stream'
+    }
+
+    return {
+      url: targetUrl,
+      method,
+      headers: requestHeaders,
+      data,
+    }
+  }
+
   return {
-    url: `${baseEndpoint}`,
-    fallbackUrl: baseEndpoint,
-    candidateUrls: [...candidateUrls],
-    method,
-    headers: requestHeaders,
-    data,
+    candidateUrls: uniqueCandidateUrls,
+    buildRequestConfig,
   }
 }
