@@ -242,7 +242,6 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
   const [ownerCommsEnabled, setOwnerCommsEnabled] = useState(commsEnabled)
   const [ownerCommsPrice, setOwnerCommsPrice] = useState(formatWeiToAgt(commsPricePerCall || '0'))
   const [savingConfig, setSavingConfig] = useState(false)
-  const [task, setTask] = useState('')
 
   useEffect(() => {
     setOwnerCommsEnabled(commsEnabled)
@@ -590,7 +589,10 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
                           key={agent.agentId}
                           agent={agent}
                           selected={selectedAgent}
-                          onSelect={loadSelectedTarget}
+                          onSelect={async (selected) => {
+                            setSelectedAgent(selected)
+                            await loadSelectedTarget(selected)
+                          }}
                         />
                       ))}
                     </div>
