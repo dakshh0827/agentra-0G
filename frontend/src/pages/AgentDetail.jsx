@@ -22,6 +22,7 @@ import RuntimeExecutionForm from '../components/execution/Runtimeexecutionform'
 import { agentsAPI } from '../api/agents'
 import { CHAIN_CONFIG } from '../config/chains.config'
 import { getAgentExternalId } from '../utils/helpers'
+import buildBinaryDownload from '../utils/buildBinaryDownload'
 
 function FadeInSection({ children, className = '', delay = 0 }) {
   const ref = useRef(null)
@@ -1095,19 +1096,9 @@ console.log('========================================\n')
       const data = response.data
 
       // If backend returned binary data metadata, prepare downloadable blob URL
-      if (data?.response && data.response.isBinary) {
-        try {
-          const b64 = data.response.base64
-          const byteChars = atob(b64)
-          const byteNumbers = new Array(byteChars.length)
-          for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i)
-          const byteArray = new Uint8Array(byteNumbers)
-          const blob = new Blob([byteArray], { type: data.response.mimeType || 'application/octet-stream' })
-          const url = URL.createObjectURL(blob)
-          setResult({ output: `Binary file ready: ${data.response.filename}`, latency: data.latency || 0, success: true, download: { url, filename: data.response.filename } })
-        } catch (e) {
-          setResult({ output: `Received binary response (failed to create download): ${e.message}`, latency: data.latency || 0, success: true })
-        }
+      const download = buildBinaryDownload(data?.response)
+      if (download) {
+        setResult({ output: `Binary file ready: ${download.filename}`, latency: data.latency || 0, success: true, download: { url: download.url, filename: download.filename } })
       } else {
         setResult({ output: data.response || data.output || data.result || data || `Task completed.\n\n${new Date().toISOString()}`, latency: data.latency || Math.floor(Math.random() * 500) + 100, success: true })
       }

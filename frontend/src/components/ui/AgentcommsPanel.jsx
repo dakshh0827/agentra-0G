@@ -12,6 +12,7 @@ import { agentsAPI } from '../../api/agents'
 import { CHAIN_CONFIG } from '../../config/chains.config'
 import RuntimeExecutionForm from '../execution/Runtimeexecutionform'
 import OutputRenderer from './OutputRenderer'
+import buildBinaryDownload from '../../utils/buildBinaryDownload'
 
 const formatWeiToAgt = (weiValue) => {
   try {
@@ -52,32 +53,7 @@ const extractReadableText = (payload) => {
     return ''
   }
 
-  const buildBinaryDownload = (binaryPayload) => {
-    if (!binaryPayload?.isBinary || !binaryPayload?.base64) return null
-
-    try {
-      const byteChars = atob(binaryPayload.base64)
-      const byteNumbers = new Array(byteChars.length)
-
-      for (let i = 0; i < byteChars.length; i++) {
-        byteNumbers[i] = byteChars.charCodeAt(i)
-      }
-
-      const byteArray = new Uint8Array(byteNumbers)
-      const blob = new Blob([byteArray], {
-        type: binaryPayload.mimeType || 'application/octet-stream',
-      })
-
-      return {
-        url: URL.createObjectURL(blob),
-        filename: binaryPayload.filename || 'download.bin',
-        mimeType: binaryPayload.mimeType || 'application/octet-stream',
-        size: binaryPayload.size || byteArray.length,
-      }
-    } catch {
-      return null
-    }
-  }
+  // buildBinaryDownload is provided by ../../utils/buildBinaryDownload
 }
 
 // ── Agent Discovery Card ──────────────────────────────────────
