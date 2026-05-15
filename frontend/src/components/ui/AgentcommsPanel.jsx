@@ -399,10 +399,9 @@ export default function AgentCommsPanel({ agentId, agentName, isOwner = false, c
         args: [BigInt(source.contractAgentId), BigInt(target.contractAgentId)],
         value: buffered,
       })
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: commsTx })
-      txHash = receipt.transactionHash
+      txHash = commsTx
 
-      setCommsTxHash(receipt.transactionHash)
+      setCommsTxHash(commsTx)
       setCommsPending(true)
     }
 

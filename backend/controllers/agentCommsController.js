@@ -283,7 +283,10 @@ const callAgent = asyncHandler(async (req, res) => {
     if (!txHash) {
       return res.status(400).json({ error: 'txHash required: comms call payment must be processed by wallet first' })
     }
-    const confirmed = await contractManager.isTransactionConfirmed(txHash)
+    const confirmed = await contractManager.waitForTransactionConfirmation(txHash, {
+      timeoutMs: 120000,
+      pollIntervalMs: 4000,
+    })
     if (!confirmed) {
       return res.status(400).json({ error: 'Provided txHash is not confirmed on-chain' })
     }

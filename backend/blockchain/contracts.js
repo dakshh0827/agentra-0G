@@ -386,6 +386,22 @@ class ContractManager {
     }
   }
 
+  async waitForTransactionConfirmation(txHash, { timeoutMs = 120000, pollIntervalMs = 4000 } = {}) {
+    if (!txHash || typeof txHash !== 'string') return false
+    if (this._mockMode) return true
+    if (!this.provider) return false
+
+    const startedAt = Date.now()
+    while (Date.now() - startedAt < timeoutMs) {
+      const confirmed = await this.isTransactionConfirmed(txHash)
+      if (confirmed) return true
+
+      await new Promise((resolve) => setTimeout(resolve, pollIntervalMs))
+    }
+
+    return false
+  }
+
   // ─────────────────────────────────────────────
   // EVENTS
   // ─────────────────────────────────────────────
