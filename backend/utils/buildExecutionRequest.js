@@ -7,7 +7,7 @@ import { redactHeaders } from './redactSecrets.js'
  *
  * @param {object} executionConfig  — agent.executionConfig from DB
  * @param {object} runtimePayload   — { headers, body, files, contentType, method }
- * @param {string} task             — the task string (always included)
+ * @param {string} task             — the task string (used for multipart/urlencoded flows)
  * @returns {{ url: string, method: string, headers: object, data: any }}
  */
 export function buildExecutionRequest(endpoint, executionConfig, runtimePayload, task) {
@@ -39,9 +39,7 @@ export function buildExecutionRequest(endpoint, executionConfig, runtimePayload,
 
   // ── Build request body ────────────────────────────────────────
   let data
-  const hasFiles = Object.keys(runtimeFiles).length > 0
-
-  if (contentType === 'form-data' || hasFiles) {
+  if (contentType === 'form-data') {
     const form = new FormData()
 
     // Always include task
@@ -87,7 +85,7 @@ export function buildExecutionRequest(endpoint, executionConfig, runtimePayload,
 
   } else {
     // Default: JSON
-    data = { task, ...runtimeBody }
+    data = runtimeBody
     requestHeaders['Content-Type'] = 'application/json'
   }
 

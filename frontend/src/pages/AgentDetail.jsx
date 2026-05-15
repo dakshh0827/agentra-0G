@@ -1065,8 +1065,9 @@ if (opts.runtimePayload) {
 
 console.log('========================================\n')
       let response
-      if (opts.runtimePayload && Object.keys(opts.runtimePayload.files || {}).length > 0) {
-        // Multipart submission when files are present
+      const payloadContentType = opts.runtimePayload?.contentType || 'json'
+      if (opts.runtimePayload && payloadContentType === 'form-data') {
+        // Multipart submission is driven by the selected content type.
         const formData = new FormData()
         formData.append('task', activeTask)
         formData.append('runtimePayload', JSON.stringify({
@@ -1080,7 +1081,13 @@ console.log('========================================\n')
         }
         response = await agentsAPI.executeMultipart(externalAgentId, formData)
       } else if (opts.runtimePayload) {
-        response = await agentsAPI.executeWithPayload(externalAgentId, activeTask, opts.runtimePayload)
+        const jsonRuntimePayload = {
+          headers: opts.runtimePayload.headers,
+          body: opts.runtimePayload.body,
+          contentType: payloadContentType,
+          method: opts.runtimePayload.method,
+        }
+        response = await agentsAPI.executeWithPayload(externalAgentId, activeTask, jsonRuntimePayload)
       } else {
         response = await agentsAPI.execute(externalAgentId, activeTask)
       }
