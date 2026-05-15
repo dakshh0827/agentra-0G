@@ -117,7 +117,22 @@ function DiscoveryResult({ agent, onSelect, selected }) {
 function CallResultDisplay({ result }) {
   if (!result) return null
   const { targetAgent, sourceAgent, result: execResult, billing } = result
-  const binaryResponse = execResult?.response?.isBinary ? execResult.response : null
+  // Support both object responses and stringified JSON responses that may include `isBinary`.
+  let parsedBinary = null
+  if (execResult?.response) {
+    if (typeof execResult.response === 'string') {
+      try {
+        const parsed = JSON.parse(execResult.response)
+        if (parsed && parsed.isBinary) parsedBinary = parsed
+      } catch {
+        parsedBinary = null
+      }
+    } else if (execResult.response.isBinary) {
+      parsedBinary = execResult.response
+    }
+  }
+
+  const binaryResponse = parsedBinary
   const [download, setDownload] = useState(null)
 
   useEffect(() => {
