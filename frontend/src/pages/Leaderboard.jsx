@@ -44,24 +44,44 @@ export default function Leaderboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    analyticsAPI.getLeaderboard()
-      .then(r => {
+    let cancelled = false
+
+    const fetchLeaderboard = async ({ silent = false } = {}) => {
+      if (!silent) setLoading(true)
+
+      try {
+        const r = await analyticsAPI.getLeaderboard()
+
         // Backend returns { leaderboard: [...], total, algorithm, generatedAt }
         const raw = r.data?.leaderboard || r.data || []
         const agents = Array.isArray(raw) ? raw : []
 
-        const scored = agents.map(a => ({
-          ...a,
-          score: parseFloat((a.score || 0).toFixed(1)),
-        })).sort((a, b) => b.score - a.score)
+        const scored = agents
+          .map(a => ({
+            ...a,
+            score: parseFloat((a.score || 0).toFixed(1)),
+          }))
+          .sort((a, b) => b.score - a.score)
 
-        setRanked(scored)
-      })
-      .catch(err => {
+        if (!cancelled) setRanked(scored)
+      } catch (err) {
         console.error('Leaderboard error:', err)
-        setRanked([])
-      })
-      .finally(() => setLoading(false))
+        if (!cancelled) setRanked([])
+      } finally {
+        if (!silent && !cancelled) setLoading(false)
+      }
+    }
+
+    fetchLeaderboard()
+
+    const intervalId = setInterval(() => {
+      fetchLeaderboard({ silent: true })
+    }, 15000)
+
+    return () => {
+      cancelled = true
+      clearInterval(intervalId)
+    }
   }, [])
 
   if (loading) return <div className="p-6 max-w-7xl mx-auto"><LoadingPulse /></div>

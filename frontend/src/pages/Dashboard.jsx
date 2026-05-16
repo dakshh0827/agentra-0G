@@ -69,11 +69,36 @@ export default function Dashboard() {
   const { agents } = useAgents()
 
   useEffect(() => {
-    if (!walletAddress) { setLoading(false); return }
-    analyticsAPI.getDashboard(walletAddress)
-      .then(r => setDashData(r.data))
-      .catch(console.error)
-      .finally(() => setLoading(false))
+    if (!walletAddress) {
+      setLoading(false)
+      return
+    }
+
+    let cancelled = false
+
+    const fetchDashboard = async ({ silent = false } = {}) => {
+      if (!silent) setLoading(true)
+
+      try {
+        const r = await analyticsAPI.getDashboard(walletAddress)
+        if (!cancelled) setDashData(r.data)
+      } catch (err) {
+        if (!cancelled) console.error(err)
+      } finally {
+        if (!silent && !cancelled) setLoading(false)
+      }
+    }
+
+    fetchDashboard()
+
+    const intervalId = setInterval(() => {
+      fetchDashboard({ silent: true })
+    }, 15000)
+
+    return () => {
+      cancelled = true
+      clearInterval(intervalId)
+    }
   }, [walletAddress])
 
   // Agents owned by this user (from DB)

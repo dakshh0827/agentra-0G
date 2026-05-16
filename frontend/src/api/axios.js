@@ -52,7 +52,8 @@ function extractWalletFromStorage() {
 api.interceptors.request.use((config) => {
   const wallet = extractWalletFromStorage()
 
-  if (wallet) {
+  // Respect per-request wallet headers (e.g. dashboard fetches bound to current wagmi account).
+  if (wallet && !config.headers['x-wallet-address']) {
     config.headers['x-wallet-address'] = wallet
   }
 

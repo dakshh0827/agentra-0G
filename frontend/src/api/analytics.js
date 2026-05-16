@@ -1,12 +1,27 @@
 import api from './axios'
 
 export const analyticsAPI = {
-  getLeaderboard: (params) => api.get('/leaderboard', { params }),
+  getLeaderboard: (params) =>
+    api.get('/leaderboard', {
+      params: {
+        ...(params || {}),
+        _t: Date.now(),
+      },
+      headers: {
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache',
+      },
+    }),
 
   getDashboard: (wallet) =>
     api.get('/analytics/dashboard', {
+      params: {
+        _t: Date.now(),
+      },
       headers: {
         'x-wallet-address': wallet,
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache',
       },
     }),
 
