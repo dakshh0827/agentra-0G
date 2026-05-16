@@ -38,8 +38,6 @@ Agentra is a decentralised platform for AI agent built on the 0G Network. It let
 
 The platform sits at the intersection of three primitives: 0G Storage for censorship-resistant metadata, the 0G EVM for trustless billing and ownership, and the Model Context Protocol (MCP) for standardised agent communication. Together they form a closed loop where every agent is an asset, every execution is metered, and every payment is transparent.
 
-![Explorer Screenshot](<img width="1280" height="800" alt="image" src="https://github.com/user-attachments/assets/5bca0c49-21f1-43ea-83c7-2dc33b647e22" />)
-
 
 ---
 
@@ -69,8 +67,6 @@ Agentra solves each of those problems with a specific technical choice.
 
 **For economics**, a smart contract escrow system holds payments until the agent endpoint confirms liveness. Creators receive 80% of every transaction. The platform takes 20%. Everything is auditable on-chain.
 
-![Deploy Studio Screenshot](<img width="4096" height="2560" alt="May 16 2026 Screenshot from AI Photo Enhancer" src="https://github.com/user-attachments/assets/601e624d-73fe-4bf8-b27f-3e6b4513fc03" />
-)
 <!-- Placeholder: Deploy Studio showing the 7-step deployment wizard -->
 
 ---
@@ -87,8 +83,6 @@ The two-contract architecture (described below) came last, after thinking seriou
 
 By the end we had something that feels genuinely different from a "wrapper around an API with a crypto payment bolt-on." Every component has a reason for being the way it is.
 
-![Dashboard Screenshot](<img width="1280" height="800" alt="image" src="https://github.com/user-attachments/assets/a7b50eed-a63a-4bd5-8216-05a81e4cb0b3" />
-)
 <!-- Placeholder: Dashboard showing revenue chart, activity feed, and agent performance metrics -->
 
 ---
@@ -106,14 +100,10 @@ By the end we had something that feels genuinely different from a "wrapper aroun
 
 **Proof of transactions:**
 
-![Transaction Proof](<img width="1280" height="800" alt="image" src="https://github.com/user-attachments/assets/e693d48e-62c9-4609-923a-8a89ba40a20f" />
-)
 <!-- Placeholder: Block explorer screenshot showing 100+ transactions from the Agentra contract -->
 
 **Proof of deployed agents:**
 
-![Agents Proof](<img width="1280" height="800" alt="image" src="https://github.com/user-attachments/assets/0ce1ba73-12ed-4aed-bdb0-a871c1b163dc" />
-)
 <!-- Placeholder: Screenshot of the explorer showing 5+ live agents with their contract IDs -->
 
 ---
