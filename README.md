@@ -1,7 +1,5 @@
 <div align="center">
 
-<br/><br/>
-
 # Agentra
 ### *You built the agent. We made it an asset.*
 
@@ -12,7 +10,6 @@
 [🚀 Live Demo](https://agentra.live) &nbsp;·&nbsp; [🎬 Watch Demo](https://canva.link/uxmz5s79nca4jxi) &nbsp;·&nbsp; [📦 GitHub Repo](https://github.com/dakshh0827/agentra-0G.git) &nbsp;·&nbsp;
 
 </div>
----
 
 ## Table of Contents
 
@@ -472,7 +469,7 @@ npm run build
 Built during the 0G hackathon.
 
 - Daksh Thakran - Full-stack development, backend architecture, databases
-- Mohit - Blockchain development, smart contracts
+- Mohit Bharat - Blockchain development, smart contracts
 
 ---
 
