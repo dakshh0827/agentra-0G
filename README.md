@@ -646,14 +646,8 @@ npm run build
 
 Built during the 0G hackathon.
 
-- Daksh Sharma - Full-stack development, smart contracts, backend architecture
-- [Additional team members]
-
----
-
-## License
-
-MIT. See `LICENSE` for details.
+- Daksh Thakran - Full-stack development, backend architecture, databases
+- Mohit Bharat - Blockchain development, smart-contracts
 
 ---
 
