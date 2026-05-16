@@ -128,11 +128,23 @@ class AnalyticsService {
       revenue: parseFloat((Number(a.revenue || '0') / 1e18).toFixed(4)),
     }))
 
-    // Activity feed from recent interactions
-    const activityFeed = recentInteractions.map(i => ({
-      text: `${i.agent?.name || 'Agent'} executed${i.callerWallet ? ` by ${i.callerWallet.slice(0, 8)}...` : ''}`,
-      time: new Date(i.createdAt).toLocaleTimeString(),
-    }))
+    const activityFeed = [
+      ...recentInteractions.map(i => ({
+        createdAt: i.createdAt,
+        kind: 'interaction',
+        text: `${i.agent?.name || 'Agent'} executed${i.callerWallet ? ` by ${i.callerWallet.slice(0, 8)}...` : ''}`,
+        time: new Date(i.createdAt).toLocaleTimeString(),
+      })),
+      ...transactions.map(tx => ({
+        createdAt: tx.createdAt,
+        kind: 'transaction',
+        text: `${tx.type === 'purchase_access' ? 'Purchase' : tx.type === 'agent_to_agent' ? 'Agent-to-agent call' : 'Call'} ${tx.ownerWallet ? `for ${tx.ownerWallet.slice(0, 8)}...` : ''}`,
+        time: new Date(tx.createdAt).toLocaleTimeString(),
+      })),
+    ]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 20)
+      .map(({ createdAt, ...item }) => item)
 
     return {
       metrics: {

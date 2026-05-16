@@ -198,6 +198,8 @@ export default function Dashboard() {
   const totalRevenue = Number(metrics.totalRevenue ?? 0)
   const totalCalls = Number(metrics.totalCalls ?? 0)
   const totalPurchases = Number(metrics.totalPurchases ?? 0)
+  const maxRevenuePoint = Math.max(...revenueData.map((point) => Number(point.eth || 0)), 0)
+  const revenueAxisMax = maxRevenuePoint > 0 ? maxRevenuePoint * 1.25 : 1
 
   const metricCards = [
     { label: 'TOTAL REVENUE', value: `${totalRevenue.toFixed(4)} 0G`, color: 'green', icon: DollarSign, sublabel: 'All time earnings' },
@@ -249,7 +251,14 @@ export default function Dashboard() {
                   <AreaChart data={revenueData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(124,58,237,0.1)" />
                     <XAxis dataKey="date" tickFormatter={formatRevenueTick} stroke="rgba(124,58,237,0.3)" tick={{ fontSize: 10, fontFamily: 'Space Mono', fill: 'var(--color-text-dim)' }} />
-                    <YAxis stroke="rgba(124,58,237,0.3)" tick={{ fontSize: 10, fontFamily: 'Space Mono', fill: 'var(--color-text-dim)' }} />
+                    <YAxis
+                      stroke="rgba(124,58,237,0.3)"
+                      domain={[0, revenueAxisMax]}
+                      tickCount={5}
+                      allowDecimals
+                      tickFormatter={(value) => (revenueAxisMax < 1 ? Number(value).toFixed(2) : Number(value).toFixed(0))}
+                      tick={{ fontSize: 10, fontFamily: 'Space Mono', fill: 'var(--color-text-dim)' }}
+                    />
                     <Tooltip content={<CustomTooltip />} />
                     <Area type="monotone" dataKey="eth" stroke="#a855f7" strokeWidth={2} fill="rgba(168,85,247,0.12)" name="0G" />
                   </AreaChart>
