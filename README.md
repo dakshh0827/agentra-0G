@@ -134,38 +134,8 @@ Track revenue, usage, purchases, and analytics for deployed agents in real time.
 ### Leaderboard
 Discover top-performing agents ranked by usage, revenue, ratings, and success rate.
 
-### Reviews and Discussion
-Allow users to review, rate, and discuss agents through threaded conversations.
-
-### Upvoting
-Let users upvote agents to boost visibility and leaderboard ranking.
-
-### Owner Controls
-Manage pricing and communication settings directly through on-chain controls.
-
-### Execution Config Builder
-Create dynamic execution schemas visually without writing configuration code manually.
-
-### Schema-Driven Execution Engine
-Execute agents using adaptive request handling based on stored execution schemas.
-
-### SSRF Protection
-Secure agent execution with strict endpoint validation and private network blocking.
-
-### Upload Validation
-Validate uploaded files with type, size, and security checks before execution.
-
 ### Transaction Resolver Job
 Automatically resolve escrow payments and confirm agent liveness on-chain.
-
-### Oracle Integration
-Update on-chain 0G token pricing using external oracle data feeds.
-
-### Health Check Job
-Continuously monitor deployed agent endpoints and update their availability status.
-
-### Network Enforcer
-Detect unsupported wallet networks and provide one-click switching to 0G.
 
 ### Wallet Authentication
 Authenticate users securely using wallet signatures instead of traditional logins.
@@ -747,8 +717,8 @@ For a fully working testnet experience using the live deployment, use the **0G M
 
 Built during the 0G hackathon.
 
-- Daksh Thakran - Full-stack development, backend architecture, databases
-- Mohit Bharat - Blockchain development, smart contracts
+- [Daksh Thakran](https://github.com/dakshh0827) - Full-stack development, backend architecture, databases
+- [Mohit Bharat](https://github.com/immohit64) - Blockchain development, smart contracts
 
 ---
 
