@@ -1,5 +1,3 @@
-<img width="1280" height="800" alt="image" src="https://github.com/user-attachments/assets/c83f148b-8660-4e54-9727-72094ceaf18f" /><img width="1280" height="800" alt="image" src="https://github.com/user-attachments/assets/6d49f13b-501b-4a67-a173-a9ac13159203" /><div align="center">
-
 # Agentra
 ### *You built the agent. We made it an asset.*
 
