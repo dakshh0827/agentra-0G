@@ -50,6 +50,13 @@ const CustomTooltip = ({ active, payload, label }) => {
   )
 }
 
+const formatRevenueTick = (value) => {
+  if (!value) return ''
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+  return parsed.toLocaleDateString('en', { month: 'short', day: 'numeric' })
+}
+
 export default function Dashboard() {
   const { address: walletAddress, isConnected } = useAccount()
 
@@ -212,7 +219,7 @@ export default function Dashboard() {
                 <ResponsiveContainer width="100%" height={200}>
                   <AreaChart data={revenueData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(124,58,237,0.1)" />
-                    <XAxis dataKey="day" stroke="rgba(124,58,237,0.3)" tick={{ fontSize: 10, fontFamily: 'Space Mono', fill: 'var(--color-text-dim)' }} />
+                    <XAxis dataKey="date" tickFormatter={formatRevenueTick} stroke="rgba(124,58,237,0.3)" tick={{ fontSize: 10, fontFamily: 'Space Mono', fill: 'var(--color-text-dim)' }} />
                     <YAxis stroke="rgba(124,58,237,0.3)" tick={{ fontSize: 10, fontFamily: 'Space Mono', fill: 'var(--color-text-dim)' }} />
                     <Tooltip content={<CustomTooltip />} />
                     <Area type="monotone" dataKey="eth" stroke="#a855f7" strokeWidth={2} fill="rgba(168,85,247,0.12)" name="0G" />

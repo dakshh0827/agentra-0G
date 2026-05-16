@@ -86,7 +86,7 @@ class AnalyticsService {
       ? agents.reduce((s, a) => s + a.successRate, 0) / agents.length
       : 0
 
-    const revenueByDay = this._groupRevenueSeries(transactions)
+    const revenueByDay = this._groupRevenueSeries(transactions, 14)
 
     // Agent performance chart data
     const agentPerf = agents.map(a => ({
@@ -197,42 +197,45 @@ class AnalyticsService {
     }
   }
 
-  _groupRevenueSeries(transactions) {
-    if (!transactions.length) return []
-
+  _groupRevenueSeries(transactions, days = 14) {
     const sorted = [...transactions]
       .filter(tx => tx?.createdAt)
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
 
-    if (!sorted.length) return []
-
-    const start = new Date(sorted[0].createdAt)
-    start.setHours(0, 0, 0, 0)
-
     const end = new Date()
     end.setHours(0, 0, 0, 0)
+
+    const start = new Date(end)
+    start.setDate(start.getDate() - (days - 1))
 
     const dayMap = new Map()
     for (const tx of sorted) {
       const day = new Date(tx.createdAt)
       day.setHours(0, 0, 0, 0)
+
+      if (day < start || day > end) continue
+
       const key = day.toISOString().split('T')[0]
       const amountWei = this._toWei(tx.creatorAmount || tx.totalAmount || '0')
-      dayMap.set(key, (dayMap.get(key) || 0n) + amountWei)
+      const current = dayMap.get(key) || { revenueWei: 0n, transactions: 0 }
+      dayMap.set(key, {
+        revenueWei: current.revenueWei + amountWei,
+        transactions: current.transactions + 1,
+      })
     }
 
     const result = []
-    let runningWei = 0n
 
     for (let cursor = new Date(start); cursor <= end; cursor.setDate(cursor.getDate() + 1)) {
       const dayKey = cursor.toISOString().split('T')[0]
-      runningWei += dayMap.get(dayKey) || 0n
+      const dayInfo = dayMap.get(dayKey) || { revenueWei: 0n, transactions: 0 }
 
       result.push({
+        label: cursor.toLocaleDateString('en', { month: 'short', day: 'numeric' }),
         day: cursor.toLocaleDateString('en', { weekday: 'short' }),
         date: dayKey,
-        eth: parseFloat((Number(runningWei) / 1e18).toFixed(6)),
-        transactions: Number(dayMap.get(dayKey) ? 1 : 0),
+        eth: parseFloat((Number(dayInfo.revenueWei) / 1e18).toFixed(6)),
+        transactions: dayInfo.transactions,
       })
     }
 
