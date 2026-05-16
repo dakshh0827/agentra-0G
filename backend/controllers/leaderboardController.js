@@ -1,5 +1,6 @@
 import prisma from '../lib/prisma.js'
 import { asyncHandler } from '../middlewares/errorHandler.js'
+import analyticsService from '../services/analyticsService.js'
 
 const weiToNumber = (wei) => {
   if (!wei) return 0
@@ -26,6 +27,27 @@ const getLeaderboard = asyncHandler(async (req, res) => {
       metrics: true,
     },
   })
+
+  // If all scores are zero (fresh DB or job didn't run), attempt a recalculation
+  try {
+    const allZero = agents.length > 0 && agents.every(a => !a.score)
+    if (allZero) {
+      await analyticsService.updateLeaderboardScores()
+      // refetch updated agents
+      const refreshed = await prisma.agent.findMany({
+        where,
+        orderBy: { score: 'desc' },
+        take: limit,
+        include: { metrics: true },
+      })
+      // replace agents with refreshed set for downstream mapping
+      // eslint-disable-next-line no-param-reassign
+      agents.length = 0
+      refreshed.forEach(a => agents.push(a))
+    }
+  } catch (err) {
+    console.error('[LEADERBOARD] Score recalculation failed:', err?.message || err)
+  }
 
   const leaderboard = agents.map((agent, index) => {
     const revenue = weiToNumber(agent.revenue)
