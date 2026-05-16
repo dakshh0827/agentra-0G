@@ -19,14 +19,30 @@ const getLeaderboard = asyncHandler(async (req, res) => {
     where.category = category
   }
 
+  // Fetch agents (no DB ordering) and compute scores live to avoid stale zeros
   const agents = await prisma.agent.findMany({
     where,
-    orderBy: { score: 'desc' },
-    take: limit,
     include: {
       metrics: true,
     },
   })
+
+  // Compute dynamic score for each agent and attach it for response sorting
+  try {
+    for (const agent of agents) {
+      const computed = analyticsService.calculateScore(agent)
+      // ensure numeric score available for frontend
+      // do not persist here; only for response
+      // eslint-disable-next-line no-param-reassign
+      agent.score = computed
+    }
+  } catch (err) {
+    console.error('[LEADERBOARD] Dynamic score computation failed:', err?.message || err)
+  }
+
+  // sort by computed score and take top `limit`
+  agents.sort((a, b) => (b.score || 0) - (a.score || 0))
+  const sliced = agents.slice(0, limit)
 
   // If all scores are zero (fresh DB or job didn't run), attempt a recalculation
   try {
@@ -49,7 +65,7 @@ const getLeaderboard = asyncHandler(async (req, res) => {
     console.error('[LEADERBOARD] Score recalculation failed:', err?.message || err)
   }
 
-  const leaderboard = agents.map((agent, index) => {
+  const leaderboard = sliced.map((agent, index) => {
     const revenue = weiToNumber(agent.revenue)
 
     return {
