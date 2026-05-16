@@ -5,67 +5,30 @@
 # Agentra
 ### *You built the agent. We made it an asset.*
 
-**A permissionless, natively reactive infrastructure protocol that lets developers monetize AI agents on-chain — where every user action triggers instant, trustless, decentralized reactions. No backends. No cron jobs. Pure on-chain autonomy.**
+**A permissionless, natively reactive infrastructure protocol that lets developers monetize AI agents on-chain, where every user action triggers instant, trustless, decentralized reactions. No backends. No cron jobs. Pure on-chain autonomy.**
 
 <br/>
 
-[🚀 Live Demo](https://agentra.live/) &nbsp;·&nbsp; [🎬 Watch Demo](#) &nbsp;·&nbsp; [📦 GitHub Repo](https://github.com/dakshh0827/agentra-0G)
+[🚀 Live Demo](https://agentra.live) &nbsp;·&nbsp; [🎬 Watch Demo](https://canva.link/uxmz5s79nca4jxi) &nbsp;·&nbsp; [📦 GitHub Repo](https://github.com/dakshh0827/agentra-0G.git) &nbsp;·&nbsp;
 
 </div>
 ---
 
 ## Table of Contents
 
-- [Agentra](#agentra)
-    - [*You built the agent. We made it an asset.*](#you-built-the-agent-we-made-it-an-asset)
-  - [](#)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-  - [The Problem](#the-problem)
-  - [Our Solution](#our-solution)
-  - [The Journey](#the-journey)
-  - [Stats](#stats)
-  - [Features](#features)
-    - [Agent Deployment (Deploy Studio)](#agent-deployment-deploy-studio)
-    - [Agent Explorer](#agent-explorer)
-    - [Agent Detail and Execution](#agent-detail-and-execution)
-    - [Agent-to-Agent Communication (A2A Comms)](#agent-to-agent-communication-a2a-comms)
-    - [Revenue Dashboard](#revenue-dashboard)
-    - [Leaderboard](#leaderboard)
-    - [Reviews and Discussion](#reviews-and-discussion)
-    - [Upvoting](#upvoting)
-    - [Owner Controls](#owner-controls)
-    - [Execution Config Builder](#execution-config-builder)
-    - [Schema-Driven Execution Engine](#schema-driven-execution-engine)
-    - [SSRF Protection](#ssrf-protection)
-    - [Upload Validation](#upload-validation)
-    - [Transaction Resolver Job](#transaction-resolver-job)
-    - [Oracle Integration](#oracle-integration)
-    - [Health Check Job](#health-check-job)
-    - [Network Enforcer](#network-enforcer)
-    - [Wallet Authentication](#wallet-authentication)
-  - [Contract Architecture](#contract-architecture)
-    - [AgentraRegistry](#agentraregistry)
-    - [Agentra (V1)](#agentra-v1)
-  - [Why Two Contracts](#why-two-contracts)
-  - [Technical Details](#technical-details)
-    - [Stack](#stack)
-    - [Networks](#networks)
-    - [API Rate Limits](#api-rate-limits)
-    - [Execution Timeout](#execution-timeout)
-    - [Score Formula](#score-formula)
-    - [Escrow Split](#escrow-split)
-    - [Access Expiry Logic](#access-expiry-logic)
-  - [Folder Structure](#folder-structure)
-  - [Setup Guide](#setup-guide)
-    - [Prerequisites](#prerequisites)
-    - [Environment Variables](#environment-variables)
-    - [Backend Setup](#backend-setup)
-    - [Frontend Setup](#frontend-setup)
-    - [Contract Deployment](#contract-deployment)
-    - [Running in Production](#running-in-production)
-  - [Future Enhancements](#future-enhancements)
-  - [Team](#team)
+- [Overview](#overview)
+- [The Problem](#the-problem)
+- [Our Solution](#our-solution)
+- [The Journey](#the-journey)
+- [Stats](#stats)
+- [Features](#features)
+- [Contract Architecture](#contract-architecture)
+- [Why Two Contracts](#why-two-contracts)
+- [Technical Details](#technical-details)
+- [Folder Structure](#folder-structure)
+- [Setup Guide](#setup-guide)
+- [Future Enhancements](#future-enhancements)
+- [Team](#team)
 
 ---
 
