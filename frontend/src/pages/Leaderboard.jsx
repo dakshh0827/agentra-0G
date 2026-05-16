@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, useInView, AnimatePresence } from 'framer-motion'
-import { Trophy, Star, Zap, Crown, Medal, TrendingUp, Users, Award, Flame } from 'lucide-react'
+import { Trophy, Star, Zap, Crown, Medal, TrendingUp, Users, Award, Flame, ShoppingBag } from 'lucide-react'
 import LoadingPulse from '../components/ui/LoadingPulse'
 import { analyticsAPI } from '../api/analytics'
 import { Link } from 'react-router-dom'
@@ -173,13 +173,14 @@ export default function Leaderboard() {
         <FadeInSection delay={0.15}>
           <div className="glass-card-landing rounded-xl overflow-hidden">
             {/* Table header */}
-            <div className="grid grid-cols-12 gap-2 sm:gap-3 px-4 sm:px-6 py-4 border-b border-[var(--color-border)] bg-[rgba(124,58,237,0.03)]">
+            <div className="grid grid-cols-[repeat(14,minmax(0,1fr))] gap-2 sm:gap-3 px-4 sm:px-6 py-4 border-b border-[var(--color-border)] bg-[rgba(124,58,237,0.03)]">
               <div className="col-span-1 text-xs font-mono tracking-wider text-[var(--color-text-dim)]">#</div>
-              <div className="col-span-5 sm:col-span-4 text-xs font-mono tracking-wider text-[var(--color-text-dim)]">AGENT</div>
+              <div className="col-span-4 text-xs font-mono tracking-wider text-[var(--color-text-dim)]">AGENT</div>
               <div className="col-span-2 text-xs font-mono tracking-wider text-[var(--color-text-dim)]">SCORE</div>
               <div className="hidden sm:block col-span-2 text-xs font-mono tracking-wider text-[var(--color-text-dim)]">RATING</div>
               <div className="col-span-2 text-xs font-mono tracking-wider text-[var(--color-text-dim)]">CALLS</div>
-              <div className="col-span-2 sm:col-span-1 text-xs font-mono tracking-wider text-[var(--color-text-dim)]">WIN%</div>
+              <div className="col-span-2 text-xs font-mono tracking-wider text-[var(--color-text-dim)]">PURCHASES</div>
+              <div className="col-span-1 text-xs font-mono tracking-wider text-[var(--color-text-dim)]">WIN%</div>
             </div>
 
             <AnimatePresence>
@@ -195,12 +196,12 @@ export default function Leaderboard() {
                     onMouseLeave={() => setHovered(null)}
                   >
                     <Link to={`/agent/${linkId}`}>
-                      <div className={`grid grid-cols-12 gap-2 sm:gap-3 px-4 sm:px-6 py-4 border-b border-[var(--color-border)] last:border-0 transition-all duration-200 cursor-pointer ${
+                      <div className={`grid grid-cols-[repeat(14,minmax(0,1fr))] gap-2 sm:gap-3 px-4 sm:px-6 py-4 border-b border-[var(--color-border)] last:border-0 transition-all duration-200 cursor-pointer ${
                         hovered === linkId ? 'bg-[rgba(124,58,237,0.08)]' : i < 3 ? 'bg-[rgba(251,191,36,0.02)]' : ''
                       }`}>
                         <div className="col-span-1 flex items-center">{rankIcon(i)}</div>
 
-                        <div className="col-span-5 sm:col-span-4 flex items-center gap-2 sm:gap-3 min-w-0">
+                        <div className="col-span-4 flex items-center gap-2 sm:gap-3 min-w-0">
                           <motion.div whileHover={{ scale: 1.1 }} className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-[var(--color-nebula-deep)] border border-[var(--color-border)] flex items-center justify-center shrink-0">
                             <Zap size={14} className="text-[var(--color-primary)]" />
                           </motion.div>
@@ -230,10 +231,15 @@ export default function Leaderboard() {
                         </div>
 
                         <div className="col-span-2 flex items-center">
-                          <span className="font-mono text-xs text-[var(--color-star-blue)]">{((agent.calls || 0) / 1000).toFixed(1)}K</span>
+                          <span className="font-mono text-xs text-[var(--color-star-blue)]">{(agent.calls || 0).toLocaleString()}</span>
                         </div>
 
-                        <div className="col-span-2 sm:col-span-1 flex items-center">
+                        <div className="col-span-2 flex items-center gap-1.5">
+                          <ShoppingBag size={12} className="text-[var(--color-secondary)]" />
+                          <span className="font-mono text-xs text-[var(--color-text-primary)]">{(agent.purchaseCount || 0).toLocaleString()}</span>
+                        </div>
+
+                        <div className="col-span-1 flex items-center">
                           <span className="font-mono text-xs text-[var(--color-success)]">{(agent.successRate || 0).toFixed(1)}%</span>
                         </div>
                       </div>

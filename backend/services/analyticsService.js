@@ -80,8 +80,21 @@ class AnalyticsService {
 
     const totalRevenueWei = transactions.reduce((s, t) => s + txRevenueWei(t), 0n)
 
+    const callCounts = await prisma.interaction.groupBy({
+      by: ['agentId'],
+      where: {
+        agentId: { in: agents.map(a => a.agentId) },
+      },
+      _count: { agentId: true },
+    })
+
+    const callCountMap = callCounts.reduce((acc, row) => {
+      acc[row.agentId] = row._count.agentId
+      return acc
+    }, {})
+
     const totalRevenue = Number(totalRevenueWei) / 1e18
-    const totalCalls = agents.reduce((s, a) => s + a.calls, 0)
+    const totalCalls = agents.reduce((s, a) => s + (callCountMap[a.agentId] ?? a.calls ?? 0), 0)
     const avgSuccessRate = agents.length > 0
       ? agents.reduce((s, a) => s + a.successRate, 0) / agents.length
       : 0
@@ -91,7 +104,7 @@ class AnalyticsService {
     // Agent performance chart data
     const agentPerf = agents.map(a => ({
       name: a.name.length > 10 ? a.name.slice(0, 10) + '…' : a.name,
-      calls: a.calls,
+      calls: callCountMap[a.agentId] ?? a.calls ?? 0,
       revenue: parseFloat((Number(a.revenue || '0') / 1e18).toFixed(4)),
     }))
 

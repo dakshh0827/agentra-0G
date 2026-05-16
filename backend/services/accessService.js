@@ -11,25 +11,48 @@ export async function recordAgentPurchase({ agent, walletAddress, txHash, isLife
   const normalizedWallet = normalizeWallet(walletAddress)
   const finalExpiresAt = expiresAt || null
 
-  const purchase = await prisma.agentPurchase.upsert({
-    where: {
-      agentId_userWallet: {
+  const purchase = await prisma.$transaction(async (tx) => {
+    const existingPurchase = await tx.agentPurchase.findUnique({
+      where: {
+        agentId_userWallet: {
+          agentId: agent.agentId,
+          userWallet: normalizedWallet,
+        },
+      },
+    })
+
+    if (existingPurchase) {
+      return tx.agentPurchase.update({
+        where: {
+          agentId_userWallet: {
+            agentId: agent.agentId,
+            userWallet: normalizedWallet,
+          },
+        },
+        data: {
+          txHash: txHash || null,
+          isLifetime: !!isLifetime,
+          expiresAt: finalExpiresAt,
+        },
+      })
+    }
+
+    await tx.agent.update({
+      where: { id: agent.id },
+      data: {
+        purchaseCount: { increment: 1 },
+      },
+    })
+
+    return tx.agentPurchase.create({
+      data: {
         agentId: agent.agentId,
         userWallet: normalizedWallet,
+        txHash: txHash || null,
+        isLifetime: !!isLifetime,
+        expiresAt: finalExpiresAt,
       },
-    },
-    update: {
-      txHash: txHash || null,
-      isLifetime: !!isLifetime,
-      expiresAt: finalExpiresAt,
-    },
-    create: {
-      agentId: agent.agentId,
-      userWallet: normalizedWallet,
-      txHash: txHash || null,
-      isLifetime: !!isLifetime,
-      expiresAt: finalExpiresAt,
-    },
+    })
   })
 
   return purchase

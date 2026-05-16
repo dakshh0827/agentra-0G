@@ -3,6 +3,7 @@ import prisma from '../lib/prisma.js'
 import orchestrator from '../orchestrator/orchestrator.js'
 import { hasPersistentAgentAccess } from '../services/accessService.js'
 import { asyncHandler } from '../middlewares/errorHandler.js'
+import agentService from '../services/agentService.js'
 import { validateRuntimePayload } from '../utils/validateRuntimePayloadAgainstExecutionConfig.js'
 
 const callAgentSchema = z.object({
@@ -362,6 +363,11 @@ const callAgent = asyncHandler(async (req, res) => {
       },
     })
 
+    await agentService.recordExecution(targetAgent.agentId, {
+      success: true,
+      latency: delegatedResult.latency,
+    })
+
     res.json({
       mode: 'agent-communication',
       sourceAgent: {
@@ -396,6 +402,11 @@ const callAgent = asyncHandler(async (req, res) => {
         status: 'failed',
         errorMessage: error.message,
       },
+    }).catch(() => {})
+
+    await agentService.recordExecution(targetAgent.agentId, {
+      success: false,
+      latency: 0,
     }).catch(() => {})
 
     throw error

@@ -115,6 +115,7 @@ model Agent {
   ratingCount     Int           @default(0)
 
   calls           Int           @default(0)
+  purchaseCount   Int           @default(0)
   successRate     Float         @default(100)
 
   revenue         String        @default("0")

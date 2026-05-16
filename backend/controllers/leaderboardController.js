@@ -27,9 +27,44 @@ const getLeaderboard = asyncHandler(async (req, res) => {
     },
   })
 
+  const callCounts = await prisma.interaction.groupBy({
+    by: ['agentId'],
+    where: {
+      agentId: { in: agents.map(a => a.agentId) },
+    },
+    _count: { agentId: true },
+  })
+
+  const purchaseCounts = await prisma.agentPurchase.groupBy({
+    by: ['agentId'],
+    where: {
+      agentId: { in: agents.map(a => a.agentId) },
+    },
+    _count: { agentId: true },
+  })
+
+  const callCountMap = callCounts.reduce((acc, row) => {
+    acc[row.agentId] = row._count.agentId
+    return acc
+  }, {})
+
+  const purchaseCountMap = purchaseCounts.reduce((acc, row) => {
+    acc[row.agentId] = row._count.agentId
+    return acc
+  }, {})
+
   // Compute dynamic score for each agent and attach it for response sorting
   try {
     for (const agent of agents) {
+      const dynamicCalls = callCountMap[agent.agentId] ?? agent.calls ?? 0
+      const dynamicPurchases = purchaseCountMap[agent.agentId] ?? agent.purchaseCount ?? 0
+      // ensure leaderboard uses real call activity even when denormalized counters lag
+      // eslint-disable-next-line no-param-reassign
+      agent.calls = dynamicCalls
+      // ensure leaderboard reflects real unique purchases even when denormalized counters lag
+      // eslint-disable-next-line no-param-reassign
+      agent.purchaseCount = dynamicPurchases
+
       const computed = analyticsService.calculateScore(agent)
       // ensure numeric score available for frontend
       // do not persist here; only for response
@@ -110,6 +145,7 @@ const getTopAgents = asyncHandler(async (req, res) => {
       score: true,
       rating: true,
       calls: true,
+      purchaseCount: true,
       successRate: true,
       revenue: true,
       pricing: true,
@@ -247,6 +283,7 @@ const getLeaderboardStats = asyncHandler(async (req, res) => {
         pricing: true,
         revenue: true,
         calls: true,
+        purchaseCount: true,
       },
     }),
     prisma.agent.groupBy({
