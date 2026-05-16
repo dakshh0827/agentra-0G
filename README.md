@@ -1,33 +1,77 @@
+<div align="center">
+
+<br/><br/>
+
 # Agentra
+### *You built the agent. We made it an asset.*
 
-**The open infrastructure for deploying, discovering, and monetising AI agents on the 0G Network.**
+**A permissionless, natively reactive infrastructure protocol that lets developers monetize AI agents on-chain — where every user action triggers instant, trustless, decentralized reactions. No backends. No cron jobs. Pure on-chain autonomy.**
 
-![Agentra Banner](./screenshots/banner.png)
-<!-- Placeholder: Full-width landing page hero screenshot -->
+<br/>
 
+[🚀 Live Demo](https://agentra-somnia.vercel.app/) &nbsp;·&nbsp; [🎬 Watch Demo](https://canva.link/uxmz5s79nca4jxi) &nbsp;·&nbsp; [📦 GitHub Repo](https://github.com/iammohit64/agentra-somnia.git) &nbsp;·&nbsp; [🔗 Marketplace Contract](https://shannon.explorer.somnia.network/address/0x37bF6Fa744faf5E1d5eb563559818373901d4499) &nbsp;·&nbsp; [🪙 AGT Token](https://shannon.explorer.somnia.network/address/0x04c293572ADea2d3D52A623C4B49D4C6fEdA569d) &nbsp;·&nbsp; [⚡ Reactor Contract](https://shannon.explorer.somnia.network/address/0x24e656c6bb05F36F255Eb72CD86562E6b4704D94)
+
+</div>
 ---
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [The Problem](#the-problem)
-- [Our Solution](#our-solution)
-- [The Journey](#the-journey)
-- [Stats](#stats)
-- [Features](#features)
-- [Contract Architecture](#contract-architecture)
-- [Why Two Contracts](#why-two-contracts)
-- [Technical Details](#technical-details)
-- [Folder Structure](#folder-structure)
-- [Setup Guide](#setup-guide)
-- [Future Enhancements](#future-enhancements)
-- [Team](#team)
+- [Agentra](#agentra)
+    - [*You built the agent. We made it an asset.*](#you-built-the-agent-we-made-it-an-asset)
+  - [](#)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [The Problem](#the-problem)
+  - [Our Solution](#our-solution)
+  - [The Journey](#the-journey)
+  - [Stats](#stats)
+  - [Features](#features)
+    - [Agent Deployment (Deploy Studio)](#agent-deployment-deploy-studio)
+    - [Agent Explorer](#agent-explorer)
+    - [Agent Detail and Execution](#agent-detail-and-execution)
+    - [Agent-to-Agent Communication (A2A Comms)](#agent-to-agent-communication-a2a-comms)
+    - [Revenue Dashboard](#revenue-dashboard)
+    - [Leaderboard](#leaderboard)
+    - [Reviews and Discussion](#reviews-and-discussion)
+    - [Upvoting](#upvoting)
+    - [Owner Controls](#owner-controls)
+    - [Execution Config Builder](#execution-config-builder)
+    - [Schema-Driven Execution Engine](#schema-driven-execution-engine)
+    - [SSRF Protection](#ssrf-protection)
+    - [Upload Validation](#upload-validation)
+    - [Transaction Resolver Job](#transaction-resolver-job)
+    - [Oracle Integration](#oracle-integration)
+    - [Health Check Job](#health-check-job)
+    - [Network Enforcer](#network-enforcer)
+    - [Wallet Authentication](#wallet-authentication)
+  - [Contract Architecture](#contract-architecture)
+    - [AgentraRegistry](#agentraregistry)
+    - [Agentra (V1)](#agentra-v1)
+  - [Why Two Contracts](#why-two-contracts)
+  - [Technical Details](#technical-details)
+    - [Stack](#stack)
+    - [Networks](#networks)
+    - [API Rate Limits](#api-rate-limits)
+    - [Execution Timeout](#execution-timeout)
+    - [Score Formula](#score-formula)
+    - [Escrow Split](#escrow-split)
+    - [Access Expiry Logic](#access-expiry-logic)
+  - [Folder Structure](#folder-structure)
+  - [Setup Guide](#setup-guide)
+    - [Prerequisites](#prerequisites)
+    - [Environment Variables](#environment-variables)
+    - [Backend Setup](#backend-setup)
+    - [Frontend Setup](#frontend-setup)
+    - [Contract Deployment](#contract-deployment)
+    - [Running in Production](#running-in-production)
+  - [Future Enhancements](#future-enhancements)
+  - [Team](#team)
 
 ---
 
 ## Overview
 
-Agentra is a decentralised platform for AI agents built on the 0G Network. It lets developers publish their AI agents as on-chain intelligent NFTs (iNFTs), set their own pricing, and start earning immediately. Users can discover, purchase access to, and execute those agents directly from the browser. Payments are settled on-chain with no intermediaries.
+Agentra is a decentralised AI agent marketplace built on the 0G Network. It lets developers publish their AI agents as on-chain intelligent NFTs (iNFTs), set their own pricing, and start earning immediately. Users can discover, purchase access to, and execute those agents directly from the browser. Payments are settled on-chain with no intermediaries.
 
 The platform sits at the intersection of three primitives: 0G Storage for censorship-resistant metadata, the 0G EVM for trustless billing and ownership, and the Model Context Protocol (MCP) for standardised agent communication. Together they form a closed loop where every agent is an asset, every execution is metered, and every payment is transparent.
 
@@ -110,233 +154,58 @@ By the end we had something that feels genuinely different from a "wrapper aroun
 ## Features
 
 ### Agent Deployment (Deploy Studio)
-
-A seven-step guided deployment wizard that handles the full lifecycle from configuration to on-chain minting.
-
-- Choose between blockchain deployment (on-chain iNFT, trustless payments) or database-only listing (no gas fees, instant)
-- Define agent identity: name, category, description, tags
-- Set MCP endpoint URL and upload an optional MCP schema JSON
-- Configure monthly and yearly access pricing denominated in 0G
-- Enable Agent-to-Agent communication with a configurable per-call fee
-- Build a full execution schema: request headers, body fields, content type (JSON, multipart form-data, URL-encoded), field types (text, textarea, number, file, password, boolean), required/optional flags, user-provided vs static values, secret masking
-- Review a complete deployment summary before signing the wallet transaction
-- On blockchain deployments, the contract automatically mints the agent as an ERC-721 iNFT and registers it with the AgentraRegistry for permanent global identity
-
-![Deploy Steps Screenshot](./screenshots/deploy-steps.png)
-<!-- Placeholder: Deploy Studio step 6 showing the execution config builder with headers and body fields -->
-
----
+Deploy AI agents as on-chain iNFTs with configurable pricing, schemas, and execution settings.
 
 ### Agent Explorer
-
-A filterable, searchable registry of all agents deployed on the network.
-
-- Filter by category: Analysis, Development, Security, Data, NLP, Web3, Other
-- Sort by total computations, uptime score, or deployment date
-- Each card shows the deployer wallet address, call count, category tag, and uptime status
-- Real-time global stats: total deployed contracts, live endpoints, total computations
-- Full-text search across agent name, description, and tags
-
-![Explorer Detail Screenshot](./screenshots/explorer-detail.png)
-<!-- Placeholder: Explorer page filtered by "Security" category showing agent cards -->
-
----
+Browse, search, and filter all deployed AI agents across the network.
 
 ### Agent Detail and Execution
-
-A full-featured agent profile page that adapts to the agent's configuration.
-
-**Access control**
-- Owner access is granted automatically
-- Purchased access is verified against the on-chain `accessRegistry` mapping
-- A DB-level `AgentAccess` record provides immediate UX after purchase while the resolver confirms on-chain
-- Access state is cached in localStorage per wallet to prevent re-lock flicker on reconnect
-- A polling mechanism checks access every 5 seconds after a purchase until the resolver confirms
-
-**Execution console**
-- For agents with an `executionConfig`, a fully dynamic schema-driven form renders all required headers and body fields at runtime
-- Secret fields (API keys, passwords) render as masked inputs and are never stored
-- File uploads are supported with drag-and-drop, size validation (200MB limit), and MIME type checking
-- A pre-execution summary panel shows exactly what will be sent (with secrets redacted) before the user confirms
-- For legacy agents without an execution config, a simple task textarea is shown
-
-**Output rendering**
-- The output renderer automatically detects response type: plain text, Markdown, JSON, CSV, code (with syntax highlighting and language detection), data URIs, URLs, or binary file downloads
-- Markdown responses are parsed into structured blocks (headings, lists, blockquotes, inline code, tables, code blocks) and rendered with a custom formatter
-- CSV data renders as a scrollable in-browser table with copy functionality
-- Binary responses (PDFs, ZIPs, images) are decoded from base64 and offered as a download with a blob URL
-
-**Purchase flow**
-- Monthly (30 days) and yearly (365 days) access options
-- Price is fetched live from the contract's `getRequiredWei` function using the current 0G/USD oracle price
-- A 2% buffer is added to the purchase value to account for oracle price movement between the read and the transaction
-- After purchase, a pending escrow badge is shown with a countdown to the 24-hour refund timeout
-- The resolver job polls on-chain pending transactions every 2 minutes, confirms liveness of the agent endpoint, then calls `resolveTransaction` to release funds
-
-![Agent Detail Screenshot](./screenshots/agent-detail.png)
-<!-- Placeholder: Agent detail page with the execution console open and a response rendered -->
-
----
+Access a dynamic execution console with schema-based inputs and smart output rendering.
 
 ### Agent-to-Agent Communication (A2A Comms)
-
-A native protocol for agents to delegate tasks to other agents on the platform with automatic on-chain billing.
-
-- Agents can be configured to accept delegation with a per-call fee in 0G
-- From any agent detail page, a user can invoke another agent as a sub-agent for a given task
-- Two target selection modes: manual (browse all agents and pick one) and auto-discover (semantic search by task description using keyword matching against name, description, and tags)
-- When a target is selected, its full execution schema loads dynamically so the caller can provide all required fields
-- Payment flow: the caller signs a `initiateAgentComms` transaction on-chain, the API executes the delegation, the resolver confirms and splits the payment 80/20 between the target agent's creator and the platform
-- A message history log shows all sent and received inter-agent messages with status, latency, and billing breakdown
-
-![A2A Comms Screenshot](./screenshots/a2a-comms.png)
-<!-- Placeholder: Agent Comms panel showing the manual target selector and a successful delegation result -->
-
----
+Enable agents to delegate tasks and transact with other agents automatically on-chain.
 
 ### Revenue Dashboard
-
-A personal analytics hub for agent creators.
-
-- Total revenue, total calls, agent count, and total unique purchases displayed as metric cards
-- A 14-day revenue area chart (0G earnings over time) sourced from confirmed transaction records
-- A bar chart of calls vs revenue per agent for portfolio-level performance comparison
-- An activity feed combining recent interactions and transactions
-- A list of the creator's deployed agents with links to their detail pages
-- A list of agents the current wallet has purchased access to (unlocked agents)
-- All metrics are reloaded silently every 15 seconds without a full page refresh
-
-![Dashboard Detail Screenshot](./screenshots/dashboard-detail.png)
-<!-- Placeholder: Dashboard showing the revenue chart with actual data points and the activity feed -->
-
----
+Track revenue, usage, purchases, and analytics for deployed agents in real time.
 
 ### Leaderboard
-
-A ranked list of all agents by composite score.
-
-- Score formula: `0.35 x upvotes + 0.30 x usage + 0.20 x revenue + 0.05 x purchases + 0.10 x success rate`
-- Podium display for the top 3 agents with animated rank icons
-- Full ranked table showing score, star rating, call count, purchase count, and success rate
-- Score bars animate on load for each row
-- Scores are recomputed dynamically from live database counts rather than relying on potentially stale denormalised fields
-- A leaderboard job runs every 5 minutes to persist updated scores to the database
-
-![Leaderboard Screenshot](./screenshots/leaderboard.png)
-<!-- Placeholder: Leaderboard page showing the top 3 podium and the full ranked table -->
-
----
+Discover top-performing agents ranked by usage, revenue, ratings, and success rate.
 
 ### Reviews and Discussion
-
-A threaded comment and rating system attached to each agent.
-
-- Star ratings (1-5) on top-level reviews, averaged into the agent's displayed rating
-- Threaded replies up to 3 levels deep
-- Like/unlike on any review or reply
-- Delete your own reviews (cascades to delete all child replies and their likes)
-- Pagination with a "load more" button
-
----
+Allow users to review, rate, and discuss agents through threaded conversations.
 
 ### Upvoting
-
-- Any connected wallet (except the agent owner) can upvote an agent once
-- Upvotes are tracked in the `AgentUpvote` table for deduplication
-- Upvote count contributes to the leaderboard score
-
----
+Let users upvote agents to boost visibility and leaderboard ranking.
 
 ### Owner Controls
-
-For agents with a `contractAgentId`, the owner sees an additional panel on the agent detail page:
-
-- Update monthly price and comms price per call on-chain via `updateAgentPricing`
-- Toggle agent-to-agent communication on/off on-chain via `toggleAgentComms`
-- Both actions require a wallet transaction and wait for receipt confirmation before updating the database
-
----
+Manage pricing and communication settings directly through on-chain controls.
 
 ### Execution Config Builder
-
-A visual schema designer embedded in the Deploy Studio that generates the `executionConfig` JSON stored with the agent.
-
-- Add and remove request headers with key, default value, placeholder, description, required flag, secret flag, and user-provided flag
-- Add and remove body fields with key, type, placeholder, description, required flag, and user-provided flag
-- Choose content type: JSON, multipart/form-data, or URL-encoded
-- Live JSON preview of the generated config updates in real time as fields are edited
-- Validation catches duplicate keys, invalid identifiers, and empty required fields before deploy
-
----
+Create dynamic execution schemas visually without writing configuration code manually.
 
 ### Schema-Driven Execution Engine
-
-The backend execution engine adapts its HTTP call strategy based on the agent's stored `executionConfig`.
-
-- For JSON agents: builds a JSON body with all runtime fields plus the task string, sets `Content-Type: application/json`
-- For form-data agents: builds a `FormData` object, appends all fields and file buffers with correct MIME types
-- For URL-encoded agents: builds a `URLSearchParams` string
-- Static (non-user-provided) headers from the schema are injected automatically without exposing them to the caller
-- Multiple candidate URLs are tried in sequence (base endpoint, `/apply`, `/execute`) for maximum compatibility with Hugging Face Spaces and other hosted models
-- Binary responses (detected from content-type or ArrayBuffer type) are base64-encoded and returned with filename and MIME metadata for frontend download rendering
-- A retry utility retries on network failures and 502/503/504 responses with exponential backoff and jitter, up to 2 retries
-
----
+Execute agents using adaptive request handling based on stored execution schemas.
 
 ### SSRF Protection
-
-All agent endpoint URLs are validated before execution.
-
-- URL must use `http://` or `https://` scheme
-- Hostname is checked against a blocklist: `localhost`, `0.0.0.0`, AWS metadata endpoint, GCP metadata endpoint
-- DNS resolution is performed and all resolved IP addresses are checked against private/loopback ranges (10.x, 172.16-31.x, 192.168.x, 127.x, ::1)
-
----
+Secure agent execution with strict endpoint validation and private network blocking.
 
 ### Upload Validation
-
-File uploads pass through a server-side validation layer before reaching the agent endpoint.
-
-- Maximum 10MB per file (200MB limit at the multer layer for large model inputs)
-- Blocked executable extensions: `.exe`, `.bat`, `.cmd`, `.sh`, `.ps1`, `.py`, `.js`, `.php`, and more
-- Allowed MIME types: images, PDF, plain text, CSV, JSON, ZIP, DOCX, XLSX, audio/MP3, audio/WAV, MP4
-
----
+Validate uploaded files with type, size, and security checks before execution.
 
 ### Transaction Resolver Job
+Automatically resolve escrow payments and confirm agent liveness on-chain.
 
-A cron job that runs every 2 minutes and processes all pending on-chain escrow transactions.
-
-- Fetches the on-chain `txCounter` and iterates all pending transactions
-- For access transactions: pings the agent endpoint's `/health` route, resolves the escrow if alive, refunds if unreachable
-- For comms transactions: checks for a matching confirmed `AgentCommsMessage` record created within 5 minutes of the on-chain timestamp, resolves if found
-- Marks stale transactions (>20 hours old) with a warning log so users know their 24-hour refund window is approaching
-- On resolution, updates the DB transaction status and grants `AgentAccess` with the correct expiry
-
----
+### Oracle Integration
+Update on-chain 0G token pricing using external oracle data feeds.
 
 ### Health Check Job
-
-A cron job that runs every 2 minutes and monitors all active, busy, and offline agents.
-
-- Pings each agent's `/health` endpoint with a 5-second timeout
-- Marks agents as `offline` if they return a 4xx/5xx or are unreachable
-- Recovers agents back to `active` if they return healthy after being offline
-
----
+Continuously monitor deployed agent endpoints and update their availability status.
 
 ### Network Enforcer
-
-A frontend guard that detects when the connected wallet is on an unsupported chain and shows a blocking modal with a one-click switch to the supported 0G network.
-
----
+Detect unsupported wallet networks and provide one-click switching to 0G.
 
 ### Wallet Authentication
-
-- Wallet-address-based authentication using an `x-wallet-address` header
-- Nonce-based signature verification for session establishment
-- `authMiddleware` upserts a `User` record on every authenticated request so new wallets are registered automatically
-- No JWT tokens: the wallet address is the identity
+Authenticate users securely using wallet signatures instead of traditional logins.
 
 ---
 
@@ -480,7 +349,7 @@ agentra/
 │   ├── routes/
 │   ├── services/
 │   ├── utils/
-│   ├── index.js                  
+│   ├── index.js                 
 │   └── package.json
 ├── contracts/
 │   └── src/
@@ -489,6 +358,7 @@ agentra/
 │   ├── src/
 │   │   ├── api/
 │   │   ├── components/
+│   │   │   ├── execution/
 │   │   │   ├── layouts/
 │   │   │   └── ui/
 │   │   ├── config/
@@ -496,7 +366,7 @@ agentra/
 │   │   ├── pages/
 │   │   ├── stores/
 │   │   ├── utils/
-│   │   ├── deployments.json      
+│   │   ├── deployments.json       # Contract addresses and ABIs per chain ID
 │   │   ├── App.jsx
 │   │   ├── index.css
 │   │   └── main.jsx
@@ -628,17 +498,9 @@ npm run build
 
 **Decentralised resolver.** The current resolver is a centralised cron job operated by the platform. A network of resolver nodes competing to confirm and resolve escrow transactions, rewarded with a portion of the platform fee, would remove this centralisation risk.
 
-**Agent trading.** Because agents are ERC-721 tokens, they can already be transferred. A dedicated secondary market UI where creators can list their agents for sale, with automatic revenue stream transfer on NFT transfer, is a natural extension.
+**Agent marketplace trading.** Because agents are ERC-721 tokens, they can already be transferred. A dedicated secondary market UI where creators can list their agents for sale, with automatic revenue stream transfer on NFT transfer, is a natural extension.
 
 **Agent bundles.** Let creators package multiple complementary agents as a single purchase. A "data science bundle" might include a data cleaning agent, a visualisation agent, and an analysis agent, all accessible with one transaction.
-
-**On-chain agent discovery index.** Currently, semantic search for agent discovery uses keyword matching in the database. A vector embedding index of agent descriptions stored on 0G Storage, queried via a lightweight embedding model, would dramatically improve discovery relevance.
-
-**Cross-chain support.** The registry contract's design is chain-agnostic. Expanding to other EVM chains (Arbitrum, Base, Polygon) with 0G Storage as the shared metadata layer would allow a single agent to be discoverable and executable regardless of which chain a user prefers.
-
-**Execution streaming.** For long-running agents, stream partial results back to the frontend via server-sent events rather than blocking the client on a single HTTP response.
-
-**Agent analytics API.** Expose a public read-only API that lets third-party tools query execution history, revenue, and performance metrics for any agent by its global ID. Think Etherscan but for agent calls.
 
 ---
 
@@ -647,8 +509,8 @@ npm run build
 Built during the 0G hackathon.
 
 - Daksh Thakran - Full-stack development, backend architecture, databases
-- Mohit Bharat - Blockchain development, smart-contracts
+- Mohit - Blockchain development, smart contracts
 
 ---
 
-*Built on 0G Network. Agents are assets.*
+*You built the agent. We made it an asset.*
