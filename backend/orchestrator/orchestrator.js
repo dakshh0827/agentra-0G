@@ -19,6 +19,7 @@ async executeAgent(agentId, task, callerWallet, options = {}) {
     callChainId = uuidv4(),
     runtimePayload = null,
     executionTraceId = uuidv4(),
+    skipCallRevenueBooking = false,
   } = options
 
   console.log('[ORCHESTRATOR] ▶️  Starting agent execution:', {
@@ -299,6 +300,58 @@ async executeAgent(agentId, task, callerWallet, options = {}) {
     success,
     latency,
   })
+
+  // Record paid direct-call revenue in DB so dashboard/leaderboard reflect live call monetization.
+  // Delegated agent-to-agent flows already persist billing separately, so they can opt out.
+  if (
+    !skipCallRevenueBooking &&
+    success &&
+    interactionRecord?.id &&
+    callerWallet &&
+    agent.ownerWallet?.toLowerCase() !== callerWallet?.toLowerCase() &&
+    BigInt(agent.commsPricePerCall || '0') > 0n
+  ) {
+    try {
+      const totalAmountWei = BigInt(agent.commsPricePerCall || '0')
+      const platformFeeWei = (totalAmountWei * 20n) / 100n
+      const creatorAmountWei = totalAmountWei - platformFeeWei
+      const callTxHash = `call_${interactionRecord.id}`
+
+      await prisma.transaction.upsert({
+        where: { txHash: callTxHash },
+        update: {
+          status: 'confirmed',
+          type: 'call',
+          agentId: agent.agentId,
+          callerWallet: callerWallet.toLowerCase(),
+          ownerWallet: agent.ownerWallet,
+          totalAmount: totalAmountWei.toString(),
+          platformFee: platformFeeWei.toString(),
+          creatorAmount: creatorAmountWei.toString(),
+        },
+        create: {
+          txHash: callTxHash,
+          status: 'confirmed',
+          type: 'call',
+          agentId: agent.agentId,
+          callerWallet: callerWallet.toLowerCase(),
+          ownerWallet: agent.ownerWallet,
+          totalAmount: totalAmountWei.toString(),
+          platformFee: platformFeeWei.toString(),
+          creatorAmount: creatorAmountWei.toString(),
+        },
+      })
+
+      await prisma.agent.update({
+        where: { id: agent.id },
+        data: {
+          revenue: (BigInt(agent.revenue || '0') + creatorAmountWei).toString(),
+        },
+      })
+    } catch (billingErr) {
+      console.error('[ORCHESTRATOR] Call revenue booking failed:', billingErr?.message || billingErr)
+    }
+  }
 
   // Observability: log completion
   logExecutionComplete({

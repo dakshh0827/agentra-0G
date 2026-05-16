@@ -52,9 +52,25 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const formatRevenueTick = (value) => {
   if (!value) return ''
-  const parsed = new Date(value)
+  const parts = String(value).split('-').map(Number)
+  const parsed = parts.length === 3
+    ? new Date(parts[0], (parts[1] || 1) - 1, parts[2] || 1)
+    : new Date(value)
   if (Number.isNaN(parsed.getTime())) return value
   return parsed.toLocaleDateString('en', { month: 'short', day: 'numeric' })
+}
+
+const formatActivityTimestamp = (createdAt) => {
+  if (!createdAt) return ''
+  const parsed = new Date(createdAt)
+  if (Number.isNaN(parsed.getTime())) return ''
+  return parsed.toLocaleString('en', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+  })
 }
 
 export default function Dashboard() {
@@ -287,7 +303,7 @@ export default function Dashboard() {
                     <div className="w-2 h-2 rounded-full mt-1.5 shrink-0 bg-[var(--color-primary)] group-hover:scale-125 transition-transform" />
                     <div className="flex-1 min-w-0">
                       <div className="text-xs text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors truncate">{item.text}</div>
-                      <div className="text-[var(--color-text-dim)] text-xs font-mono mt-1">{item.time}</div>
+                      <div className="text-[var(--color-text-dim)] text-xs font-mono mt-1">{formatActivityTimestamp(item.createdAt)}</div>
                     </div>
                   </motion.div>
                 )) : (

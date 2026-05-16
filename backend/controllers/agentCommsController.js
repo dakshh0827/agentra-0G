@@ -311,6 +311,7 @@ const callAgent = asyncHandler(async (req, res) => {
       callDepth: 1,
       parentInteractionId: sourceInteraction.id,
       runtimePayload: enrichedRuntimePayload,
+      skipCallRevenueBooking: true,
     })
 
     if (priceWei > 0n) {
