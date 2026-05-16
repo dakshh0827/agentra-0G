@@ -1,6 +1,15 @@
 import prisma from '../lib/prisma.js'
 
 class AnalyticsService {
+  _toWei(value) {
+    if (value === null || value === undefined || value === '') return 0n
+    try {
+      return BigInt(value)
+    } catch {
+      return 0n
+    }
+  }
+
   calculateScore(agent) {
     const voteFactor = Math.min(100, agent.upvotes || 0) * 0.4
     const usageFactor = Math.min(100, (agent.calls || 0) / 1000) * 0.3
@@ -67,10 +76,9 @@ class AnalyticsService {
       prisma.globalStats.findUnique({ where: { id: 'global' } }),
     ])
 
-    const totalRevenueWei = transactions.reduce((s, t) => {
-      const creatorAmount = BigInt(t.creatorAmount || '0')
-      return s + creatorAmount
-    }, 0n)
+    const txRevenueWei = (tx) => this._toWei(tx.creatorAmount || tx.totalAmount || '0')
+
+    const totalRevenueWei = transactions.reduce((s, t) => s + txRevenueWei(t), 0n)
 
     const totalRevenue = Number(totalRevenueWei) / 1e18
     const totalCalls = agents.reduce((s, a) => s + a.calls, 0)
@@ -206,7 +214,8 @@ class AnalyticsService {
       })
 
       const revenueWei = dayTxs.reduce((s, t) => {
-        return s + BigInt(t.creatorAmount || '0')
+        const fallbackAmount = t.creatorAmount || t.totalAmount || '0'
+        return s + this._toWei(fallbackAmount)
       }, 0n)
 
       result.push({
