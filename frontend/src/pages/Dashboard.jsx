@@ -8,12 +8,12 @@ import {
   BarChart3, TrendingUp, Zap, DollarSign, Activity,
   Wallet, Sparkles, Clock, ShieldCheck, Cpu
 } from 'lucide-react'
-import { useAccount, useReadContracts } from 'wagmi'
-import { CHAIN_CONFIG } from '../config/chains.config'
+import { useAccount } from 'wagmi'
 import MetricBadge from '../components/ui/MetricBadge'
 import LoadingPulse from '../components/ui/LoadingPulse'
 import AgentCard from '../components/ui/AgentCard'
 import { analyticsAPI } from '../api/analytics'
+import { agentsAPI } from '../api/agents'
 import { useAgents } from '../hooks/useAgents'
 import { Link } from 'react-router-dom'
 
@@ -51,10 +51,12 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 export default function Dashboard() {
-  const { address: walletAddress, isConnected, chain } = useAccount()
+  const { address: walletAddress, isConnected } = useAccount()
 
   const [loading, setLoading] = useState(true)
   const [dashData, setDashData] = useState(null)
+  const [accessStates, setAccessStates] = useState({})
+  const [accessLoading, setAccessLoading] = useState(false)
   const [hoveredMetric, setHoveredMetric] = useState(null)
 
   const { agents } = useAgents()
@@ -72,27 +74,62 @@ export default function Dashboard() {
     a => a.ownerWallet?.toLowerCase() === walletAddress?.toLowerCase()
   )
 
-  // On-chain: batch check access for blockchain agents not owned by user
-  const currentNetwork = chain?.id ? CHAIN_CONFIG[chain.id] : null
-  const contracts = currentNetwork?.contracts
-
-  const otherBlockchainAgents = (agents || []).filter(
-    a => a.contractAgentId && a.ownerWallet?.toLowerCase() !== walletAddress?.toLowerCase()
-  )
-
-  const accessContracts = otherBlockchainAgents.map(agent => ({
-    address: contracts?.Agentra?.address,
-    abi: contracts?.Agentra?.abi,
-    functionName: 'hasAccess',
-    args: [BigInt(agent.contractAgentId || 0), walletAddress || '0x0000000000000000000000000000000000000000'],
-  }))
-
-  const { data: accessResults } = useReadContracts({
-    contracts: accessContracts,
-    query: { enabled: !!contracts && !!walletAddress && otherBlockchainAgents.length > 0 },
+  const unlockedAgents = (agents || []).filter((agent) => {
+    if (!agent?.agentId) return false
+    if (agent.ownerWallet?.toLowerCase() === walletAddress?.toLowerCase()) return false
+    return !!accessStates[agent.agentId]
   })
 
-  const purchasedAgents = otherBlockchainAgents.filter((_, i) => accessResults?.[i]?.result === true)
+  useEffect(() => {
+    let cancelled = false
+
+    const loadAccessStates = async () => {
+      if (!walletAddress || !(agents || []).length) {
+        setAccessStates({})
+        return
+      }
+
+      const candidates = (agents || []).filter(
+        agent => agent.ownerWallet?.toLowerCase() !== walletAddress?.toLowerCase()
+      )
+
+      if (candidates.length === 0) {
+        setAccessStates({})
+        return
+      }
+
+      setAccessLoading(true)
+      try {
+        const results = await Promise.allSettled(
+          candidates.map(async (agent) => {
+            const res = await agentsAPI.checkAccess(agent.agentId)
+            return [agent.agentId, !!res.data?.hasAccess]
+          })
+        )
+
+        if (cancelled) return
+
+        const nextAccessStates = {}
+        for (const result of results) {
+          if (result.status === 'fulfilled') {
+            const [agentId, hasAccess] = result.value
+            nextAccessStates[agentId] = hasAccess
+          }
+        }
+        setAccessStates(nextAccessStates)
+      } catch {
+        if (!cancelled) setAccessStates({})
+      } finally {
+        if (!cancelled) setAccessLoading(false)
+      }
+    }
+
+    loadAccessStates()
+
+    return () => {
+      cancelled = true
+    }
+  }, [agents, walletAddress])
 
   if (!isConnected || !walletAddress) return (
     <div className="relative min-h-[80vh] flex items-center justify-center p-6">
@@ -130,7 +167,7 @@ export default function Dashboard() {
     { label: 'TOTAL REVENUE', value: `${parseFloat(metrics.totalRevenue || 0).toFixed(4)} 0G`, color: 'green', icon: DollarSign, sublabel: 'All time earnings' },
     { label: 'TOTAL CALLS', value: (metrics.totalCalls || 0).toLocaleString(), color: 'blue', icon: Activity, sublabel: 'Total executions' },
     { label: 'MY AGENTS', value: myAgents.length, color: 'purple', icon: Zap, sublabel: 'Deployed on network' },
-    { label: 'SUCCESS RATE', value: `${(metrics.successRate || 0).toFixed(1)}%`, color: 'yellow', icon: TrendingUp, sublabel: 'Avg across agents' },
+    { label: 'UNLOCKED ACCESS', value: accessLoading ? '...' : unlockedAgents.length, color: 'yellow', icon: ShieldCheck, sublabel: 'Purchased / accessible agents' },
   ]
 
   return (
@@ -248,15 +285,15 @@ export default function Dashboard() {
                 <ShieldCheck size={20} className="text-[var(--color-success)]" />
                 <h3 className="font-display font-bold text-[var(--color-text-primary)] text-xl sm:text-2xl">Unlocked Access</h3>
               </div>
-              {purchasedAgents.length > 0 ? (
+              {unlockedAgents.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
-                  {purchasedAgents.map((agent, i) => (
+                  {unlockedAgents.map((agent, i) => (
                     <AgentCard key={agent.agentId || agent.id} agent={agent} index={i} />
                   ))}
                 </div>
               ) : (
                 <div className="glass-card-landing rounded-xl p-10 text-center border-dashed border border-[rgba(52,211,153,0.3)] bg-[rgba(52,211,153,0.02)]">
-                  <div className="text-[var(--color-text-dim)] font-mono text-xs  mb-3">NO ON-CHAIN AGENTS PURCHASED</div>
+                  <div className="text-[var(--color-text-dim)] font-mono text-xs  mb-3">NO UNLOCKED AGENTS YET</div>
                   <Link to="/explorer" className="text-[var(--color-success)] text-xs font-mono hover:underline">EXPLORE REGISTRY →</Link>
                 </div>
               )}
