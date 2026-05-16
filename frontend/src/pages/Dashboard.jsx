@@ -195,11 +195,15 @@ export default function Dashboard() {
   const agentPerf = dashData?.agentPerf || []
   const activityFeed = dashData?.activityFeed || []
 
+  const totalRevenue = Number(metrics.totalRevenue ?? 0)
+  const totalCalls = Number(metrics.totalCalls ?? 0)
+  const totalPurchases = Number(metrics.totalPurchases ?? 0)
+
   const metricCards = [
-    { label: 'TOTAL REVENUE', value: `${parseFloat(metrics.totalRevenue || 0).toFixed(4)} 0G`, color: 'green', icon: DollarSign, sublabel: 'All time earnings' },
-    { label: 'TOTAL CALLS', value: (metrics.totalCalls || 0).toLocaleString(), color: 'blue', icon: Activity, sublabel: 'Total executions' },
+    { label: 'TOTAL REVENUE', value: `${totalRevenue.toFixed(4)} 0G`, color: 'green', icon: DollarSign, sublabel: 'All time earnings' },
+    { label: 'TOTAL CALLS', value: totalCalls.toLocaleString(), color: 'blue', icon: Activity, sublabel: 'Total executions' },
     { label: 'MY AGENTS', value: myAgents.length, color: 'purple', icon: Zap, sublabel: 'Deployed on network' },
-    { label: 'UNLOCKED ACCESS', value: accessLoading ? '...' : unlockedAgents.length, color: 'yellow', icon: ShieldCheck, sublabel: 'Purchased / accessible agents' },
+    { label: 'TOTAL PURCHASES', value: totalPurchases.toLocaleString(), color: 'yellow', icon: ShieldCheck, sublabel: 'Unique buyer unlocks' },
   ]
 
   return (

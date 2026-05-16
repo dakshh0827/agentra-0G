@@ -385,6 +385,11 @@ const purchaseAccess = asyncHandler(async (req, res) => {
     ? (monthlyWei * multiplier).toString()
     : monthlyWei.toString()
 
+  // Keep creator/platform split consistent with other monetized flows.
+  const totalWei = BigInt(totalCost)
+  const platformFeeWei = (totalWei * 20n / 100n).toString()
+  const creatorAmountWei = (totalWei - BigInt(platformFeeWei)).toString()
+
   const expiresAt = isLifetime
     ? new Date('9999-12-31')
     : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
@@ -419,20 +424,37 @@ const purchaseAccess = asyncHandler(async (req, res) => {
     expiresAt,
   })
 
-  // ✅ Record as PENDING (escrow not resolved yet)
+  // Persist as confirmed once on-chain inclusion is verified by txHash.
   await prisma.transaction.upsert({
     where: { txHash },
-    update: {},
-    create: {
-      txHash,
+    update: {
       type: 'purchase_access',
-      status: 'pending', // 🔥 IMPORTANT CHANGE
+      status: 'confirmed',
       agentId: agent.agentId,
       callerWallet: req.walletAddress,
       ownerWallet: agent.ownerWallet,
       totalAmount: totalCost,
-      platformFee: '0',     // calculated later on-chain
-      creatorAmount: '0',   // calculated later on-chain
+      platformFee: platformFeeWei,
+      creatorAmount: creatorAmountWei,
+    },
+    create: {
+      txHash,
+      type: 'purchase_access',
+      status: 'confirmed',
+      agentId: agent.agentId,
+      callerWallet: req.walletAddress,
+      ownerWallet: agent.ownerWallet,
+      totalAmount: totalCost,
+      platformFee: platformFeeWei,
+      creatorAmount: creatorAmountWei,
+    },
+  })
+
+  // Keep denormalized revenue in sync with purchase persistence.
+  await prisma.agent.update({
+    where: { id: agent.id },
+    data: {
+      revenue: (BigInt(agent.revenue || '0') + BigInt(creatorAmountWei)).toString(),
     },
   })
 
@@ -445,7 +467,7 @@ const purchaseAccess = asyncHandler(async (req, res) => {
     success: true,
     txHash,
     expiresAt,
-    status: 'pending', // optional but useful for frontend
+    status: 'confirmed',
   })
 })
 

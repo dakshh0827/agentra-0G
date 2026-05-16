@@ -122,7 +122,7 @@ const getLeaderboard = asyncHandler(async (req, res) => {
   res.json({
     leaderboard,
     total: leaderboard.length,
-    algorithm: 'score = 0.4×upvotes + 0.3×usage + 0.2×revenue + 0.1×successRate',
+    algorithm: 'score = 0.35×upvotes + 0.3×usage + 0.2×revenue + 0.05×purchases + 0.1×successRate',
     generatedAt: new Date().toISOString(),
   })
 })

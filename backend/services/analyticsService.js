@@ -11,15 +11,17 @@ class AnalyticsService {
   }
 
   calculateScore(agent) {
-    const voteFactor = Math.min(100, agent.upvotes || 0) * 0.4
+    const voteFactor = Math.min(100, agent.upvotes || 0) * 0.35
     const usageFactor = Math.min(100, (agent.calls || 0) / 1000) * 0.3
 
     const revenueNum = Number(agent.revenue || '0') / 1e18
     const revenueFactor = Math.min(100, revenueNum / 100) * 0.2
 
+    const purchaseFactor = Math.min(100, (agent.purchaseCount || 0) / 100) * 0.05
+
     const successFactor = (agent.successRate || 0) * 0.1
 
-    return parseFloat((voteFactor + usageFactor + revenueFactor + successFactor).toFixed(2))
+    return parseFloat((voteFactor + usageFactor + revenueFactor + purchaseFactor + successFactor).toFixed(2))
   }
 
   async updateLeaderboardScores() {
@@ -61,9 +63,13 @@ class AnalyticsService {
         include: { metrics: true },
       }),
       prisma.transaction.findMany({
-        where: { ownerWallet: wallet, status: 'confirmed' },
+        where: {
+          ownerWallet: wallet,
+          status: { in: ['confirmed', 'pending'] },
+          type: { in: ['purchase_access', 'agent_to_agent', 'call'] },
+        },
         orderBy: { createdAt: 'desc' },
-        take: 100,
+        take: 300,
       }),
       prisma.interaction.findMany({
         where: {
@@ -93,8 +99,22 @@ class AnalyticsService {
       return acc
     }, {})
 
+    const purchaseCounts = await prisma.agentPurchase.groupBy({
+      by: ['agentId'],
+      where: {
+        agentId: { in: agents.map(a => a.agentId) },
+      },
+      _count: { agentId: true },
+    })
+
+    const purchaseCountMap = purchaseCounts.reduce((acc, row) => {
+      acc[row.agentId] = row._count.agentId
+      return acc
+    }, {})
+
     const totalRevenue = Number(totalRevenueWei) / 1e18
     const totalCalls = agents.reduce((s, a) => s + (callCountMap[a.agentId] ?? a.calls ?? 0), 0)
+    const totalPurchases = agents.reduce((s, a) => s + (purchaseCountMap[a.agentId] ?? a.purchaseCount ?? 0), 0)
     const avgSuccessRate = agents.length > 0
       ? agents.reduce((s, a) => s + a.successRate, 0) / agents.length
       : 0
@@ -118,6 +138,7 @@ class AnalyticsService {
       metrics: {
         totalRevenue: parseFloat(totalRevenue.toFixed(6)),
         totalCalls,
+        totalPurchases,
         agentCount: agents.length,
         activeAgents: agents.filter(a => a.status === 'active').length,
         successRate: parseFloat(avgSuccessRate.toFixed(2)),
