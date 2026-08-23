@@ -96,7 +96,7 @@ export default function ReportCard({ report }) {
       {/* The audit's own verdict on itself, when it failed one of its checks. */}
       {Array.isArray(report.selfCheckFailed) && report.selfCheckFailed.length > 0 && (
         <p className="px-4 pb-3 text-[11px] text-[var(--color-warning)]">
-          This run did not pass its own consistency checks — treat the score as provisional.
+          This run did not pass its own consistency checks - treat the score as provisional.
         </p>
       )}
     </div>
