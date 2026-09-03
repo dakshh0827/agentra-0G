@@ -24,7 +24,7 @@ export default function Sidebar() {
       <motion.aside
         animate={{ width: collapsed ? 68 : 250 }}
         transition={{ type: 'spring', stiffness: 260, damping: 28 }}
-        className="hidden lg:flex flex-col h-screen z-20 overflow-hidden shrink-0 border-r border-border"
+        className="hidden lg:flex flex-col h-full z-20 overflow-hidden shrink-0 border-r border-border"
         style={{ background: 'var(--color-panel)' }}
       >
 

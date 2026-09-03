@@ -6,9 +6,9 @@ import RouteErrorBoundary from '../ui/RouteErrorBoundary'
 
 export default function Layout() {
   return (
-    <div className="flex h-screen overflow-hidden bg-bg text-text-primary">
+    <div className="fixed inset-0 flex overflow-hidden bg-bg text-text-primary">
       <Sidebar />
-      <div className="flex flex-col flex-1 min-w-0 relative z-10">
+      <div className="flex flex-col flex-1 min-w-0 min-h-0 relative z-10">
         <TopBar />
         <main className="flex-1 overflow-y-auto bg-bg">
           <RouteErrorBoundary>

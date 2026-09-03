@@ -2,6 +2,10 @@
 
 @import "tailwindcss";
 
+html {
+  zoom: 1.2;
+}
+
 @font-face {
   font-family: 'Brisa';
   src: url('/fonts/Brisa-Regular.ttf') format('truetype');
@@ -227,6 +231,40 @@
 
   .glass-card-landing:hover {
     border-color: var(--color-primary-light);
+  }
+
+  /* Workflow timeline — scroll-driven scale/opacity are set imperatively via
+     GSAP (gsap.set), never through these classes. These classes only carry the
+     states that change rarely (once per card crossing), so toggling them
+     doesn't fight the per-frame scroll updates. */
+
+  .workflow-step {
+    transition: filter 0.2s ease;
+  }
+
+  .workflow-step.is-blurred {
+    filter: blur(2px);
+  }
+
+  .workflow-card {
+    border: 1px solid var(--color-panel-border);
+    box-shadow: 0 1px 2px rgba(42, 31, 37, 0.03);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .workflow-card.is-center {
+    border-color: rgba(172, 100, 247, 0.45);
+    box-shadow: 0 24px 60px -20px rgba(172, 100, 247, 0.35), 0 4px 16px -4px rgba(172, 100, 247, 0.15);
+  }
+
+  .workflow-dot {
+    background: var(--color-border-bright);
+    transition: background 0.25s ease, transform 0.25s ease;
+  }
+
+  .workflow-dot.is-active {
+    background: var(--color-primary);
+    transform: translateX(-50%) scale(1.25);
   }
 
   /* Navbar */
