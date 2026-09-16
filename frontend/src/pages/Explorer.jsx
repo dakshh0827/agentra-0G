@@ -97,7 +97,7 @@ export default function Explorer() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-bg text-text-primary px-4 sm:px-6 lg:px-8 py-7">
-      <div className="max-w-7xl w-full mx-auto flex flex-col flex-1 min-h-0">
+      <div className="max-w-[85rem] w-full mx-auto flex flex-col flex-1 min-h-0">
         {/* HEADER */}
         <div className="shrink-0 flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
           <div>

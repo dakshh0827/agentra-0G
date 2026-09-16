@@ -541,8 +541,8 @@ export default function DeployStudio() {
   const canDeploy = isConnected && form.name && form.category && form.tier && form.monthlyPrice !== ''
 
   return (
-    <div className="relative min-h-screen bg-bg">
-      <div className="relative z-10 p-5 lg:p-8 max-w-7xl mx-auto">
+    <div className="relative min-h-screen bg-bg p-5 lg:p-8">
+      <div className="relative z-10 max-w-[85rem] mx-auto">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-8">
           {/* <div className="flex items-center gap-2.5 mb-3"> */}

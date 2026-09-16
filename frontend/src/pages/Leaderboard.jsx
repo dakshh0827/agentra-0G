@@ -84,12 +84,12 @@ export default function Leaderboard() {
     }
   }, [])
 
-  if (loading) return <div className="p-6 max-w-7xl mx-auto"><LoadingPulse /></div>
+  if (loading) return <div className="p-6 max-w-[85rem] mx-auto"><LoadingPulse /></div>
 
   return (
-    <div className="relative min-h-screen bg-[var(--color-bg)]">
+    <div className="relative min-h-screen bg-[var(--color-bg)] p-5 lg:p-8">
 
-      <div className="relative z-10 p-5 lg:p-8 max-w-7xl mx-auto">
+      <div className="relative z-10 max-w-[85rem] mx-auto">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-8">
           <p className="text-xs uppercase tracking-wide text-text-dim font-semibold">Directory</p>
